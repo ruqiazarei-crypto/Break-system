@@ -138,6 +138,10 @@ body{font-family:Tahoma,sans-serif;background:#f0f2f5;color:#1a2a3a;padding:8px;
   </div>
   <div class="st" id="supSt"></div>
   <div id="supSlots"></div>
+  <div style="margin-top:8px;border-top:1px solid #ddd;padding-top:6px">
+    <h3 style="font-size:12px;color:#1a5276">📜 سجل التوزيعات <span style="font-weight:400;color:#999" id="lgCnt"></span></h3>
+    <div id="logList" style="max-height:200px;overflow-y:auto;font-size:11px"></div>
+  </div>
 </div>
 
 <!-- ═══ ADMIN SECTION (hidden) ═══ -->
@@ -237,6 +241,10 @@ if(emVer!=EM_VER||!EM||!EM.length){
   sv("bs_emp",EM);sv("bs_emp_ver",EM_VER);
 }
 let EDP = ld("bs_edp",{});
+let SUP = ld("bs_sup",[]);
+let LG = ld("bs_lg",[]);
+function addLog(emp,sk,t,act){const tm=new Date();const ts=`${String(tm.getHours()).padStart(2,"0")}:${String(tm.getMinutes()).padStart(2,"0")}`;LG.unshift({emp,sk,t,act,ts,dr:gd(sk,t,0,emp),d:`${tm.getDate()}/${tm.getMonth()+1}`});if(LG.length>50)LG.pop();sv("bs_lg",LG);playBeep();notifySup(emp,sk,t,act)}
+function notifySup(emp,sk,t,act){const isSup=SUP.includes(ME);if(!isSup)return;const b=document.getElementById("rmdBar");b.style.display="block";const msg=act.includes("أخذ")?`📌 ${emp} أخذ ${fm(t)} (${gd(sk,t,0,emp)}د)`:`🗑️ ${emp} ألغى ${t?fm(t):""}`;b.innerHTML=`🔔 <strong>${msg}</strong>`;if(notifOn)new Notification("👁️",{body:msg});setTimeout(()=>b.style.display="none",6000)}
 let CD = ld("bs_cd",{});
 let AS = ld("bs_as",{});
 let RS = ld("bs_rs",[]);
@@ -324,11 +332,11 @@ function empAs(sk,t,k){
   let mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
   if(mc>=4){nf("⚠️ 4 بريكات","r");return}
   if(AS[k]){nf("⚠️ مأخوذ","r");return}
-  AS[k]=ME;sv("bs_as",AS);nf(`✅ ${fm(t)}`,"g");rEmp();rAll();
+  AS[k]=ME;sv("bs_as",AS);addLog(ME,sk,t,"📌 أخذ");nf(`✅ ${fm(t)}`,"g");rEmp();rAll();
 }
 function empUn(k){
   if(AS[k]!=ME){nf("⚠️ مو بريكك","r");return}
-  delete AS[k];sv("bs_as",AS);nf("✅","g");rEmp();rAll();
+  delete AS[k];sv("bs_as",AS);addLog(ME,"","","🗑️ ألغى");nf("✅","g");rEmp();rAll();
 }
 
 // ═══════════════ ADMIN TOGGLE ═══════════════
@@ -364,6 +372,7 @@ function chgPw(){
 let adTab=1;
 function adSw(n){adTab=n;document.querySelectorAll("#admSec .adm-tabs button").forEach((b,i)=>b.classList.toggle("ok",i+1==n));document.getElementById("adPanel1").style.display=n==1?"":"none";document.getElementById("adPanel2").style.display=n==2?"":"none";if(n==2)rAll();}
 
+function togSup(nm){const idx=SUP.indexOf(nm);if(idx>-1){SUP.splice(idx,1)}else{SUP.push(nm)}sv("bs_sup",SUP);rAdmin();nf(`👁️ ${nm}: ${idx>-1?"موظف خدمة عملاء":"مشرف"}`,"b")}
 function setEDP(nm,v){if(!nm||!v)return;const a=v.split(/[·,،\s]+/).map(Number).filter(x=>x>=5&&x<=60);if(!a.length){nf("⚠️ ادخل أرقام","r");return}EDP[nm]=a;sv("bs_edp",EDP);nf(`✅ ${a.join("·")}د`,"g");rAdmin();}
 function supView(){
   const el=document.getElementById("supSch");
@@ -384,11 +393,15 @@ function supView(){
   }
   document.getElementById("supSlots").innerHTML=h;
   document.getElementById("supSt").innerHTML=`<span>🟢 متاح: ${ta}</span><span>🔴 مأخوذ: ${tv}</span><span>📋 إجمالي: ${tt}</span>`;
+  let lh="";const nowd=new Date();const td=`${nowd.getDate()}/${nowd.getMonth()+1}`;
+  LG.filter(x=>x.d==td).slice(0,30).forEach(x=>{const cls=x.act.includes("أخذ")?"#27ae60":"#e74c3c";lh+=`<div style="display:flex;gap:6px;padding:2px 0;border-bottom:1px solid #f0f0f0"><span style="color:#999;min-width:35px">${x.ts}</span><span style="color:${cls};font-weight:600">${x.act}</span><span>${x.emp}</span>${x.t?`<span style="color:#666">${fm(x.t)}</span>`:""}${x.dr?`<span style="color:#999">(${x.dr}د)</span>`:""}</div>`;});
+  document.getElementById("logList").innerHTML=lh||`<span style="color:#999">لا توجد توزيعات اليوم</span>`;
+  document.getElementById("lgCnt").textContent=`(${LG.filter(x=>x.d==td).length} عملية)`;
 }
 function rAdmin(){
   // Employees
   let h=`<div class="rw" style="font-weight:700;border-bottom:2px solid #ddd"><span class="nm">الاسم</span><span>الإيميل</span></div>`;
-  EM.forEach((e,i)=>{h+=`<div class="rw"><span class="nm">${e.n}</span><input value="${e.m}" style="flex:1;font-size:11px" onchange="EM[${i}].m=this.value;sv('bs_emp',EM)"><button class="btn btn-dan btn-sm" onclick="dEmp(${i})">✕</button></div>`;});
+  EM.forEach((e,i)=>{const isSup=SUP.includes(e.n);h+=`<div class="rw"><span class="nm">${e.n}</span><input value="${e.m}" style="flex:1;font-size:11px" onchange="EM[${i}].m=this.value;sv('bs_emp',EM)"><span onclick="togSup('${e.n}')" style="cursor:pointer;background:${isSup?"#27ae60":"#ddd"};color:${isSup?"#fff":"#666"};padding:1px 6px;border-radius:4px;font-size:10px">${isSup?"👁️ مشرف":"موظف خدمة عملاء"}</span><button class="btn btn-dan btn-sm" onclick="dEmp(${i})">✕</button></div>`;});
   document.getElementById("emps").innerHTML=h;
   // Codes
   let c=`<div class="rw" style="font-weight:700;border-bottom:2px solid #ddd"><span class="nm">الاسم</span><span>الكود</span></div>`;
@@ -439,7 +452,7 @@ function rAll(){
 function as(sk,t){
   if(!ME){nf("⚠️ اختر اسمك","r");return}
   if(Object.values(AS).filter(v=>v==ME).length>=4){nf("⚠️ 4 بريكات","r");return}
-  AS[sk+"_"+t]=ME;sv("bs_as",AS);nf(`✅ ${fm(t)}`,"g");rAll();rEmp();
+  AS[sk+"_"+t]=ME;sv("bs_as",AS);addLog(ME,sk,t,"📌 أخذ (إدارة)");nf(`✅ ${fm(t)}`,"g");rAll();rEmp();
 }
 function addEmp(){const n=prompt("الاسم:");if(!n)return;const m=prompt("الإيميل:");if(!m)return;EM.push({n,m});sv("bs_emp",EM);rAdmin();upSel();nf("✅","g");}
 function dEmp(i){if(!confirm(`حذف ${EM[i].n}؟`))return;Object.keys(AS).forEach(k=>{if(AS[k]==EM[i].n)delete AS[k]});EM.splice(i,1);sv("bs_emp",EM);sv("bs_as",AS);rAdmin();upSel();rAll();nf("✅","g");}
