@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام البريكات - مستشفيات المانع</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Tahoma,sans-serif;background:#f0f2f5;color:#1a2a3a;padding:8px;direction:rtl}
+.c{max-width:1000px;margin:0 auto}
+
+/* Header */
+.hd{background:linear-gradient(135deg,#1a5276,#2980b9);color:#fff;padding:14px 16px;border-radius:14px 14px 0 0;text-align:center}
+.hd h1{font-size:18px}.hd p{font-size:11px;opacity:.8;margin-top:2px}
+
+/* Clock */
+.clk{background:#fff;text-align:center;padding:10px;font-size:28px;font-weight:700;color:#1a5276;border-bottom:1px solid #eee}
+
+/* Reminder bar */
+.rmd{background:#fef9e7;border:1px solid #f39c12;border-radius:8px;padding:8px;text-align:center;font-size:13px;margin-bottom:6px;display:none;animation:pl 1s infinite}
+@keyframes pl{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* Name bar */
+.nb{background:#fff;padding:8px 12px;display:flex;align-items:center;gap:6px;border-bottom:1px solid #eee;flex-wrap:wrap}
+.nb select{flex:1;min-width:120px;padding:5px 8px;border:1px solid #ccc;border-radius:6px;font-size:12px}
+.nb .ct{background:#2980b9;color:#fff;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700}
+.rmbtn{background:#fef9e7;border:1px solid #f39c12;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer;white-space:nowrap}
+
+/* Panels */
+.pn{background:#fff;border-radius:10px;padding:12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.pn h3{font-size:13px;margin-bottom:6px;color:#1a5276}
+.my{background:#eaf2f8;border:2px solid #2980b9;border-radius:12px;padding:12px;margin-bottom:8px}
+.my h3{font-size:13px;margin-bottom:6px}
+.mt{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
+.mtt{display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #2980b9;border-radius:16px;padding:3px 10px;font-size:12px;font-weight:600}
+.mtt .x{color:#e74c3c;cursor:pointer;font-weight:700;margin-right:3px}
+
+/* Slots grid */
+.gr{display:flex;flex-wrap:wrap;gap:4px}
+.gr span{display:inline-flex;align-items:center;gap:3px;background:#fff;border:1px solid #ddd;border-radius:14px;padding:3px 8px;font-size:11px;cursor:pointer;transition:.15s}
+.gr span:hover{box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.gr .g{background:#e8f8f5;border-color:#27ae60}
+.gr .r{background:#fdedec;border-color:#e74c3c;cursor:default}
+.gr .b{background:#eaf2f8;border-color:#2980b9}
+.gr .vw{background:#fef9e7;border-color:#f39c12;cursor:default}
+
+/* Slots grouped by shift */
+.sg{margin-bottom:6px}
+.sg h4{font-size:12px;color:#1a5276;margin-bottom:3px}
+.sg .row{display:flex;flex-wrap:wrap;gap:3px}
+
+/* Admin (hidden by default) */
+.adm{display:none}
+.adm.vis{display:block}
+.adm-tabs{display:flex;gap:4px;margin-bottom:6px}
+.adm-tabs button{flex:1;padding:6px;border:none;border-radius:6px;font-weight:600;font-size:11px;cursor:pointer;background:#ddd;transition:.2s}
+.adm-tabs button.ok{background:#1a2a3a;color:#fff}
+
+/* Buttons */
+.btn{padding:6px 12px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600}
+.btn-pri{background:#1a2a3a;color:#fff}.btn-suc{background:#27ae60;color:#fff}
+.btn-dan{background:#e74c3c;color:#fff}.btn-war{background:#f39c12;color:#fff}
+.btn-gry{background:#95a5a6;color:#fff}.btn-sm{padding:3px 8px;font-size:10px}
+
+/* Stats */
+.st{background:#fff;border-radius:8px;padding:6px 10px;margin-bottom:6px;display:flex;gap:10px;flex-wrap:wrap;font-size:11px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.st span{background:#f8f9fa;padding:3px 8px;border-radius:4px}
+
+/* Admin lock button */
+.lk{position:fixed;bottom:10px;right:10px;background:#1a2a3a;color:#fff;border:none;border-radius:25px;padding:7px 14px;font-size:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:1000;opacity:.8;transition:.2s}
+.lk:hover{opacity:1}.lk-on{background:#27ae60}
+
+/* Footer */
+.ft{text-align:center;color:#aaa;font-size:10px;padding:8px;margin-bottom:40px}
+
+/* Notif */
+.nf{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#1a2a3a;color:#fff;padding:7px 16px;border-radius:20px;font-size:11px;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+.nf.g{background:#27ae60;opacity:1}.nf.r{background:#e74c3c;opacity:1}.nf.b{background:#2980b9;opacity:1}
+
+@media(max-width:480px){
+  .clk{font-size:22px}.hd h1{font-size:15px}.gr span{font-size:10px;padding:2px 6px}
+}
+</style>
+</head>
+<body>
+
+<div class="c">
+
+<!-- HEADER -->
+<div class="hd">
+  <h1>🏥 نظام البريكات</h1>
+  <p>مستشفيات المانع العامة - Al Mana General Hospitals</p>
+</div>
+
+<!-- CLOCK -->
+<div class="clk" id="tclk">--:--:--</div>
+
+<!-- REMINDER BAR -->
+<div class="rmd" id="rmdBar"></div>
+
+<!-- NAME SELECTOR -->
+<div class="nb">
+  <span style="font-weight:700;font-size:13px">👤</span>
+  <select id="selMe" onchange="setMe(this.value)">
+    <option value="">— اختر اسمك —</option>
+  </select>
+  <span class="ct" id="myCnt">0/4</span>
+  <button class="rmbtn" id="rmBtn" onclick="reqNotif()">🔔 تفعيل</button>
+</div>
+
+<!-- MY BREAKS -->
+<div class="my">
+  <h3>✅ بريكاتي</h3>
+  <div class="mt" id="myList"><span style="color:#999;font-size:11px">اختر اسمك أولاً</span></div>
+</div>
+
+<!-- AVAILABLE SLOTS -->
+<div class="pn">
+  <h3>🟢 الأوقات المتاحة</h3>
+  <div id="availSlots"></div>
+  <div style="text-align:center;color:#999;font-size:10px;margin-top:6px">⚠️ 4 بريكات كحد أقصى</div>
+</div>
+
+<!-- UPCOMING BREAKS -->
+<div class="pn" id="upcPn" style="display:none">
+  <h3>⏳ البريكات الجاية</h3>
+  <div id="upcList"></div>
+</div>
+
+<!-- ═══ ADMIN SECTION (hidden) ═══ -->
+<div class="adm" id="admSec">
+  <div class="adm-tabs">
+    <button class="ok" onclick="adSw(1)">⚙️ إدارة</button>
+    <button onclick="adSw(2)">📋 جدول</button>
+  </div>
+  <div id="adPanel1">
+    <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px">
+      <button class="btn btn-pri btn-sm" onclick="addEmp()">➕ موظف</button>
+      <button class="btn btn-war btn-sm" onclick="addSlot()">🕐 إضافة وقت</button>
+      <button class="btn btn-dan btn-sm" onclick="rstSlots()">🔄 استعادة الأوقات</button>
+      <button class="btn btn-dan btn-sm" onclick="rs()">🔄 تصفير</button>
+      <button class="btn btn-suc btn-sm" onclick="report()">📊 تقرير</button>
+    </div>
+    <div class="pn"><h3>👥 الموظفين</h3><div id="emps"></div></div>
+    <div class="pn"><h3>🔑 الأكواد</h3><div id="codes"></div></div>
+    <div class="pn"><h3>🕐 الأوقات</h3><div id="slotMgr"></div></div>
+    <div class="pn"><h3>📧 المستلمين</h3><div id="recips"></div>
+      <div style="display:flex;gap:3px;margin-top:3px"><input id="rn" placeholder="الاسم" style="flex:1"><input id="rm" placeholder="الإيميل" style="flex:2"><button class="btn btn-suc btn-sm" onclick="addR()">➕</button></div>
+    </div>
+    <div class="pn">
+      <h3>📧 SMTP</h3>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
+        <input id="smtpHost" placeholder="smtp.office365.com" style="flex:2" value="smtp.office365.com">
+        <input id="smtpPort" placeholder="587" style="flex:1;max-width:60px" value="587">
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        <input id="smtpUser" placeholder="البريد" style="flex:2">
+        <input id="smtpPass" type="password" placeholder="كلمة السر" style="flex:2">
+        <input id="smtpFrom" placeholder="من" style="flex:2">
+      </div>
+      <div style="margin-top:4px"><button class="btn btn-suc btn-sm" onclick="sendEmail()">📧 إرسال</button><span id="emailStatus" style="font-size:10px;color:#999;margin-right:6px"></span></div>
+    </div>
+    <div class="pn">
+      <h3>🔑 كلمة سر الإدارة</h3>
+      <div style="display:flex;gap:4px"><input id="adminPw" placeholder="كلمة السر الحالية" style="flex:2"><button class="btn btn-pri btn-sm" onclick="chgPw()">تغيير</button><span id="pwStatus" style="font-size:10px;color:#999"></span></div>
+    </div>
+  </div>
+  <div id="adPanel2" style="display:none">
+    <div class="st" id="st"></div>
+    <div id="slots"></div>
+  </div>
+</div>
+
+<div class="ft">مستشفيات المانع العامة · 4 بريكات 15·15·20·10</div>
+</div>
+
+<!-- 🔑 ADMIN LOCK BUTTON -->
+<button class="lk" id="lkBtn" onclick="toggleAdmin()">🔑 دخول المدير</button>
+<div class="nf" id="nf"></div>
+
+<script>
+// ═══════════════ DATA ═══════════════
+const SH = {
+  morning:{lb:"🌅 Morning (8-5)",ts:["9:00","9:10","9:15","9:20","9:30","9:45","9:50","10:10","10:55","11:10","11:15","11:35","11:40","12:00","12:20","12:40","12:55","13:10","13:25","13:40","14:00","14:20","14:40","14:55","15:00","15:10","15:20","15:30","15:40","15:50"]},
+  afternoon:{lb:"☀️ Afternoon (11-8)",ts:["12:30","12:40","12:50","13:00","13:10","13:15","13:30","13:40","14:00","14:20","14:50","15:00","15:20","16:00","16:15","16:30","16:40","17:00","17:15","17:35","18:00","18:15","18:30","19:00","19:15","19:35","19:50","20:00","20:10","20:20"]},
+  night:{lb:"🌙 Night (1-10)",ts:["15:00","15:15","15:30","15:50","16:00","16:20","16:40","17:00","17:20","17:35","18:10","18:45","19:10","19:25","20:20","20:40","20:50","21:10","21:20","21:30","21:40"]}
+};
+const VO = {"morning":["12:00","13:10","15:10"],"afternoon":["15:00","18:00","17:00"],"night":["17:00","19:10","16:00"]};
+const DP_DF = [15,15,20,10];
+
+function ld(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}}
+function sv(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function fm(t){let[h,m]=t.split(":").map(Number);return `${h%12||12}:${String(m).padStart(2,"0")} ${h>=12?"PM":"AM"}`}
+function nf(m,t){const e=document.getElementById("nf");e.className=t||"";e.textContent=m;clearTimeout(e._t);e._t=setTimeout(()=>e.className="",3000)}
+
+// Load data with defaults
+let DP = ld("bs_dp",null); if(!DP){DP=[...DP_DF];sv("bs_dp",DP)} 
+let cs=ld("bs_sh",null); if(cs)Object.assign(SH,cs);
+let cv=ld("bs_vo",null); if(cv)Object.assign(VO,cv);
+let CDUR = ld("bs_dur",{});
+function gd(sk,t,i){return CDUR[sk+"_"+t]||DP[i%4]}
+
+let EM = ld("bs_emp",null);
+if(!EM||!EM.length){
+  // Default employees for first run
+  EM = [
+    {n:"Afaf Alkhaldi",m:"Afaf.Alkhaldi@almanahospital.com.sa"},{n:"Aisha Jezan",m:"Aisha.Jezan@almanahospital.com.sa"},
+    {n:"Aljawhara Almelifi",m:"Aljawhara.Almelifi@almanahospital.com.sa"},{n:"Aljazi Al-Anazi",m:"Aljazi.Al-Anazi@almanahospital.com.sa"},
+    {n:"Amna Albrari",m:"Amna.Albrari@almanahospital.com.sa"},{n:"Fatimah Busaeed",m:"Fatimah.Busaeed@almanahospital.com.sa"},
+    {n:"Hussain Albaqshi",m:"Hussain.Albaqshi@almanahospital.com.sa"},{n:"Khadra alqahtani",m:"Khadra.alqahtani@almanahospital.com.sa"},
+    {n:"Lina Alshshri",m:"Lina.Alshshri@almanahospital.com.sa"},{n:"Manal Alfarhan",m:"Manal.Alfarhan@almanahospital.com.sa"},
+    {n:"Mariam Almahawsh",m:"Mariam.Almahawsh@almanahospital.com.sa"},{n:"Maryam Alsuwayigh",m:"Maryam.Al-suwayigh@almanahospital.com.sa"},
+    {n:"Nehal Alfarhan",m:"Nehal.Alfarhan@almanahospital.com.sa"},{n:"Rawan Al-Naghmoush",m:"Rawan.Al-Naghmoush@almanahospital.com.sa"},
+    {n:"Rima Alqahtani",m:"Rima.Alqahtani@almanahospital.com.sa"},{n:"Ruqaia AlShammery",m:"Ruqaia.AlShammery@almanahospital.com.sa"},
+    {n:"Ruqaia Zarei",m:"Ruqaia.Zarei@almanahospital.com.sa"},{n:"Saif Alruwaili",m:"Saif.Alruwaili@almanahospital.com.sa"},
+    {n:"Salman Alrhiman",m:"Salman.Alrhiman@almanahospital.com.sa"},{n:"Sara Aldossary",m:"Sara.Aldossary@almanahospital.com.sa"},
+    {n:"Shahad Al-Harbi",m:"Shahad.Al-Harbi@almanahospital.com.sa"},{n:"Sheikah Alkhelaiwi",m:"Sheikah.Alkhelaiwi@almanahospital.com.sa"},
+    {n:"Shouq Al-Harbi",m:"Shouq.Al-Harbi@almanahospital.com.sa"},{n:"Tahani AlSahluli",m:"Tahani.AlSahluli@almanahospital.com.sa"},
+    {n:"Khadijah Almalki",m:"Khadijah.Almalki@almanahospital.com.sa"}
+  ];
+  sv("bs_emp",EM);
+}
+let CD = ld("bs_cd",{});
+let AS = ld("bs_as",{});
+let RS = ld("bs_rs",[]);
+let ME = ld("bs_me","");
+let reminded = ld("bs_rmd",{});
+let adminPw = ld("bs_admin_pw","admin123");
+let adminOn = sessionStorage.getItem("bs_admin")=="1";
+
+// ═══════════════ CLOCK ═══════════════
+function upClock(){
+  const n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds();
+  document.getElementById("tclk").textContent=`${String(h%12||12).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")} ${h>=12?"PM":"AM"}`;
+}
+setInterval(upClock,1000);upClock();
+
+// ═══════════════ NAME ═══════════════
+function upSel(){
+  const sel=document.getElementById("selMe");
+  sel.innerHTML='<option value="">— اختر اسمك —</option>';
+  EM.forEach(e=>{const o=document.createElement("option");o.value=e.n;o.textContent=e.n;if(e.n==ME)o.selected=true;sel.appendChild(o);});
+}
+function setMe(n){ME=n;sv("bs_me",ME);reminded={};sv("bs_rmd",{});rEmp();}
+
+// ═══════════════ RENDER ═══════════════
+function rEmp(){
+  let mc=0;for(const k of Object.keys(AS))if(AS[k]==ME)mc++;
+  document.getElementById("myCnt").textContent=mc+"/4";
+
+  // My breaks
+  let mh="";
+  for(const[sk,sh]of Object.entries(SH)){
+    sh.ts.forEach((t,i)=>{
+      const k=sk+"_"+t;
+      if(AS[k]==ME){const dr=gd(sk,t,i);mh+=`<span class="mtt">${fm(t)} (${dr}د) <span class="x" onclick="empUn('${k}')">✕</span></span>`;}
+    });
+  }
+  if(!mh)mh=`<span style="color:#999;font-size:11px">ما اخترت بريكات بعد</span>`;
+  document.getElementById("myList").innerHTML=mh;
+
+  if(!ME){
+    document.getElementById("availSlots").innerHTML=`<div style="text-align:center;color:#e74c3c;font-size:12px;padding:6px">👆 اختر اسمك من القائمة فوق</div>`;
+    document.getElementById("upcPn").style.display="none";
+    return;
+  }
+
+  // Available slots (show all even without selection, grouped by shift)
+  let ah="",avail=[],myTimes=[];
+  for(const[sk,sh]of Object.entries(SH)){
+    sh.ts.forEach((t,i)=>{
+      const k=sk+"_"+t,dr=gd(sk,t,i);
+      const em=AS[k],vw=(VO[sk]||[]).includes(t);
+      if(em==ME){myTimes.push({k,sk,t,dr});return;}
+      if(em||vw)return;
+      avail.push({k,sk,t,dr});
+    });
+  }
+
+  if(mc>=4){
+    ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:14px;padding:10px">⚠️ اخترت 4 بريكات كحد أقصى</div>`;
+  } else if(!avail.length){
+    ah=`<span style="color:#999;font-size:11px">لا توجد أوقات متاحة</span>`;
+  } else {
+    const g={};avail.forEach(x=>{if(!g[x.sk])g[x.sk]=[];g[x.sk].push(x);});
+    for(const[sk,list]of Object.entries(g)){
+      ah+=`<div class="sg"><h4>${SH[sk].lb}</h4><div class="row">`;
+      list.forEach(x=>{ah+=`<span class="mtt" style="cursor:pointer;border-color:#27ae60;background:#e8f8f5" onclick="empAs('${x.sk}','${x.t}','${x.k}')">${fm(x.t)} (${x.dr}د) ✅</span>`;});
+      ah+=`</div></div>`;
+    }
+  }
+  document.getElementById("availSlots").innerHTML=ah;
+
+  // Upcoming
+  const now=new Date(),cm=now.getHours()*60+now.getMinutes();
+  const sorted=myTimes.map(x=>{const[h,m]=x.t.split(":").map(Number);return{...x,tm:h*60+m}}).filter(x=>x.tm>cm).sort((a,b)=>a.tm-b.tm);
+  if(!sorted.length){document.getElementById("upcPn").style.display="none";return;}
+  document.getElementById("upcPn").style.display="block";
+  let uh="";
+  sorted.forEach(x=>{const d=x.tm-cm,hh=Math.floor(d/60),mm=d%60;
+    uh+=`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #eee;font-size:11px"><span>${fm(x.t)} (${x.dr}د)</span><span style="color:#2980b9;font-weight:600">بعد ${hh?hh+"س ":""}${mm}د</span></div>`;});
+  document.getElementById("upcList").innerHTML=uh;
+}
+
+function empAs(sk,t,k){
+  if(!ME){nf("⚠️ اختر اسمك","r");return}
+  let mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
+  if(mc>=4){nf("⚠️ 4 بريكات","r");return}
+  if(AS[k]){nf("⚠️ مأخوذ","r");return}
+  AS[k]=ME;sv("bs_as",AS);nf(`✅ ${fm(t)}`,"g");rEmp();rAll();
+}
+function empUn(k){
+  if(AS[k]!=ME){nf("⚠️ مو بريكك","r");return}
+  delete AS[k];sv("bs_as",AS);nf("✅","g");rEmp();rAll();
+}
+
+// ═══════════════ ADMIN TOGGLE ═══════════════
+function toggleAdmin(){
+  if(adminOn){
+    adminOn=false;sessionStorage.removeItem("bs_admin");
+    document.getElementById("lkBtn").textContent="🔑 دخول المدير";
+    document.getElementById("lkBtn").classList.remove("lk-on");
+    document.getElementById("admSec").classList.remove("vis");
+    nf("🔒 خروج","b");return;
+  }
+  const p=prompt("🔑 كلمة سر المدير:");
+  if(!p)return;
+  if(p==adminPw){
+    adminOn=true;sessionStorage.setItem("bs_admin","1");
+    document.getElementById("lkBtn").textContent="🔓 مدير";
+    document.getElementById("lkBtn").classList.add("lk-on");
+    document.getElementById("admSec").classList.add("vis");
+    nf("✅ أهلاً","g");rAdmin();rAll();
+  } else { nf("❌ خطأ","r"); }
+}
+function chgPw(){
+  const old=document.getElementById("adminPw").value.trim();
+  if(old!=adminPw){document.getElementById("pwStatus").textContent="⚠️ غلط";return}
+  const n=prompt("كلمة السر الجديدة:");if(!n||n.length<3)return;
+  const n2=prompt("تأكيد:");if(n!=n2)return;
+  sv("bs_admin_pw",n);adminPw=n;
+  document.getElementById("adminPw").value="";
+  document.getElementById("pwStatus").textContent="✅ تم";setTimeout(()=>document.getElementById("pwStatus").textContent="",3000);
+}
+
+// ═══════════════ ADMIN RENDER ═══════════════
+let adTab=1;
+function adSw(n){adTab=n;document.querySelectorAll("#admSec .adm-tabs button").forEach((b,i)=>b.classList.toggle("ok",i+1==n));document.getElementById("adPanel1").style.display=n==1?"":"none";document.getElementById("adPanel2").style.display=n==2?"":"none";if(n==2)rAll();}
+
+function rAdmin(){
+  // Employees
+  let h=`<div class="rw" style="font-weight:700;border-bottom:2px solid #ddd"><span class="nm">الاسم</span><span>الإيميل</span></div>`;
+  EM.forEach((e,i)=>{h+=`<div class="rw"><span class="nm">${e.n}</span><input value="${e.m}" style="flex:1;font-size:11px" onchange="EM[${i}].m=this.value;sv('bs_emp',EM)"><button class="btn btn-dan btn-sm" onclick="dEmp(${i})">✕</button></div>`;});
+  document.getElementById("emps").innerHTML=h;
+  // Codes
+  let c=`<div class="rw" style="font-weight:700;border-bottom:2px solid #ddd"><span class="nm">الاسم</span><span>الكود</span></div>`;
+  EM.forEach(e=>{c+=`<div class="rw"><span class="nm">${e.n}</span><input value="${CD[e.n]||""}" placeholder="5 أرقام" style="max-width:70px" onchange="CD['${e.n}']=this.value;sv('bs_cd',CD)"><span style="color:#999;font-size:10px">${CD[e.n]?"✅":"❌"}</span></div>`;});
+  document.getElementById("codes").innerHTML=c;
+  // Slots manager
+  let sm="";
+  for(const[sk,sh]of Object.entries(SH)){
+    sm+=`<div style="margin-bottom:4px"><strong style="font-size:11px">${sh.lb}</strong><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:2px">`;
+    sh.ts.forEach((t,i)=>{
+      const vw=(VO[sk]||[]).includes(t);
+      sm+=`<span style="display:inline-flex;align-items:center;gap:2px;background:${vw?"#fef9e7":"#fff"};border:1px solid ${vw?"#f39c12":"#ddd"};border-radius:10px;padding:1px 5px;font-size:9px">`;
+      sm+=`${fm(t)} <span style="color:#999;cursor:pointer" onclick="edDur('${sk}','${t}',${i})" title="تعديل المدة">${gd(sk,t,i)}m✏️</span>`;
+      sm+=`${vw?"📖":""}<span onclick="tv('${sk}','${t}')" style="color:#2980b9;cursor:pointer">${vw?"👁️":"📖"}</span>`;
+      sm+=`<span onclick="dSlot('${sk}','${t}')" style="color:#e74c3c;cursor:pointer">✕</span></span>`;
+    });
+    sm+=`</div></div>`;
+  }
+  document.getElementById("slotMgr").innerHTML=sm;
+  // Recipients
+  let r=`<div class="rw" style="font-weight:700;border-bottom:2px solid #ddd"><span class="nm">الاسم</span><span>الإيميل</span></div>`;
+  RS.forEach((x,i)=>{r+=`<div class="rw"><span class="nm">${x.n}</span><span>${x.m}</span><button class="btn btn-dan btn-sm" onclick="dR(${i})">✕</button></div>`;});
+  if(!RS.length)r+=`<div style="font-size:10px;color:#999;padding:4px">لا يوجد</div>`;
+  document.getElementById("recips").innerHTML=r;
+}
+
+function rAll(){
+  let h="",ta=0,tv=0,tt=0;
+  for(const[sk,sh]of Object.entries(SH)){
+    h+=`<div class="sh"><h3>${sh.lb}</h3><div class="gr">`;
+    sh.ts.forEach((t,i)=>{
+      tt++;const k=sk+"_"+t,em=AS[k],vw=(VO[sk]||[]).includes(t),dr=gd(sk,t,i),my=em==ME;
+      const cls=my?"b":vw?"vw":em?"r":"g";
+      const txt=my?`✅ أنا ${dr}د`:vw?`📖 ${fm(t)}`:em?`🔴 ${em.substring(0,10)}`:fm(t)+(ME?` <span style="font-size:9px">${dr}د</span>`:"");
+      if(!em)ta++;else if(!my)tv++;
+      h+=`<span class="${cls}" onclick="${em&&!my?'':`as('${sk}','${t}')`}">${txt}</span>`;
+    });
+    h+=`</div></div>`;
+  }
+  document.getElementById("slots").innerHTML=h;
+  document.getElementById("st").innerHTML=`<span>🟢 متاح: ${ta}</span><span>🔴 مأخوذ: ${tv}</span><span>📋 إجمالي: ${tt}</span>`;
+}
+
+// ═══════════════ ADMIN ACTIONS ═══════════════
+function as(sk,t){
+  if(!ME){nf("⚠️ اختر اسمك","r");return}
+  if(Object.values(AS).filter(v=>v==ME).length>=4){nf("⚠️ 4 بريكات","r");return}
+  AS[sk+"_"+t]=ME;sv("bs_as",AS);nf(`✅ ${fm(t)}`,"g");rAll();rEmp();
+}
+function addEmp(){const n=prompt("الاسم:");if(!n)return;const m=prompt("الإيميل:");if(!m)return;EM.push({n,m});sv("bs_emp",EM);rAdmin();upSel();nf("✅","g");}
+function dEmp(i){if(!confirm(`حذف ${EM[i].n}؟`))return;Object.keys(AS).forEach(k=>{if(AS[k]==EM[i].n)delete AS[k]});EM.splice(i,1);sv("bs_emp",EM);sv("bs_as",AS);rAdmin();upSel();rAll();nf("✅","g");}
+function addSlot(){const sk=prompt("الوردية:\n1=🌅 Morning\n2=☀️ Afternoon\n3=🌙 Night");const sn={1:"morning",2:"afternoon",3:"night"}[parseInt(sk)];if(!sn)return;const t=prompt("الوقت (مثال: 14:30):");if(!t||!/^\d{1,2}:\d{2}$/.test(t))return;if(SH[sn].ts.includes(t)){nf("⚠️ موجود","r");return}SH[sn].ts.push(t);SH[sn].ts.sort((a,b)=>a.localeCompare(b));sv("bs_sh",SH);nf(`✅ ${fm(t)}`,"g");rAll();rAdmin();}
+function dSlot(sk,t){if(!confirm(`حذف ${fm(t)}؟`))return;delete AS[sk+"_"+t];SH[sk].ts=SH[sk].ts.filter(x=>x!=t);sv("bs_sh",SH);sv("bs_as",AS);nf("✅","g");rAll();rAdmin();}
+function tv(sk,t){if(!VO[sk])VO[sk]=[];const idx=VO[sk].indexOf(t);if(idx>-1){VO[sk].splice(idx,1)}else{VO[sk].push(t)}sv("bs_vo",VO);rAll();rAdmin();}
+function edDur(sk,t,i){const cur=gd(sk,t,i);const n=prompt(`⏱ مدة ${fm(t)} (5-60):`,cur);if(!n||isNaN(n)||parseInt(n)<5||parseInt(n)>60)return;CDUR[sk+"_"+t]=parseInt(n);sv("bs_dur",CDUR);nf(`✅ ${parseInt(n)} د`,"g");rAll();rAdmin();}
+function rs(){if(!confirm("تصفير التوزيعات؟"))return;AS={};sv("bs_as",AS);nf("🔄","b");rAll();rEmp();}
+function rstSlots(){if(!confirm("استعادة 81 وقت؟"))return;const def={morning:{lb:"🌅 Morning (8-5)",ts:["9:00","9:10","9:15","9:20","9:30","9:45","9:50","10:10","10:55","11:10","11:15","11:35","11:40","12:00","12:20","12:40","12:55","13:10","13:25","13:40","14:00","14:20","14:40","14:55","15:00","15:10","15:20","15:30","15:40","15:50"]},afternoon:{lb:"☀️ Afternoon (11-8)",ts:["12:30","12:40","12:50","13:00","13:10","13:15","13:30","13:40","14:00","14:20","14:50","15:00","15:20","16:00","16:15","16:30","16:40","17:00","17:15","17:35","18:00","18:15","18:30","19:00","19:15","19:35","19:50","20:00","20:10","20:20"]},night:{lb:"🌙 Night (1-10)",ts:["15:00","15:15","15:30","15:50","16:00","16:20","16:40","17:00","17:20","17:35","18:10","18:45","19:10","19:25","20:20","20:40","20:50","21:10","21:20","21:30","21:40"]}};const defVo={"morning":["12:00","13:10","15:10"],"afternoon":["15:00","18:00","17:00"],"night":["17:00","19:10","16:00"]};Object.assign(SH,def);Object.assign(VO,defVo);sv("bs_sh",SH);sv("bs_vo",VO);nf("✅ 81 وقت","g");rAll();rAdmin();}
+function addR(){const n=document.getElementById("rn").value.trim(),m=document.getElementById("rm").value.trim();if(!n||!m)return;RS.push({n,m});sv("bs_rs",RS);document.getElementById("rn").value="";document.getElementById("rm").value="";rAdmin();nf("✅","g");}
+function dR(i){RS.splice(i,1);sv("bs_rs",RS);rAdmin()}
+function report(){const ds=new Date().toISOString().split("T")[0];let lines=[];lines.push("BREAK SCHEDULE - "+ds,"Al Mana General Hospitals","");let total=0;for(const[sk,sh]of Object.entries(SH)){let any=false;sh.ts.forEach((t,i)=>{const k=sk+"_"+t,em=AS[k];if(!em)return;if(!any){lines.push("-- "+sh.lb);any=true}lines.push(fm(t)+" "+gd(sk,t,i)+"m "+em);total++});if(any)lines.push("")}lines.push("Total: "+total);const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/plain;charset=utf-8"}));a.download="breaks_"+ds+".txt";a.click();nf("📥","g");}
+
+// ═══════════════ REMINDERS ═══════════════
+let notifOn=false;
+function reqNotif(){if(!Notification)return;Notification.requestPermission().then(p=>{if(p=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل";nf("✅","g")}});}
+function playBeep(){try{const ac=new(window.AudioContext||window.webkitAudioContext)();[523.25,659.25,783.99].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.value=f;g.gain.value=.2;o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+i*.12);o.stop(ac.currentTime+i*.12+.2)})}catch(e){}}
+function checkReminders(){if(!ME)return;const n=new Date(),cm=n.getHours()*60+n.getMinutes();for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t;if(AS[k]!=ME)return;const[h,m]=t.split(":").map(Number),tm=h*60+m,dr=gd(sk,t,i);if(!reminded["b5_"+k]&&cm>=tm-5&&cm<tm){reminded["b5_"+k]=true;sv("bs_rmd",reminded);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 <strong>${fm(t)}</strong> بعد 5 دقائق (${dr}د)`;playBeep();if(notifOn)new Notification("⏰",{body:`${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}if(!reminded["ex_"+k]&&cm>=tm&&cm<tm+1){reminded["ex_"+k]=true;sv("bs_rmd",reminded);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 <strong>${fm(t)}</strong> وقت البريك!`;playBeep();if(notifOn)new Notification("🔔",{body:`${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}});}}
+
+// ═══════════════ EMAIL ═══════════════
+function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.trim(),port:document.getElementById("smtpPort").value.trim(),user:document.getElementById("smtpUser").value.trim(),pass:document.getElementById("smtpPass").value.trim(),from_email:document.getElementById("smtpFrom").value.trim()};for(const[k,v]of Object.entries({host:"Host",port:"Port",user:"User",pass:"Password",from_email:"From"})){if(!smtp[k]){document.getElementById("emailStatus").textContent="⚠️ أكمل";return}}fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({smtp,assignments:AS,shifts:SH,view_only:VO,durations:DP,custom_durations:CDUR,employees:EM.map(e=>({email:e.m})),extra_emails:RS})}).then(r=>r.json()).then(d=>{document.getElementById("emailStatus").textContent=d.message||d.error}).catch(e=>{document.getElementById("emailStatus").textContent="⚠️"})}
+
+// ═══════════════ INIT ═══════════════
+if(adminOn){document.getElementById("lkBtn").textContent="🔓 مدير";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis");}
+if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}
+upSel();rEmp();rAdmin();
+
+// Auto-reset 24h
+const lr=ld("bs_lr",null);const n2=new Date();
+if(lr&&(n2-new Date(lr))/36e5>=24){AS={};sv("bs_as",AS);nf("🔄 تصفير تلقائي","b")}
+sv("bs_lr",n2.toISOString());
+
+// Loops
+setInterval(()=>{checkReminders();const n=new Date();if(n.getHours()===0&&n.getMinutes()===0){reminded={};sv("bs_rmd",{})}},15000);
+setTimeout(checkReminders,1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,320 @@
+#!/usr/bin/env python3
+"""Break Schedule - Al Mana General Hospitals (Server-Sync Version)"""
+from flask import Flask, send_from_directory, request, jsonify, send_file
+import json, io, os, smtplib, ssl, sqlite3
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from datetime import datetime
+import openpyxl
+from openpyxl.styles import Font, PatternFill
+
+app = Flask(__name__)
+BASE = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE, "break_schedule.db")
+
+COL_MAP = {"morning":(2,3),"afternoon":(5,6),"night":(8,9)}
+SLB = {"morning":"🌅 Morning (8-5)","afternoon":"☀️ Afternoon (11-8)","night":"🌙 Night (1-10)"}
+
+# ═══════════════ DB SETUP ═══════════════
+def get_db():
+    con = sqlite3.connect(DB_PATH)
+    con.row_factory = sqlite3.Row
+    return con
+
+def init_db():
+    con = get_db()
+    con.executescript("""
+        CREATE TABLE IF NOT EXISTS employees(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            email TEXT NOT NULL DEFAULT '',
+            code TEXT NOT NULL DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS assignments(
+            slot_key TEXT PRIMARY KEY,
+            employee_name TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS shifts(
+            shift TEXT NOT NULL,
+            time TEXT NOT NULL,
+            idx INTEGER DEFAULT 0,
+            PRIMARY KEY(shift,time)
+        );
+        CREATE TABLE IF NOT EXISTS view_only(
+            shift TEXT NOT NULL,
+            time TEXT NOT NULL,
+            PRIMARY KEY(shift,time)
+        );
+        CREATE TABLE IF NOT EXISTS custom_durations(
+            slot_key TEXT PRIMARY KEY,
+            duration INTEGER NOT NULL DEFAULT 15
+        );
+        CREATE TABLE IF NOT EXISTS recipients(
+            name TEXT NOT NULL,
+            email TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS duration_pattern(
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            d0 INTEGER DEFAULT 15,
+            d1 INTEGER DEFAULT 15,
+            d2 INTEGER DEFAULT 20,
+            d3 INTEGER DEFAULT 10
+        );
+    """)
+    # Ensure default duration pattern
+    cur = con.execute("SELECT COUNT(*) FROM duration_pattern")
+    if cur.fetchone()[0] == 0:
+        con.execute("INSERT INTO duration_pattern DEFAULT VALUES")
+
+    # Restore 81 default shifts if table empty
+    cur = con.execute("SELECT COUNT(*) FROM shifts")
+    if cur.fetchone()[0] == 0:
+        defaults = {
+            "morning": ["9:00","9:10","9:15","9:20","9:30","9:45","9:50","10:10","10:55","11:10","11:15","11:35","11:40","12:00","12:20","12:40","12:55","13:10","13:25","13:40","14:00","14:20","14:40","14:55","15:00","15:10","15:20","15:30","15:40","15:50"],
+            "afternoon": ["12:30","12:40","12:50","13:00","13:10","13:15","13:30","13:40","14:00","14:20","14:50","15:00","15:20","16:00","16:15","16:30","16:40","17:00","17:15","17:35","18:00","18:15","18:30","19:00","19:15","19:35","19:50","20:00","20:10","20:20"],
+            "night": ["15:00","15:15","15:30","15:50","16:00","16:20","16:40","17:00","17:20","17:35","18:10","18:45","19:10","19:25","20:20","20:40","20:50","21:10","21:20","21:30","21:40"]
+        }
+        for shift, times in defaults.items():
+            for i, t in enumerate(times):
+                con.execute("INSERT OR IGNORE INTO shifts(shift,time,idx) VALUES(?,?,?)", (shift,t,i))
+        vo_defaults = {"morning":["12:00","13:10","15:10"],"afternoon":["15:00","18:00","17:00"],"night":["17:00","19:10","16:00"]}
+        for shift, times in vo_defaults.items():
+            for t in times:
+                con.execute("INSERT OR IGNORE INTO view_only(shift,time) VALUES(?,?)", (shift,t))
+    con.commit()
+    con.close()
+
+init_db()
+
+# ═══════════════ API: DATA ═══════════════
+@app.route("/api/data", methods=["GET","POST","OPTIONS"])
+def api_data():
+    if request.method == "OPTIONS":
+        return jsonify({"ok":True})
+
+    con = get_db()
+
+    if request.method == "GET":
+        # Load all data
+        emps = [{"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees").fetchall()]
+        ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
+        sh = {"morning":{"lb":"🌅 Morning (8-5)","ts":[]},"afternoon":{"lb":"☀️ Afternoon (11-8)","ts":[]},"night":{"lb":"🌙 Night (1-10)","ts":[]}}
+        for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx"):
+            sh[r["shift"]]["ts"].append(r["time"])
+        vo = {}
+        for r in con.execute("SELECT * FROM view_only"):
+            if r["shift"] not in vo: vo[r["shift"]] = []
+            vo[r["shift"]].append(r["time"])
+        cdur = {r["slot_key"]:r["duration"] for r in con.execute("SELECT * FROM custom_durations").fetchall()}
+        rs = [{"name":r["name"],"email":r["email"]} for r in con.execute("SELECT * FROM recipients").fetchall()]
+        dp = con.execute("SELECT * FROM duration_pattern WHERE id=1").fetchone()
+        dur = [dp["d0"],dp["d1"],dp["d2"],dp["d3"]]
+
+        con.close()
+        return jsonify({"employees":emps,"assignments":ass,"shifts":sh,"view_only":vo,"custom_durations":cdur,"recipients":rs,"durations":dur})
+
+    else:
+        # Save all data
+        d = request.json
+        if not d: return jsonify({"error":"no data"}), 400
+
+        con.execute("DELETE FROM employees")
+        for e in d.get("employees",[]):
+            con.execute("INSERT INTO employees(name,email,code) VALUES(?,?,?)", (e["name"],e.get("email",""),e.get("code","")))
+
+        con.execute("DELETE FROM assignments")
+        for k,v in d.get("assignments",{}).items():
+            con.execute("INSERT INTO assignments(slot_key,employee_name) VALUES(?,?)", (k,v))
+
+        con.execute("DELETE FROM view_only")
+        for shift, times in d.get("view_only",{}).items():
+            for t in times:
+                con.execute("INSERT INTO view_only(shift,time) VALUES(?,?)", (shift,t))
+
+        con.execute("DELETE FROM custom_durations")
+        for k,v in d.get("custom_durations",{}).items():
+            con.execute("INSERT INTO custom_durations(slot_key,duration) VALUES(?,?)", (k,v))
+
+        con.execute("DELETE FROM recipients") if d.get("recipients") else None
+        if d.get("recipients"):
+            con.execute("DELETE FROM recipients")
+            for r in d["recipients"]:
+                con.execute("INSERT INTO recipients(name,email) VALUES(?,?)", (r["name"],r["email"]))
+
+        dur = d.get("durations",[15,15,20,10])
+        con.execute("UPDATE duration_pattern SET d0=?,d1=?,d2=?,d3=? WHERE id=1", dur[:4])
+
+        # Sync shifts
+        if d.get("shifts"):
+            con.execute("DELETE FROM shifts")
+            for shift, data in d["shifts"].items():
+                for i, t in enumerate(data.get("ts",[])):
+                    con.execute("INSERT INTO shifts(shift,time,idx) VALUES(?,?,?)", (shift,t,i))
+
+        con.commit()
+        con.close()
+        return jsonify({"ok":True,"message":"✅ تم الحفظ في السيرفر"})
+
+@app.route("/api/sync", methods=["POST"])
+def api_sync():
+    """Quick sync - just assignments + check reset"""
+    d = request.json
+    con = get_db()
+    if d.get("assignments"):
+        con.execute("DELETE FROM assignments")
+        for k,v in d["assignments"].items():
+            con.execute("INSERT OR REPLACE INTO assignments(slot_key,employee_name) VALUES(?,?)", (k,v))
+    con.commit()
+    con.close()
+    return jsonify({"ok":True})
+
+# ═══════════════ STATIC FILES ═══════════════
+@app.route("/")
+@app.route("/<path:filename>")
+def idx(filename="schedule.html"):
+    return send_from_directory(BASE, filename)
+
+# ═══════════════ EXCEL EXPORT ═══════════════
+@app.route("/api/export-excel", methods=["POST"])
+def export():
+    try:
+        d = request.json
+        assigns = d.get("assignments",{})
+        shifts = d.get("shifts",{})
+        vo = d.get("view_only",{})
+        dur = d.get("durations",[15,15,20,10])
+        cdur = d.get("custom_durations",{})
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "breaksheet"
+
+        gf = PatternFill(start_color="E8F8F5", end_color="E8F8F5", fill_type="solid")
+        rf = PatternFill(start_color="FDEDEC", end_color="FDEDEC", fill_type="solid")
+        gy = PatternFill(start_color="F0F0F0", end_color="F0F0F0", fill_type="solid")
+        bf = Font(name="Calibri", bold=True, size=10)
+        nf = Font(name="Calibri", size=10)
+        vf = Font(name="Calibri", size=10, italic=True, color="7F8C8D")
+        hf = Font(name="Calibri", bold=True, size=14, color="1A2A3A")
+
+        ws["A1"] = f"Break Schedule - Al Mana General Hospitals  |  {datetime.now().strftime('%Y-%m-%d %I:%M %p')}"
+        ws["A1"].font = hf
+
+        row = 3
+        for sk, (tc, ec) in COL_MAP.items():
+            ts = shifts.get(sk,{}).get("ts",[])
+            if not ts: continue
+            ws.cell(row=row, column=2, value=SLB.get(sk,sk)).font = Font(name="Calibri", bold=True, size=11)
+            row += 1
+            for i, t in enumerate(ts):
+                h,m = map(int,t.split(":"))
+                k = f"{sk}_{t}"
+                vw = t in vo.get(sk,[])
+                emp = assigns.get(k)
+                dr = cdur.get(k) or dur[i%4]
+                ws.cell(row=row, column=tc, value=f"{h%12 or 12}:{m:02d} {'PM' if h>=12 else 'AM'}").font = Font(name="Calibri", bold=True, size=10)
+                cell = ws.cell(row=row, column=ec)
+                if vw: cell.value,cell.fill,cell.font = "📖 View Only",gy,vf
+                elif emp: cell.value,cell.fill,cell.font = f"{emp} ({dr} min)",rf,bf
+                else: cell.value,cell.fill,cell.font = "🟢 Available",gf,nf
+                row += 1
+            row += 1
+
+        ws.column_dimensions["A"].width = 2
+        for c in ["B","E","H"]: ws.column_dimensions[c].width = 14
+        for c in ["C","F","I"]: ws.column_dimensions[c].width = 26
+
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return send_file(buf, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                         as_attachment=True, download_name=f"Break_Schedule_{datetime.now().strftime('%Y%m%d')}.xlsx")
+    except Exception as e:
+        return jsonify({"error":str(e)}), 500
+
+# ═══════════════ EMAIL ═══════════════
+def build_email_body(assigns, shifts, vo, dur, cdur, emps, extras):
+    slb = {"morning":"🌅 Morning (8AM-5PM)","afternoon":"☀️ Afternoon (11AM-8PM)","night":"🌙 Night (1PM-10PM)"}
+    lines = ["="*55,
+             f"  BREAK SCHEDULE — {datetime.now().strftime('%A, %B %d, %Y')}",
+             "  Al Mana General Hospitals - مستشفيات المانع العامة",
+             "="*55,""]
+    for sk, lb in slb.items():
+        lines.append(f"── {lb} ──")
+        ts = shifts.get(sk, {}).get("ts", [])
+        for i, t in enumerate(ts):
+            h,m = map(int,t.split(":"))
+            ft = f"{h%12 or 12}:{m:02d} {'PM' if h>=12 else 'AM'}"
+            k = f"{sk}_{t}"; vw = t in vo.get(sk, []); dr = cdur.get(k) or dur[i%4]; emp = assigns.get(k)
+            if emp: lines.append(f"  {ft.ljust(12)}│{str(dr)+'m'.rjust(4)}│{emp}")
+            elif vw: lines.append(f"  {ft.ljust(12)}│{str(dr)+'m'.rjust(4)}│📖 مراجعة")
+            else: lines.append(f"  {ft.ljust(12)}│{str(dr)+'m'.rjust(4)}│🟢 متاح")
+        lines.append("")
+    lines.append("─"*55)
+    lines.append(f"  إجمالي البريكات: {len(assigns)}  ·  النظام: 15·15·20·10")
+    lines.append(f"  الموظفين: {len(emps)}  ·  {datetime.now().strftime('%I:%M %p')}")
+    lines.append("─"*55)
+    return "\n".join(lines)
+
+@app.route("/api/send-email", methods=["POST"])
+def api_send_email():
+    try:
+        d = request.json
+        smtp = d.get("smtp", {})
+        for r in ["host","port","user","pass","from_email"]:
+            if r not in smtp or not smtp[r]:
+                return jsonify({"error":f"⚠️ SMTP: {r} مطلوب"}), 400
+
+        assigns = d.get("assignments", {})
+        shifts = d.get("shifts", {})
+        vo = d.get("view_only", {})
+        dur = d.get("durations", [15,15,20,10])
+        cdur = d.get("custom_durations", {})
+        emps = d.get("employees", [])
+        extras = d.get("extra_emails", [])
+
+        to_list = list(set([e["email"] for e in emps if e.get("email")] +
+                          [e["email"] for e in extras if e.get("email")]))
+        if not to_list: return jsonify({"error":"⚠️ لا يوجد مستلمين"}), 400
+
+        body = build_email_body(assigns, shifts, vo, dur, cdur, emps, extras)
+        msg = MIMEMultipart("alternative")
+        dt = datetime.now().strftime('%Y-%m-%d')
+        msg["Subject"] = f"📋 Break Schedule - Al Mana General Hospitals - {dt}"
+        msg["From"] = smtp["from_email"]
+        msg["To"] = ", ".join(to_list[:50])
+
+        html = f"""<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">
+<style>body{{font-family:Tahoma,sans-serif;direction:rtl;padding:20px;background:#f5f5f5}}
+pre{{background:#fff;padding:15px;border-radius:10px;border:1px solid #ddd;font-size:13px;line-height:1.6}}
+</style></head><body><pre>{body.replace(chr(10),"<br>")}</pre>
+<p style="color:#999;font-size:11px;text-align:center">Al Mana General Hospitals · مستشفيات المانع العامة · نظام البريكات</p></body></html>"""
+        msg.attach(MIMEText(body, "plain"))
+        msg.attach(MIMEText(html, "html"))
+
+        port = int(smtp["port"])
+        ctx = ssl.create_default_context()
+        if port == 465:
+            with smtplib.SMTP_SSL(smtp["host"], port, context=ctx) as s:
+                s.login(smtp["user"], smtp["pass"])
+                s.sendmail(smtp["from_email"], to_list, msg.as_string())
+        else:
+            with smtplib.SMTP(smtp["host"], port) as s:
+                s.starttls(context=ctx)
+                s.login(smtp["user"], smtp["pass"])
+                s.sendmail(smtp["from_email"], to_list, msg.as_string())
+
+        return jsonify({"ok":True, "sent":len(to_list), "message":f"✅ تم الإرسال لـ {len(to_list)} شخص"})
+    except smtplib.SMTPAuthenticationError:
+        return jsonify({"error":"❌ خطأ في بيانات SMTP"}), 401
+    except smtplib.SMTPException as e:
+        return jsonify({"error":f"❌ SMTP: {str(e)[:100]}"}), 500
+    except Exception as e:
+        return jsonify({"error":f"❌ {str(e)[:100]}"}), 500
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT",5000))
+    print(f"Break Schedule Server @ http://localhost:{port}")
+    print(f"Admin:   http://localhost:{port}/schedule.html")
+    print(f"Employee: http://localhost:{port}/employee.html")
+    app.run(host="0.0.0.0", port=port, debug=False)
