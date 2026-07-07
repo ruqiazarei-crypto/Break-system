@@ -127,6 +127,19 @@ body{font-family:Tahoma,sans-serif;background:#f0f2f5;color:#1a2a3a;padding:8px;
   <div id="upcList"></div>
 </div>
 
+<!-- SUPERVISOR SCHEDULE VIEW -->
+<div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap">
+  <button class="btn btn-pri btn-sm" onclick="supView()" style="font-size:12px;padding:7px 14px">📋 الجدول العام</button>
+</div>
+<div class="pn" id="supSch" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <h3 style="margin:0">📋 جدول البريكات</h3>
+    <span onclick="document.getElementById('supSch').style.display='none'" style="color:#e74c3c;cursor:pointer;font-weight:700;font-size:16px">✕ إغلاق</span>
+  </div>
+  <div class="st" id="supSt"></div>
+  <div id="supSlots"></div>
+</div>
+
 <!-- ═══ ADMIN SECTION (hidden) ═══ -->
 <div class="adm" id="admSec">
   <div class="adm-tabs">
@@ -352,6 +365,26 @@ let adTab=1;
 function adSw(n){adTab=n;document.querySelectorAll("#admSec .adm-tabs button").forEach((b,i)=>b.classList.toggle("ok",i+1==n));document.getElementById("adPanel1").style.display=n==1?"":"none";document.getElementById("adPanel2").style.display=n==2?"":"none";if(n==2)rAll();}
 
 function setEDP(nm,v){if(!nm||!v)return;const a=v.split(/[·,،\s]+/).map(Number).filter(x=>x>=5&&x<=60);if(!a.length){nf("⚠️ ادخل أرقام","r");return}EDP[nm]=a;sv("bs_edp",EDP);nf(`✅ ${a.join("·")}د`,"g");rAdmin();}
+function supView(){
+  const el=document.getElementById("supSch");
+  if(el.style.display==="block"){el.style.display="none";return}
+  el.style.display="block";
+  let h="",ta=0,tv=0,tt=0;
+  for(const[sk,sh]of Object.entries(SH)){
+    h+=`<div class="sh"><h3>${sh.lb}</h3><div class="gr">`;
+    sh.ts.forEach((t,i)=>{
+      tt++;const k=sk+"_"+t,em=AS[k],vw=(VO[sk]||[]).includes(t),dr=gd(sk,t,i,em||ME),my=em==ME;
+      const cls=my?"b":vw?"vw":em?"r":"g";
+      const txt=my?`✅ ${fm(t)} (${dr}د)`:vw?`📖 ${fm(t)} (${dr}د)`:em?`🔴 ${em} (${dr}د)`:fm(t)+` (${dr}د)`;
+      if(!em)ta++;else ta+=0;
+      if(em&&!my)tv++;
+      h+=`<span class="${cls}" style="${em?'cursor:default':''}">${txt}</span>`;
+    });
+    h+=`</div></div>`;
+  }
+  document.getElementById("supSlots").innerHTML=h;
+  document.getElementById("supSt").innerHTML=`<span>🟢 متاح: ${ta}</span><span>🔴 مأخوذ: ${tv}</span><span>📋 إجمالي: ${tt}</span>`;
+}
 function rAdmin(){
   // Employees
   let h=`<div class="rw" style="font-weight:700;border-bottom:2px solid #ddd"><span class="nm">الاسم</span><span>الإيميل</span></div>`;
