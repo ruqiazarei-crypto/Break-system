@@ -143,6 +143,7 @@ body{font-family:Tahoma,sans-serif;background:#f0f2f5;color:#1a2a3a;padding:8px;
     </div>
     <div class="pn"><h3>👥 الموظفين</h3><div id="emps"></div></div>
     <div class="pn"><h3>🔑 الأكواد</h3><div id="codes"></div></div>
+    <div class="pn"><h3>⏱ المدد لكل موظف</h3><div id="empDurs"></div><div style="font-size:9px;color:#999;margin-top:3px">اكتب الأرقام بـ · مثال: 20·20·20 أو 15·15·20·10</div></div>
     <div class="pn"><h3>🕐 الأوقات</h3><div id="slotMgr"></div></div>
     <div class="pn"><h3>📧 المستلمين</h3><div id="recips"></div>
       <div style="display:flex;gap:3px;margin-top:3px"><input id="rn" placeholder="الاسم" style="flex:1"><input id="rm" placeholder="الإيميل" style="flex:2"><button class="btn btn-suc btn-sm" onclick="addR()">➕</button></div>
@@ -198,7 +199,7 @@ let DP = ld("bs_dp",null); if(!DP){DP=[...DP_DF];sv("bs_dp",DP)}
 let cs=ld("bs_sh",null); if(cs)Object.assign(SH,cs);
 let cv=ld("bs_vo",null); if(cv)Object.assign(VO,cv);
 let CDUR = ld("bs_dur",{});
-function gd(sk,t,i){return CDUR[sk+"_"+t]||DP[i%4]}
+function gd(sk,t,i,emp){if(emp&&EDP[emp]){const p=EDP[emp];return CDUR[sk+"_"+t]||p[i%p.length]}return CDUR[sk+"_"+t]||DP[i%4]}
 
 const EM_VER = "v2";
 let EM = ld("bs_emp",null);
@@ -222,6 +223,7 @@ if(emVer!=EM_VER||!EM||!EM.length){
   ];
   sv("bs_emp",EM);sv("bs_emp_ver",EM_VER);
 }
+let EDP = ld("bs_edp",{});
 let CD = ld("bs_cd",{});
 let AS = ld("bs_as",{});
 let RS = ld("bs_rs",[]);
@@ -255,7 +257,7 @@ function rEmp(){
   for(const[sk,sh]of Object.entries(SH)){
     sh.ts.forEach((t,i)=>{
       const k=sk+"_"+t;
-      if(AS[k]==ME){const dr=gd(sk,t,i);mh+=`<span class="mtt">${fm(t)} (${dr}د) <span class="x" onclick="empUn('${k}')">✕</span></span>`;}
+      if(AS[k]==ME){const dr=gd(sk,t,i,ME);mh+=`<span class="mtt">${fm(t)} (${dr}د) <span class="x" onclick="empUn('${k}')">✕</span></span>`;}
     });
   }
   if(!mh)mh=`<span style="color:#999;font-size:11px">ما اخترت بريكات بعد</span>`;
@@ -271,7 +273,7 @@ function rEmp(){
   let ah="",avail=[],myTimes=[];
   for(const[sk,sh]of Object.entries(SH)){
     sh.ts.forEach((t,i)=>{
-      const k=sk+"_"+t,dr=gd(sk,t,i);
+      const k=sk+"_"+t,dr=gd(sk,t,i,ME);
       const em=AS[k],vw=(VO[sk]||[]).includes(t);
       if(em==ME){myTimes.push({k,sk,t,dr});return;}
       if(em||vw)return;
@@ -349,6 +351,7 @@ function chgPw(){
 let adTab=1;
 function adSw(n){adTab=n;document.querySelectorAll("#admSec .adm-tabs button").forEach((b,i)=>b.classList.toggle("ok",i+1==n));document.getElementById("adPanel1").style.display=n==1?"":"none";document.getElementById("adPanel2").style.display=n==2?"":"none";if(n==2)rAll();}
 
+function setEDP(nm,v){if(!nm||!v)return;const a=v.split(/[·,،\s]+/).map(Number).filter(x=>x>=5&&x<=60);if(!a.length){nf("⚠️ ادخل أرقام","r");return}EDP[nm]=a;sv("bs_edp",EDP);nf(`✅ ${a.join("·")}د`,"g");rAdmin();}
 function rAdmin(){
   // Employees
   let h=`<div class="rw" style="font-weight:700;border-bottom:2px solid #ddd"><span class="nm">الاسم</span><span>الإيميل</span></div>`;
@@ -358,7 +361,10 @@ function rAdmin(){
   let c=`<div class="rw" style="font-weight:700;border-bottom:2px solid #ddd"><span class="nm">الاسم</span><span>الكود</span></div>`;
   EM.forEach(e=>{c+=`<div class="rw"><span class="nm">${e.n}</span><input value="${CD[e.n]||""}" placeholder="5 أرقام" style="max-width:70px" onchange="CD['${e.n}']=this.value;sv('bs_cd',CD)"><span style="color:#999;font-size:10px">${CD[e.n]?"✅":"❌"}</span></div>`;});
   document.getElementById("codes").innerHTML=c;
-  // Slots manager
+  // Durations per employee
+  let dp=`<div class="rw" style="font-weight:700;border-bottom:2px solid #ddd"><span class="nm">الاسم</span><span>المدد</span></div>`;
+  EM.forEach(e=>{const cur=EDP[e.n]||DP;let s=cur.join("·");dp+=`<div class="rw"><span class="nm">${e.n}</span><input value="${s}" placeholder="${DP.join("·")}" style="max-width:120px" onchange="setEDP('${e.n}',this.value)"><span style="color:#999;font-size:9px">${EDP[e.n]?"✅ خاص":"الافتراضي"}</span></div>`;});
+  document.getElementById("empDurs").innerHTML=dp;
   let sm="";
   for(const[sk,sh]of Object.entries(SH)){
     sm+=`<div style="margin-bottom:4px"><strong style="font-size:11px">${sh.lb}</strong><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:2px">`;
@@ -384,7 +390,7 @@ function rAll(){
   for(const[sk,sh]of Object.entries(SH)){
     h+=`<div class="sh"><h3>${sh.lb}</h3><div class="gr">`;
     sh.ts.forEach((t,i)=>{
-      tt++;const k=sk+"_"+t,em=AS[k],vw=(VO[sk]||[]).includes(t),dr=gd(sk,t,i),my=em==ME;
+      tt++;const k=sk+"_"+t,em=AS[k],vw=(VO[sk]||[]).includes(t),dr=gd(sk,t,i,em),my=em==ME;
       const cls=my?"b":vw?"vw":em?"r":"g";
       const txt=my?`✅ أنا ${dr}د`:vw?`📖 ${fm(t)}`:em?`🔴 ${em.substring(0,10)}`:fm(t)+(ME?` <span style="font-size:9px">${dr}د</span>`:"");
       if(!em)ta++;else if(!my)tv++;
@@ -412,13 +418,13 @@ function rs(){if(!confirm("تصفير التوزيعات؟"))return;AS={};sv("bs
 function rstSlots(){if(!confirm("استعادة 81 وقت؟"))return;const def={morning:{lb:"🌅 Morning (8-5)",ts:["9:00","9:10","9:15","9:20","9:30","9:45","9:50","10:10","10:55","11:10","11:15","11:35","11:40","12:00","12:20","12:40","12:55","13:10","13:25","13:40","14:00","14:20","14:40","14:55","15:00","15:10","15:20","15:30","15:40","15:50"]},afternoon:{lb:"☀️ Afternoon (11-8)",ts:["12:30","12:40","12:50","13:00","13:10","13:15","13:30","13:40","14:00","14:20","14:50","15:00","15:20","16:00","16:15","16:30","16:40","17:00","17:15","17:35","18:00","18:15","18:30","19:00","19:15","19:35","19:50","20:00","20:10","20:20"]},night:{lb:"🌙 Night (1-10)",ts:["15:00","15:15","15:30","15:50","16:00","16:20","16:40","17:00","17:20","17:35","18:10","18:45","19:10","19:25","20:20","20:40","20:50","21:10","21:20","21:30","21:40"]}};const defVo={"morning":["12:00","13:10","15:10"],"afternoon":["15:00","18:00","17:00"],"night":["17:00","19:10","16:00"]};Object.assign(SH,def);Object.assign(VO,defVo);sv("bs_sh",SH);sv("bs_vo",VO);nf("✅ 81 وقت","g");rAll();rAdmin();}
 function addR(){const n=document.getElementById("rn").value.trim(),m=document.getElementById("rm").value.trim();if(!n||!m)return;RS.push({n,m});sv("bs_rs",RS);document.getElementById("rn").value="";document.getElementById("rm").value="";rAdmin();nf("✅","g");}
 function dR(i){RS.splice(i,1);sv("bs_rs",RS);rAdmin()}
-function report(){const ds=new Date().toISOString().split("T")[0];let lines=[];lines.push("BREAK SCHEDULE - "+ds,"Al Mana General Hospitals","");let total=0;for(const[sk,sh]of Object.entries(SH)){let any=false;sh.ts.forEach((t,i)=>{const k=sk+"_"+t,em=AS[k];if(!em)return;if(!any){lines.push("-- "+sh.lb);any=true}lines.push(fm(t)+" "+gd(sk,t,i)+"m "+em);total++});if(any)lines.push("")}lines.push("Total: "+total);const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/plain;charset=utf-8"}));a.download="breaks_"+ds+".txt";a.click();nf("📥","g");}
+function report(){const ds=new Date().toISOString().split("T")[0];let lines=[];lines.push("BREAK SCHEDULE - "+ds,"Al Mana General Hospitals","");let total=0;for(const[sk,sh]of Object.entries(SH)){let any=false;sh.ts.forEach((t,i)=>{const k=sk+"_"+t,em=AS[k];if(!em)return;if(!any){lines.push("-- "+sh.lb);any=true}lines.push(fm(t)+" "+gd(sk,t,i,em)+"m "+em);total++});if(any)lines.push("")}lines.push("Total: "+total);const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/plain;charset=utf-8"}));a.download="breaks_"+ds+".txt";a.click();nf("📥","g");}
 
 // ═══════════════ REMINDERS ═══════════════
 let notifOn=false;
 function reqNotif(){if(!Notification)return;Notification.requestPermission().then(p=>{if(p=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل";nf("✅","g")}});}
 function playBeep(){try{const ac=new(window.AudioContext||window.webkitAudioContext)();[523.25,659.25,783.99].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.value=f;g.gain.value=.2;o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+i*.12);o.stop(ac.currentTime+i*.12+.2)})}catch(e){}}
-function checkReminders(){if(!ME)return;const n=new Date(),cm=n.getHours()*60+n.getMinutes();for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t;if(AS[k]!=ME)return;const[h,m]=t.split(":").map(Number),tm=h*60+m,dr=gd(sk,t,i),te=tm+dr;if(!reminded["b5_"+k]&&cm>=tm-5&&cm<tm){reminded["b5_"+k]=true;sv("bs_rmd",reminded);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 <strong>${fm(t)}</strong> بعد 5 دقائق (${dr}د)`;playBeep();if(notifOn)new Notification("⏰",{body:`${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}if(!reminded["ex_"+k]&&cm>=tm&&cm<tm+1){reminded["ex_"+k]=true;sv("bs_rmd",reminded);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 <strong>${fm(t)}</strong> وقت البريك!`;playBeep();if(notifOn)new Notification("🔔",{body:`${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}if(!reminded["e3_"+k]&&cm>=te-3&&cm<te){reminded["e3_"+k]=true;sv("bs_rmd",reminded);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`⚠️ <strong>${fm(t)}</strong> باقي 3 دقائق على الانتهاء`;playBeep();if(notifOn)new Notification("⚠️",{body:`${fm(t)} - باقي 3 دقائق`});setTimeout(()=>b.style.display="none",8000)}if(!reminded["end_"+k]&&cm>=te&&cm<te+1){reminded["end_"+k]=true;sv("bs_rmd",reminded);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔴 <strong>${fm(t)}</strong> انتهى وقت البريك`;playBeep();if(notifOn)new Notification("🔴",{body:`${fm(t)} - انتهى`});setTimeout(()=>b.style.display="none",8000)}});}}
+function checkReminders(){if(!ME)return;const n=new Date(),cm=n.getHours()*60+n.getMinutes();for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t;if(AS[k]!=ME)return;const[h,m]=t.split(":").map(Number),tm=h*60+m,dr=gd(sk,t,i,ME),te=tm+dr;if(!reminded["b5_"+k]&&cm>=tm-5&&cm<tm){reminded["b5_"+k]=true;sv("bs_rmd",reminded);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 <strong>${fm(t)}</strong> بعد 5 دقائق (${dr}د)`;playBeep();if(notifOn)new Notification("⏰",{body:`${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}if(!reminded["ex_"+k]&&cm>=tm&&cm<tm+1){reminded["ex_"+k]=true;sv("bs_rmd",reminded);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 <strong>${fm(t)}</strong> وقت البريك!`;playBeep();if(notifOn)new Notification("🔔",{body:`${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}if(!reminded["e3_"+k]&&cm>=te-3&&cm<te){reminded["e3_"+k]=true;sv("bs_rmd",reminded);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`⚠️ <strong>${fm(t)}</strong> باقي 3 دقائق على الانتهاء`;playBeep();if(notifOn)new Notification("⚠️",{body:`${fm(t)} - باقي 3 دقائق`});setTimeout(()=>b.style.display="none",8000)}if(!reminded["end_"+k]&&cm>=te&&cm<te+1){reminded["end_"+k]=true;sv("bs_rmd",reminded);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔴 <strong>${fm(t)}</strong> انتهى وقت البريك`;playBeep();if(notifOn)new Notification("🔴",{body:`${fm(t)} - انتهى`});setTimeout(()=>b.style.display="none",8000)}});}}
 
 // ═══════════════ EMAIL ═══════════════
 function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.trim(),port:document.getElementById("smtpPort").value.trim(),user:document.getElementById("smtpUser").value.trim(),pass:document.getElementById("smtpPass").value.trim(),from_email:document.getElementById("smtpFrom").value.trim()};for(const[k,v]of Object.entries({host:"Host",port:"Port",user:"User",pass:"Password",from_email:"From"})){if(!smtp[k]){document.getElementById("emailStatus").textContent="⚠️ أكمل";return}}fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({smtp,assignments:AS,shifts:SH,view_only:VO,durations:DP,custom_durations:CDUR,employees:EM.map(e=>({email:e.m})),extra_emails:RS})}).then(r=>r.json()).then(d=>{document.getElementById("emailStatus").textContent=d.message||d.error}).catch(e=>{document.getElementById("emailStatus").textContent="⚠️"})}
