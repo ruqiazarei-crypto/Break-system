@@ -524,11 +524,18 @@ upSel();rEmp();rAdmin();
 
 // Auto-reset 24h
 const lr=ld("bs_lr",null);const n2=new Date();
-if(lr&&(n2-new Date(lr))/36e5>=24){AS={};sv("bs_as",AS);nf("🔄 تصفير تلقائي","b")}
+if(lr&&(n2-new Date(lr))/36e5>=24){AS={};sv("bs_as",AS);LG=[];sv("bs_lg",LG);reminded={};sv("bs_rmd",{});nf("🔄 تصفير تلقائي 24 ساعة","b")}
 sv("bs_lr",n2.toISOString());
 
 // Loops
-setInterval(()=>{checkReminders();const n=new Date();if(n.getHours()===0&&n.getMinutes()===0){reminded={};sv("bs_rmd",{})}},15000);
+setInterval(()=>{
+  checkReminders();
+  const n=new Date();
+  if(n.getHours()===0&&n.getMinutes()===0){reminded={};sv("bs_rmd",{})}
+  // Auto-reset if 24h passed while page open
+  const lr2=ld("bs_lr",null);
+  if(lr2&&(new Date()-new Date(lr2))/36e5>=24){AS={};sv("bs_as",AS);LG=[];sv("bs_lg",LG);reminded={};sv("bs_rmd",{});sv("bs_lr",new Date().toISOString());nf("🔄 تصفير تلقائي 24 ساعة","b");rAll();rEmp()}
+},15000);
 setTimeout(checkReminders,1000);
 </script>
 </body>
