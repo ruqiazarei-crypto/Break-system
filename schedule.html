@@ -138,10 +138,6 @@ body{font-family:Tahoma,sans-serif;background:#f0f2f5;color:#1a2a3a;padding:8px;
   </div>
   <div class="st" id="supSt"></div>
   <div id="supSlots"></div>
-  <div style="margin-top:8px;border-top:1px solid #ddd;padding-top:6px">
-    <h3 style="font-size:12px;color:#1a5276">📜 سجل التوزيعات <span style="font-weight:400;color:#999" id="lgCnt"></span></h3>
-    <div id="logList" style="max-height:200px;overflow-y:auto;font-size:11px"></div>
-  </div>
 </div>
 
 <!-- ═══ ADMIN SECTION (hidden) ═══ -->
@@ -393,10 +389,8 @@ function supView(){
   }
   document.getElementById("supSlots").innerHTML=h;
   document.getElementById("supSt").innerHTML=`<span>🟢 متاح: ${ta}</span><span>🔴 مأخوذ: ${tv}</span><span>📋 إجمالي: ${tt}</span>`;
-  let lh="";const nowd=new Date();const td=`${nowd.getDate()}/${nowd.getMonth()+1}`;
-  LG.filter(x=>x.d==td).slice(0,30).forEach(x=>{const cls=x.act.includes("أخذ")?"#27ae60":"#e74c3c";lh+=`<div style="display:flex;gap:6px;padding:2px 0;border-bottom:1px solid #f0f0f0"><span style="color:#999;min-width:35px">${x.ts}</span><span style="color:${cls};font-weight:600">${x.act}</span><span>${x.emp}</span>${x.t?`<span style="color:#666">${fm(x.t)}</span>`:""}${x.dr?`<span style="color:#999">(${x.dr}د)</span>`:""}</div>`;});
-  document.getElementById("logList").innerHTML=lh||`<span style="color:#999">لا توجد توزيعات اليوم</span>`;
-  document.getElementById("lgCnt").textContent=`(${LG.filter(x=>x.d==td).length} عملية)`;
+
+
 }
 function rAdmin(){
   // Employees
@@ -464,7 +458,55 @@ function rs(){if(!confirm("تصفير التوزيعات؟"))return;AS={};sv("bs
 function rstSlots(){if(!confirm("استعادة 81 وقت؟"))return;const def={morning:{lb:"🌅 Morning (8-5)",ts:["9:00","9:10","9:15","9:20","9:30","9:45","9:50","10:10","10:55","11:10","11:15","11:35","11:40","12:00","12:20","12:40","12:55","13:10","13:25","13:40","14:00","14:20","14:40","14:55","15:00","15:10","15:20","15:30","15:40","15:50"]},afternoon:{lb:"☀️ Afternoon (11-8)",ts:["12:30","12:40","12:50","13:00","13:10","13:15","13:30","13:40","14:00","14:20","14:50","15:00","15:20","16:00","16:15","16:30","16:40","17:00","17:15","17:35","18:00","18:15","18:30","19:00","19:15","19:35","19:50","20:00","20:10","20:20"]},night:{lb:"🌙 Night (1-10)",ts:["15:00","15:15","15:30","15:50","16:00","16:20","16:40","17:00","17:20","17:35","18:10","18:45","19:10","19:25","20:20","20:40","20:50","21:10","21:20","21:30","21:40"]}};const defVo={"morning":["12:00","13:10","15:10"],"afternoon":["15:00","18:00","17:00"],"night":["17:00","19:10","16:00"]};Object.assign(SH,def);Object.assign(VO,defVo);sv("bs_sh",SH);sv("bs_vo",VO);nf("✅ 81 وقت","g");rAll();rAdmin();}
 function addR(){const n=document.getElementById("rn").value.trim(),m=document.getElementById("rm").value.trim();if(!n||!m)return;RS.push({n,m});sv("bs_rs",RS);document.getElementById("rn").value="";document.getElementById("rm").value="";rAdmin();nf("✅","g");}
 function dR(i){RS.splice(i,1);sv("bs_rs",RS);rAdmin()}
-function report(){const ds=new Date().toISOString().split("T")[0];let lines=[];lines.push("BREAK SCHEDULE - "+ds,"Al Mana General Hospitals","");let total=0;for(const[sk,sh]of Object.entries(SH)){let any=false;sh.ts.forEach((t,i)=>{const k=sk+"_"+t,em=AS[k];if(!em)return;if(!any){lines.push("-- "+sh.lb);any=true}lines.push(fm(t)+" "+gd(sk,t,i,em)+"m "+em);total++});if(any)lines.push("")}lines.push("Total: "+total);const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/plain;charset=utf-8"}));a.download="breaks_"+ds+".txt";a.click();nf("📥","g");}
+function report(){
+  const ds=new Date().toISOString().split("T")[0];
+  // --- Log display on screen ---
+  const nowd=new Date();const td=`${nowd.getDate()}/${nowd.getMonth()+1}`;
+  const todayLG=LG.filter(x=>x.d==td);
+  let lh="<div style=\"border:1px solid #2980b9;border-radius:8px;padding:6px;margin-bottom:6px;background:#f0f8ff\"><h3 style=\"font-size:12px;color:#1a5276\">📜 سجل التوزيعات ("+todayLG.length+" عملية)</h3>";
+  todayLG.slice(0,40).forEach(x=>{
+    const cls=x.act.includes("أخذ")?"#27ae60":"#e74c3c";
+    lh+="<div style=\"display:flex;gap:6px;padding:2px 0;border-bottom:1px solid #eee;font-size:11px\"><span style=\"color:#999;min-width:35px\">"+x.ts+"</span><span style=\"color:"+cls+";font-weight:600\">"+x.act+"</span><span>"+x.emp+"</span>"+(x.t?"<span style=\"color:#666\">"+fm(x.t)+"</span>":"")+(x.dr?"<span style=\"color:#999\">("+x.dr+"د)</span>":"")+"</div>";
+  });
+  lh+="</div>";
+  // --- Break calculator per employee ---
+  const empBreak={};let bTotal=0;
+  for(const[sk,sh]of Object.entries(SH)){
+    sh.ts.forEach((t,i)=>{
+      const k=sk+"_"+t,em=AS[k];
+      if(!em)return;
+      if(!empBreak[em])empBreak[em]={n:0,min:0};
+      empBreak[em].n++;const dr=gd(sk,t,i,em);
+      empBreak[em].min+=dr;bTotal++;
+    });
+  }
+  lh+="<div style=\"border:1px solid #f39c12;border-radius:8px;padding:6px;margin-bottom:6px;background:#fffef5\"><h3 style=\"font-size:12px;color:#e67e22;margin-bottom:3px\">🧮 حاسبة البريكات</h3>";
+  EM.forEach(e=>{
+    const b=empBreak[e.n];
+    if(!b){lh+="<div style=\"font-size:11px;padding:1px 0\">"+e.n+": 0</div>";return}
+    lh+="<div style=\"font-size:11px;padding:1px 0\">"+e.n+": <strong>"+b.n+"</strong> بريكات = <strong>"+b.min+"</strong> دقيقة</div>";
+  });
+  lh+="<div style=\"font-size:11px;border-top:1px solid #eee;margin-top:3px;padding-top:3px\">📋 إجمالي: <strong>"+bTotal+"</strong> بريكات</div></div>";
+  // Show on screen
+  const p=document.getElementById("reportView");
+  if(!p){const d=document.createElement("div");d.id="reportView";d.innerHTML=lh+'<div style="text-align:center;margin:4px 0"><button class="btn btn-pri btn-sm" onclick="this.parentElement.parentElement.remove()">✕ إغلاق</button></div>';document.getElementById("supSch").parentNode.appendChild(d)}
+  else{p.innerHTML=lh+'<div style="text-align:center;margin:4px 0"><button class="btn btn-pri btn-sm" onclick="this.parentElement.parentElement.remove()">✕ إغلاق</button></div>'}
+  // --- Download .txt report ---
+  let lines=[];lines.push("BREAK SCHEDULE - "+ds,"Al Mana General Hospitals","");let total=0;
+  for(const[sk,sh]of Object.entries(SH)){
+    let any=false;
+    sh.ts.forEach((t,i)=>{
+      const k=sk+"_"+t,em=AS[k];if(!em)return;
+      if(!any){lines.push("-- "+sh.lb);any=true}
+      lines.push(fm(t)+" "+gd(sk,t,i,em)+"m "+em);total++
+    });if(any)lines.push("")
+  }
+  lines.push("Total: "+total);
+  lines.push("","--- Break Calculator ---");
+  Object.keys(empBreak).forEach(k=>lines.push(k+": "+empBreak[k].n+" breaks = "+empBreak[k].min+"min"));
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/plain;charset=utf-8"}));a.download="breaks_"+ds+".txt";a.click();
+  nf("📊 التقرير جاهز","g");
+}
 
 // ═══════════════ REMINDERS ═══════════════
 let notifOn=false;
