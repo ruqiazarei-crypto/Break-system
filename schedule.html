@@ -200,8 +200,10 @@ let cv=ld("bs_vo",null); if(cv)Object.assign(VO,cv);
 let CDUR = ld("bs_dur",{});
 function gd(sk,t,i){return CDUR[sk+"_"+t]||DP[i%4]}
 
+const EM_VER = "v2";
 let EM = ld("bs_emp",null);
-if(!EM||!EM.length){
+let emVer = ld("bs_emp_ver","");
+if(emVer!=EM_VER||!EM||!EM.length){
   // Default employees for first run
   EM = [
     {n:"Afaf Alkhaldi",m:"Afaf.Alkhaldi@almanahospital.com.sa"},{n:"Aisha Jezan",m:"Aisha.Jezan@almanahospital.com.sa"},
@@ -218,7 +220,7 @@ if(!EM||!EM.length){
     {n:"Shouq Al-Harbi",m:"Shouq.Al-Harbi@almanahospital.com.sa"},{n:"Tahani AlSahluli",m:"Tahani.AlSahluli@almanahospital.com.sa"},
     {n:"Khadijah Almalki",m:"Khadijah.Almalki@almanahospital.com.sa"}
   ];
-  sv("bs_emp",EM);
+  sv("bs_emp",EM);sv("bs_emp_ver",EM_VER);
 }
 let CD = ld("bs_cd",{});
 let AS = ld("bs_as",{});
