@@ -72,19 +72,19 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 
 <!-- LOGIN -->
 <div class="nb">
-  <span class="nm">🔑 الكود</span>
-  <input class="inp" id="codeInp" type="text" inputmode="numeric" maxlength="5" placeholder="كود الموظف" autocomplete="off" onkeydown="if(event.key=='Enter')logIn()">
+  <span class="nm">🔑 Badge Num</span>
+  <input class="inp" id="codeInp" type="text" inputmode="numeric" maxlength="5" placeholder="Badge Num" autocomplete="off" onkeydown="if(event.key=='Enter')logIn()">
   <button class="btn btn-pri btn-sm" onclick="logIn()">دخول</button>
   <span class="nm" id="loggedNm" style="display:none"></span>
   <span class="ct" id="myCnt">0/4</span>
   <button class="rmbtn" id="rmBtn" onclick="reqNotif()">🔔 تفعيل</button>
-  <span style="font-size:9px;color:#008080;width:100%;display:block;padding:2px 0 0">👆 أدخل كود الموظف | 👇 المدير: اضغط "🔑 دخول المدير" بالأزرار السفلية</span>
+  <span style="font-size:9px;color:#008080;width:100%;display:block;padding:2px 0 0">👆 أدخل Badge Num | 👇 المدير: اضغط "🔑 دخول المدير" بالأزرار السفلية</span>
 </div>
 
 <!-- MY BREAKS -->
 <div class="my">
   <h3>✅ بريكاتي</h3>
-  <div class="mt" id="myList"><span style="color:#999;font-size:11px">سجل الدخول بكود الموظف</span></div>
+  <div class="mt" id="myList"><span style="color:#999;font-size:11px">سجل الدخول ب Badge Num</span></div>
 </div>
 
 <!-- AVAILABLE -->
@@ -128,7 +128,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
       <button class="btn btn-suc btn-sm" onclick="report()">📊 تقرير</button>
     </div>
     <div class="pn"><h3>👥 الموظفين</h3><div id="emps"></div></div>
-    <div class="pn"><h3>🔑 الأكواد</h3><div id="codes"></div></div>
+    <div class="pn"><h3>🔑 Badge Num</h3><div id="codes"></div></div>
     <div class="pn"><h3>⏱ المدد لكل موظف</h3><div id="empDurs"></div><div style="font-size:9px;color:#999;margin-top:2px">مثال: 20·20·20</div></div>
     <div class="pn"><h3>🕐 الأوقات</h3><div id="slotMgr"></div></div>
     <div class="pn"><h3>📧 المستلمين</h3><div id="recips"></div>
@@ -229,9 +229,9 @@ setInterval(()=>{const n=new Date();document.getElementById("tclk").textContent=
 // ═══════════ LOGIN ═══════════
 function logIn(){
   const code=document.getElementById("codeInp").value.trim();
-  if(!code||code.length<3){nf("⚠️ أدخل الكود","r");return}
+  if(!code||code.length<3){nf("⚠️ أدخل Badge Num","r");return}
   const emp=EM.find(e=>CD[e.name]==code);
-  if(!emp){nf("❌ كود خطأ","r");return}
+  if(!emp){nf("❌ Badge Num خطأ","r");return}
   ME=emp.name;myCode=code;isSup=SUP.includes(ME);
   document.getElementById("codeInp").style.display="none";
   document.querySelector(".nb .btn-pri").style.display="none";
@@ -257,9 +257,9 @@ function r(){
   // My breaks
   let mh=[];
   for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+'_'+t;if(AS[k]==ME){const dr=gd(sk,t,i,ME);mh.push({s:fm(t),d:dr,k:k})}})}
-  if(!mh)mh=`<span style="color:#999;font-size:11px">${ME?"ما اخترت بريكات":"سجل الدخول بكود الموظف"}</span>`;
+  if(!mh)mh=`<span style="color:#999;font-size:11px">${ME?"ما اخترت بريكات":"سجل الدخول ب Badge Num"}</span>`;
   document.getElementById("myList").innerHTML=mh;
-  if(!ME){document.getElementById("availSlots").innerHTML=`<div style="text-align:center;color:#e74c3c;font-size:11px;padding:5px">👆 أدخل الكود من المشرف</div>`;document.getElementById("upcPn").style.display="none";return}
+  if(!ME){document.getElementById("availSlots").innerHTML=`<div style="text-align:center;color:#e74c3c;font-size:11px;padding:5px">👆 أدخل Badge Num من المشرف</div>`;document.getElementById("upcPn").style.display="none";return}
   // Available
   let ah="",avail=[],myTimes=[];mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
   for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,dr=gd(sk,t,i,ME),em=AS[k],vw=(VO[sk]||[]).includes(t);if(em==ME){myTimes.push({k,sk,t,dr});return}if(em||vw)return;avail.push({k,sk,t,dr})})}
@@ -334,7 +334,7 @@ function rAdm(){
   EM.forEach((e,i)=>{const s=SUP.includes(e.name);h+=`<div class="rw" style="display:flex;gap:3px;align-items:center;padding:2px 0;font-size:10px"><span style="flex:2">${e.name}</span><input value="${e.email||""}" style="flex:2;font-size:9px" onchange="EM[${i}].email=this.value;sv('bs_emp',EM)"><span onclick="togSup('${e.name}')" style="cursor:pointer;background:${s?"#008080":"#ddd"};color:${s?"#fff":"#666"};padding:1px 5px;border-radius:4px;font-size:9px;width:60px;text-align:center">${s?"👁️ مشرف":"خدمة عملاء"}</span><button class="btn btn-dan btn-sm" onclick="dEmp(${i})">✕</button></div>`});
   document.getElementById("emps").innerHTML=h;
   // Codes
-  let c=`<div class="rw" style="display:flex;font-weight:700;border-bottom:2px solid #ddd;padding:2px 0;font-size:10px"><span style="flex:2">الاسم</span><span>الكود</span></div>`;
+  let c=`<div class="rw" style="display:flex;font-weight:700;border-bottom:2px solid #ddd;padding:2px 0;font-size:10px"><span style="flex:2">الاسم</span><span>Badge Num</span></div>`;
   EM.forEach(e=>{c+=`<div class="rw" style="display:flex;gap:3px;align-items:center;padding:2px 0;font-size:10px"><span style="flex:2">${e.name}</span><input value="${CD[e.name]||""}" placeholder="5 أرقام" style="max-width:65px;font-size:9px;text-align:center;direction:ltr" onchange="CD['${e.name}']=this.value;sv('bs_cd',CD);svSave()"><span style="color:#999;font-size:9px">${CD[e.name]?"✅":"❌"}</span></div>`});
   document.getElementById("codes").innerHTML=c;
   // Durations
