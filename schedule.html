@@ -203,6 +203,8 @@ async function svLoad(){
     if(d.custom_durations)CDUR=d.custom_durations;
     if(d.recipients)RS=d.recipients;
     if(d.durations&&d.durations.length==4)DP=d.durations;
+    // Sync codes from server to CD (cross-device)
+    EM.forEach(function(e){if(e.code&&!CD[e.name])CD[e.name]=e.code});
     // Load extra data from localStorage (per-device)
     let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;
     let lsSUP=ld("bs_sup",[]);if(lsSUP.length)SUP=lsSUP;
