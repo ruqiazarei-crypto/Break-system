@@ -335,7 +335,7 @@ function rAdm(){
   document.getElementById("emps").innerHTML=h;
   // Codes
   let c=`<div class="rw" style="display:flex;font-weight:700;border-bottom:2px solid #ddd;padding:2px 0;font-size:10px"><span style="flex:2">الاسم</span><span>الكود</span></div>`;
-  EM.forEach(e=>{c+=`<div class="rw" style="display:flex;gap:3px;align-items:center;padding:2px 0;font-size:10px"><span style="flex:2">${e.name}</span><input value="${CD[e.name]||""}" placeholder="5 أرقام" style="max-width:65px;font-size:9px;text-align:center;direction:ltr" onchange="CD['${e.name}']=this.value;sv('bs_cd',CD)"><span style="color:#999;font-size:9px">${CD[e.name]?"✅":"❌"}</span></div>`});
+  EM.forEach(e=>{c+=`<div class="rw" style="display:flex;gap:3px;align-items:center;padding:2px 0;font-size:10px"><span style="flex:2">${e.name}</span><input value="${CD[e.name]||""}" placeholder="5 أرقام" style="max-width:65px;font-size:9px;text-align:center;direction:ltr" onchange="CD['${e.name}']=this.value;sv('bs_cd',CD);svSave()"><span style="color:#999;font-size:9px">${CD[e.name]?"✅":"❌"}</span></div>`});
   document.getElementById("codes").innerHTML=c;
   // Durations
   let dp=`<div class="rw" style="display:flex;font-weight:700;border-bottom:2px solid #ddd;padding:2px 0;font-size:10px"><span style="flex:2">الاسم</span><span>المدد</span></div>`;
@@ -435,7 +435,7 @@ function checkReminders(){if(!ME)return;const n=new Date(),cm=n.getHours()*60+n.
 // ═══════════ EMAIL ═══════════
 function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.trim(),port:document.getElementById("smtpPort").value.trim(),user:document.getElementById("smtpUser").value.trim(),pass:document.getElementById("smtpPass").value.trim(),from_email:document.getElementById("smtpFrom").value.trim()};
   for(const[k,v]of Object.entries({host:"Host",port:"Port",user:"User",pass:"Password",from_email:"From"})){if(!smtp[k]){document.getElementById("emailStatus").textContent="⚠️ أكمل";return}}
-  fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({smtp,assignments:AS,shifts:SH,view_only:VO,durations:DP,custom_durations:CDUR,employees:EM.map(e=>({email:e.m})),extra_emails:RS})})
+  fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({smtp,assignments:AS,shifts:SH,view_only:VO,durations:DP,custom_durations:CDUR,employees:EM.map(e=>({email:e.email})),extra_emails:RS})})
     .then(r=>r.json()).then(d=>{document.getElementById("emailStatus").textContent=d.message||d.error}).catch(e=>{document.getElementById("emailStatus").textContent="⚠️"})}
 
 // ═══════════ INIT ═══════════
