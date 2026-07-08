@@ -73,11 +73,12 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 <!-- LOGIN -->
 <div class="nb">
   <span class="nm">🔑 الكود</span>
-  <input class="inp" id="codeInp" type="password" maxlength="5" placeholder="أدخل الكود" autocomplete="off" onkeydown="if(event.key=='Enter')logIn()">
+  <input class="inp" id="codeInp" type="text" inputmode="numeric" maxlength="5" placeholder="كود الموظف" autocomplete="off" onkeydown="if(event.key=='Enter')logIn()">
   <button class="btn btn-pri btn-sm" onclick="logIn()">دخول</button>
   <span class="nm" id="loggedNm" style="display:none"></span>
   <span class="ct" id="myCnt">0/4</span>
   <button class="rmbtn" id="rmBtn" onclick="reqNotif()">🔔 تفعيل</button>
+  <span style="font-size:9px;color:#008080;width:100%;display:block;padding:2px 0 0">👆 أدخل كود الموظف | 👇 المدير: اضغط "🔑 دخول المدير" بالأزرار السفلية</span>
 </div>
 
 <!-- MY BREAKS -->
@@ -227,7 +228,7 @@ setInterval(()=>{const n=new Date();document.getElementById("tclk").textContent=
 function logIn(){
   const code=document.getElementById("codeInp").value.trim();
   if(!code||code.length<3){nf("⚠️ أدخل الكود","r");return}
-  const emp=EM.find(e=>e.code==code);
+  const emp=EM.find(e=>CD[e.name]==code);
   if(!emp){nf("❌ كود خطأ","r");return}
   ME=emp.name;myCode=code;isSup=SUP.includes(ME);
   document.getElementById("codeInp").style.display="none";
