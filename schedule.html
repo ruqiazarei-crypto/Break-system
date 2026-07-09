@@ -129,10 +129,15 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
       <button class="btn btn-suc btn-sm" onclick="report()">📊 تقرير</button>
     </div>
     <div class="pn"><h3>👥 الموظفين <span style="font-weight:normal;font-size:9px;color:#999">(الاسم | الإيميل | 🔑 | ⏱)</span></h3><div id="emps"></div></div>
-    <div class="pn"><h3>🕐 الأوقات</h3><div id="slotMgr"></div></div>
+    <div class="pn"><h3>🕐 الأوقات <span style="font-weight:normal;font-size:9px;color:#999">🟢 مفتوح · 🔴 مغلق · 🔒 مشرف · ✏️ تعديل · ✕ حذف</span></h3><div id="slotMgr"></div></div>
     <div class="pn"><h3>📧 المستلمين</h3><div id="recips"></div>
       <div style="display:flex;gap:3px;margin-top:3px"><input id="rn" placeholder="الاسم" style="flex:1;font-size:10px"><input id="rm" placeholder="الإيميل" style="flex:2;font-size:10px"><button class="btn btn-suc btn-sm" onclick="addR()">➕</button></div>
     </div>
+    <div class="pn"><h3>📊 التقارير اليومية</h3><div id="rptArea">
+      <div style="display:flex;gap:3px;margin-bottom:3px"><button class="btn btn-suc btn-sm" onclick="saveReport()">💾 حفظ التقرير الحالي</button></div>
+      <div id="rptList" style="font-size:10px"></div>
+      <div id="rptView" style="font-size:9px;max-height:300px;overflow-y:auto;margin-top:3px;background:#fff;border-radius:6px;padding:4px"></div>
+    </div></div>
     <div class="pn"><h3>📧 SMTP</h3>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:3px">
         <input id="smtpHost" placeholder="smtp.office365.com" style="flex:2;font-size:10px" value="smtp.office365.com">
@@ -170,6 +175,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 <script>
 // ═══════════ DATA ═══════════
 const SV = window.location.origin;
+const EMP_DF = [{name:"Afaf Alkhaldi",email:"Afaf.Alkhaldi@almanahospital.com.sa",code:""},{name:"Aisha Jezan",email:"Aisha.Jezan@almanahospital.com.sa",code:""},{name:"Aljawhara Almelifi",email:"Aljawhara.Almelifi@almanahospital.com.sa",code:""},{name:"Aljazi Al-Anazi",email:"Aljazi.Al-Anazi@almanahospital.com.sa",code:""},{name:"Amna Albrari",email:"Amna.Albrari@almanahospital.com.sa",code:""},{name:"Fatimah Busaeed",email:"Fatimah.Busaeed@almanahospital.com.sa",code:""},{name:"Hussain Albaqshi",email:"Hussain.Albaqshi@almanahospital.com.sa",code:""},{name:"Khadra alqahtani",email:"Khadra.alqahtani@almanahospital.com.sa",code:""},{name:"Lina Alshshri",email:"Lina.Alshshri@almanahospital.com.sa",code:""},{name:"Manal Alfarhan",email:"Manal.Alfarhan@almanahospital.com.sa",code:""},{name:"Mariam Almahawsh",email:"Mariam.Almahawsh@almanahospital.com.sa",code:""},{name:"Maryam Alsuwayigh",email:"Maryam.Al-suwayigh@almanahospital.com.sa",code:""},{name:"Nehal Alfarhan",email:"Nehal.Alfarhan@almanahospital.com.sa",code:""},{name:"Rawan Al-Naghmoush",email:"Rawan.Al-Naghmoush@almanahospital.com.sa",code:""},{name:"Rima Alqahtani",email:"Rima.Alqahtani@almanahospital.com.sa",code:""},{name:"Ruqaia AlShammery",email:"Ruqaia.AlShammery@almanahospital.com.sa",code:""},{name:"Ruqaia Zarei",email:"Ruqaia.Zarei@almanahospital.com.sa",code:""},{name:"Saif Alruwaili",email:"Saif.Alruwaili@almanahospital.com.sa",code:""},{name:"Salman Alrhiman",email:"Salman.Alrhiman@almanahospital.com.sa",code:""},{name:"Sara Aldossary",email:"Sara.Aldossary@almanahospital.com.sa",code:""},{name:"Shahad Al-Harbi",email:"Shahad.Al-Harbi@almanahospital.com.sa",code:""},{name:"Sheikah Alkhelaiwi",email:"Sheikah.Alkhelaiwi@almanahospital.com.sa",code:""},{name:"Shouq Al-Harbi",email:"Shouq.Al-Harbi@almanahospital.com.sa",code:""},{name:"Tahani AlSahluli",email:"Tahani.AlSahluli@almanahospital.com.sa",code:""},{name:"Khadijah Almalki",email:"Khadijah.Almalki@almanahospital.com.sa",code:""}];
 const SH_DF = {
   morning:{lb:"🌅 Morning (8-5)",ts:["9:00","9:10","9:15","9:20","9:30","9:45","9:50","10:10","10:55","11:10","11:15","11:35","11:40","12:00","12:20","12:40","12:55","13:10","13:25","13:40","14:00","14:20","14:40","14:55","15:00","15:10","15:20","15:30","15:40","15:50"]},
   afternoon:{lb:"☀️ Afternoon (11-8)",ts:["12:30","12:40","12:50","13:00","13:10","13:15","13:30","13:40","14:00","14:20","14:50","15:00","15:20","16:00","16:15","16:30","16:40","17:00","17:15","17:35","18:00","18:15","18:30","19:00","19:15","19:35","19:50","20:00","20:10","20:20"]},
@@ -191,36 +197,26 @@ function nf(m,t){const e=document.getElementById("nf");e.className=t||"";e.textC
 function gd(sk,t,i,emp){if(emp&&EDP[emp]){const p=EDP[emp];return CDUR[sk+"_"+t]||p[i%p.length]}return CDUR[sk+"_"+t]||DP[i%4]}
 
 // ═══════════ SERVER SYNC ═══════════
-async function svLoad(){
-  try{
+async function svLoad(){  try{
     const r=await fetch(SV+"/api/data");if(!r.ok)return;
     const d=await r.json();
-    if(d.employees&&d.employees.length){EM=d.employees;sv("bs_emp_bk",EM)}
-    else{
-      let bk=ld("bs_emp_bk",[]);
-      if(bk.length)EM=bk;else EM=[{name:"Afaf Alkhaldi",email:"Afaf.Alkhaldi@almanahospital.com.sa",code:""},{name:"Aisha Jezan",email:"Aisha.Jezan@almanahospital.com.sa",code:""},{name:"Aljawhara Almelifi",email:"Aljawhara.Almelifi@almanahospital.com.sa",code:""},{name:"Aljazi Al-Anazi",email:"Aljazi.Al-Anazi@almanahospital.com.sa",code:""},{name:"Amna Albrari",email:"Amna.Albrari@almanahospital.com.sa",code:""},{name:"Fatimah Busaeed",email:"Fatimah.Busaeed@almanahospital.com.sa",code:""},{name:"Hussain Albaqshi",email:"Hussain.Albaqshi@almanahospital.com.sa",code:""},{name:"Khadra alqahtani",email:"Khadra.alqahtani@almanahospital.com.sa",code:""},{name:"Lina Alshshri",email:"Lina.Alshshri@almanahospital.com.sa",code:""},{name:"Manal Alfarhan",email:"Manal.Alfarhan@almanahospital.com.sa",code:""},{name:"Mariam Almahawsh",email:"Mariam.Almahawsh@almanahospital.com.sa",code:""},{name:"Maryam Alsuwayigh",email:"Maryam.Al-suwayigh@almanahospital.com.sa",code:""},{name:"Nehal Alfarhan",email:"Nehal.Alfarhan@almanahospital.com.sa",code:""},{name:"Rawan Al-Naghmoush",email:"Rawan.Al-Naghmoush@almanahospital.com.sa",code:""},{name:"Rima Alqahtani",email:"Rima.Alqahtani@almanahospital.com.sa",code:""},{name:"Ruqaia AlShammery",email:"Ruqaia.AlShammery@almanahospital.com.sa",code:""},{name:"Ruqaia Zarei",email:"Ruqaia.Zarei@almanahospital.com.sa",code:""},{name:"Saif Alruwaili",email:"Saif.Alruwaili@almanahospital.com.sa",code:""},{name:"Salman Alrhiman",email:"Salman.Alrhiman@almanahospital.com.sa",code:""},{name:"Sara Aldossary",email:"Sara.Aldossary@almanahospital.com.sa",code:""},{name:"Shahad Al-Harbi",email:"Shahad.Al-Harbi@almanahospital.com.sa",code:""},{name:"Sheikah Alkhelaiwi",email:"Sheikah.Alkhelaiwi@almanahospital.com.sa",code:""},{name:"Shouq Al-Harbi",email:"Shouq.Al-Harbi@almanahospital.com.sa",code:""},{name:"Tahani AlSahluli",email:"Tahani.AlSahluli@almanahospital.com.sa",code:""},{name:"Khadijah Almalki",email:"Khadijah.Almalki@almanahospital.com.sa",code:""}]}
+    if(d.employees&&d.employees.length){const bk=ld("bs_emp_bk",[]);bk.forEach(e=>{if(!d.employees.find(x=>x.name==e.name))d.employees.push(e)});EM=d.employees;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
     if(d.assignments)AS=d.assignments;
     if(d.shifts){for(const k of Object.keys(SH_DF)){if(d.shifts[k]&&d.shifts[k].ts)SH[k].ts=d.shifts[k].ts}}
     if(d.view_only)VO=d.view_only;
     if(d.custom_durations)CDUR=d.custom_durations;
     if(d.recipients)RS=d.recipients;
     if(d.durations&&d.durations.length==4)DP=d.durations;
-    // Sync codes from server to CD (cross-device)
-    EM.forEach(function(e){if(e.code&&!CD[e.name])CD[e.name]=e.code});
-    // Load extra data from localStorage (per-device)
-    let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;
-    let lsSUP=ld("bs_sup",[]);if(lsSUP.length)SUP=lsSUP;
-    let lsLG=ld("bs_lg",[]);LG=lsLG;
-    nf("☁️ تم التحديث","g");r();sn++;
-  }catch(e){console.log("❌ svLoad error:",e);let bk=ld("bs_emp_bk",[]);if(bk.length&&!EM.length)EM=bk}
+    let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;let lsSUP=ld("bs_sup",[]);if(lsSUP.length)SUP=lsSUP;
+  }catch(e){}
 }
-async function svSave(){sv("bs_emp_bk",EM);
+async function svSave(){const empData=EM.map(e=>{const cd=CD.hasOwnProperty(e.name)?CD[e.name]:(e.code||"");return{name:e.name,email:e.email,code:cd}});
+  sv("bs_emp_bk",empData);
   try{
-    // Sync codes to employee data
-    const empData=EM.map(e=>{const cd=CD.hasOwnProperty(e.name)?CD[e.name]:(e.code||"");return{name:e.name,email:e.email,code:cd}});
     await fetch(SV+"/api/data",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({employees:empData,assignments:AS,shifts:SH,view_only:VO,custom_durations:CDUR,recipients:RS,durations:DP})});
     nf("☁️ تم الحفظ","g");
+    fetch(SV+"/api/emp-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(EM)});
   }catch(e){console.log("❌ svSave error:",e)}
 }
 async function svAs(){try{await fetch(SV+"/api/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({assignments:AS})})}catch(e){}}
@@ -232,7 +228,8 @@ setInterval(()=>{const n=new Date();document.getElementById("tclk").textContent=
 function logIn(){
   const code=document.getElementById("codeInp").value.trim();
   if(!code||code.length<3){nf("⚠️ أدخل Badge Num","r");return}
-  const emp=EM.find(e=>CD[e.name]==code);
+  // Search both CD (localStorage cache) AND e.code (server data)
+  const emp=EM.find(e=>(CD[e.name]==code||e.code==code));
   if(!emp){nf("❌ Badge Num خطأ","r");return}
   ME=emp.name;myCode=code;isSup=SUP.includes(ME);
   document.getElementById("codeInp").style.display="none";
@@ -342,7 +339,20 @@ function rAdm(){
 </div>`});
   document.getElementById("emps").innerHTML=h;
   // Slots
-  // Slots
+  let sm="";const sN={morning:"🌅 صباحي",afternoon:"☀️ مسائي",night:"🌙 ليلي"};
+  for(const[sk,sh]of Object.entries(SH)){
+    sm+=`<div style="margin-bottom:3px"><strong style="font-size:10px">${sN[sk]||sk}</strong><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:2px">`;
+    sh.ts.forEach((t,i)=>{const vw=(VO[sk]||[]).includes(t),sup=SUP.includes("_sl_"+sk+"_"+t);
+      const stt=vw?"closed":"open";
+      sm+=`<span style="display:inline-flex;align-items:center;gap:2px;background:${vw?"#ffebee":sup?"#f0e6ff":"#e8f5e9"};border:1px solid ${vw?"#ef5350":sup?"#8e44ad":"#66bb6a"};border-radius:10px;padding:1px 4px;font-size:8px">`;
+      sm+=`${sup?"🔒 ":""}${fm(t)} <span style="color:#999;cursor:pointer" onclick="edDur('${sk}','${t}',${i})">${gd(sk,t,i)}m✏️</span>`;
+      sm+=`<span onclick="tv('${sk}','${t}')" style="cursor:pointer;font-size:9px;color:${vw?"#ef5350":"#66bb6a"}">${vw?"🔴":"🟢"}</span>`;
+      sm+=`<span onclick="togSupSlot('${sk}','${t}')" style="color:#8e44ad;cursor:pointer">${sup?"🔓":"🔒"}</span>`;
+      sm+=`<span onclick="dSlot('${sk}','${t}')" style="color:#e74c3c;cursor:pointer">✕</span></span>`;
+    });sm+=`</div></div>`;
+  }
+  document.getElementById("slotMgr").innerHTML=sm;
+  loadReports();
   // Recipients
   let r=`<div class="rw" style="display:flex;font-weight:700;border-bottom:2px solid #ddd;padding:2px 0;font-size:10px"><span style="flex:2">الاسم</span><span>الإيميل</span></div>`;
   RS.forEach((x,i)=>{r+=`<div class="rw" style="display:flex;gap:3px;align-items:center;padding:2px 0;font-size:10px"><span style="flex:2">${x.n}</span><span style="flex:2">${x.m}</span><button class="btn btn-dan btn-sm" onclick="dR(${i})">✕</button></div>`});
@@ -374,7 +384,7 @@ function parseEmp(i,v){if(!v)return;const p=v.split("|").map(x=>x.trim());if(!p[
   sv("bs_emp",EM);svSave();rAdm();nf("✅","g")
 }
 
-function addEmp(){const n=prompt("الاسم:");if(!n)return;const m=prompt("الإيميل:");if(!m)return;EM.push({name:n,email:m,code:""});sv("bs_emp",EM);svSave();rAdm();nf("✅","g")}
+function addEmp(){const n=prompt("الاسم:");if(!n)return;const m=prompt("الإيميل:");if(!m)return;EM.push({name:n,email:m,code:""});sv("bs_emp",EM);svSave();fetch(SV+"/api/emp-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(EM)});rAdm();nf("✅","g")}
 function dEmp(i){if(!confirm(`حذف ${EM[i].name}؟`))return;const nm=EM[i].name;Object.keys(AS).forEach(k=>{if(AS[k]==nm)delete AS[k]});EM.splice(i,1);sv("bs_emp",EM);sv("bs_as",AS);svSave();rAdm();r();nf("✅","g")}
 function addSlot(){const sk=prompt("الوردية:\n1=صباح\n2=عصر\n3=ليل");const sn={1:"morning",2:"afternoon",3:"night"}[parseInt(sk)];if(!sn)return;const t=prompt("الوقت (مثال: 14:30):");if(!t||!/^\d{1,2}:\d{2}$/.test(t))return;if(SH[sn].ts.includes(t)){nf("⚠️ موجود","r");return}SH[sn].ts.push(t);SH[sn].ts.sort((a,b)=>a.localeCompare(b));rAdm();r()}
 function dSlot(sk,t){if(!confirm(`حذف ${fm(t)}؟`))return;delete AS[sk+"_"+t];SH[sk].ts=SH[sk].ts.filter(x=>x!=t);sv("bs_as",AS);rAdm();r()}
@@ -383,6 +393,24 @@ function edDur(sk,t,i){const cur=gd(sk,t,i);const n=prompt(`⏱ مدة ${fm(t)} 
 function rs(){if(!confirm("تصفير التوزيعات؟"))return;AS={};sv("bs_as",AS);svAs();r();rAll();nf("🔄","b")}
 function rstSlots(){if(!confirm("استعادة 81 وقت؟"))return;SH=JSON.parse(JSON.stringify(SH_DF));VO=JSON.parse(JSON.stringify(VO_DF));rAdm();r();nf("✅ 81 وقت","g")}
 function addR(){const n=document.getElementById("rn").value.trim(),m=document.getElementById("rm").value.trim();if(!n||!m)return;RS.push({name:n,email:m});sv("bs_rs",RS);document.getElementById("rn").value="";document.getElementById("rm").value="";rAdm();nf("✅","g")}
+// Reports
+async function saveReport(){const ld=document.getElementById("rptList");ld.innerHTML="⏳ جاري الحفظ...";try{const r=await(await fetch("/api/report/save",{method:"POST"})).json();if(r.ok){ld.innerHTML="";nf(r.message,"g");loadReports()}else{nf("❌ "+r.error,"r");ld.innerHTML="❌"}}catch(e){nf("❌ "+e.message,"r");ld.innerHTML="❌"}}
+async function loadReports(){try{const r=await(await fetch("/api/report/list")).json();const d=document.getElementById("rptList");d.innerHTML="";if(!r.length){d.innerHTML='<span style="color:#999">لا توجد تقارير</span>';return}
+    r.forEach(dt=>{const b=document.createElement("button");b.className="btn btn-sm";b.style.cssText="font-size:9px;margin:1px";b.textContent="📅 "+dt;b.onclick=()=>viewReport(dt);d.appendChild(b)})
+  }catch(e){document.getElementById("rptList").innerHTML='<span style="color:#e74c3c">❌ خطأ</span>'}}
+async function viewReport(dt){const v=document.getElementById("rptView");v.innerHTML="⏳...";try{const r=await(await fetch("/api/report/get/"+dt)).json();if(r.error){v.innerHTML="❌ غير موجود";return}
+    let h='<div style="background:#008080;color:#fff;padding:4px;border-radius:4px;font-size:11px;font-weight:700">📊 '+r.date+'</div>';
+    for(const[sk,sh]of Object.entries(r.shifts||{})){
+      h+='<div style="margin-top:2px"><b>'+(sh.lb||sk)+'</b></div>';
+      sh.ts?.forEach(t=>{const k=sk+"_"+t,emp=r.assignments?.[k],vw=r.view_only?.[sk]?.includes(t);
+        const dr=r.custom_durations?.[k]||(r.durations?.[(sh.ts||[]).indexOf(t)%4]||15);
+        h+='<div style="display:flex;justify-content:space-between;padding:1px 2px;font-size:9px;'+(emp?"background:#fde":vw?"background:#eee":"")+'">';
+        h+='<span>'+fm(t)+' ('+dr+'د)</span><span>'+(emp?emp:vw?"📖 مراجعة":"🟢")+'</span></div>'
+      });
+    }
+    h+='<div style="text-align:left;color:#999;font-size:8px;margin-top:3px">💾 '+(r.saved_at?.substring(0,19)||"")+'</div>';
+    v.innerHTML=h
+  }catch(e){v.innerHTML="❌ خطأ"}}
 function dR(i){RS.splice(i,1);sv("bs_rs",RS);rAdm()}
 
 function supView(){
@@ -436,16 +464,9 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
 
 // ═══════════ INIT ═══════════
 (async function init(){
-  // Load CD and EMP from localStorage first (fast, before server)
-  let lsCD=ld("bs_cd",{});
-  if(Object.keys(lsCD).length)CD=lsCD;
-  let lsEM=ld("bs_emp_bk",[]);
-  if(lsEM.length)EM=lsEM;
-  
-  await svLoad();
-  if(!EM.length){
-    let bk=ld("bs_emp_bk",[]);
-    if(bk.length)EM=bk;else EM=[{name:"Afaf Alkhaldi",email:"Afaf.Alkhaldi@almanahospital.com.sa",code:""},{name:"Aisha Jezan",email:"Aisha.Jezan@almanahospital.com.sa",code:""},{name:"Aljawhara Almelifi",email:"Aljawhara.Almelifi@almanahospital.com.sa",code:""},{name:"Aljazi Al-Anazi",email:"Aljazi.Al-Anazi@almanahospital.com.sa",code:""},{name:"Amna Albrari",email:"Amna.Albrari@almanahospital.com.sa",code:""},{name:"Fatimah Busaeed",email:"Fatimah.Busaeed@almanahospital.com.sa",code:""},{name:"Hussain Albaqshi",email:"Hussain.Albaqshi@almanahospital.com.sa",code:""},{name:"Khadra alqahtani",email:"Khadra.alqahtani@almanahospital.com.sa",code:""},{name:"Lina Alshshri",email:"Lina.Alshshri@almanahospital.com.sa",code:""},{name:"Manal Alfarhan",email:"Manal.Alfarhan@almanahospital.com.sa",code:""},{name:"Mariam Almahawsh",email:"Mariam.Almahawsh@almanahospital.com.sa",code:""},{name:"Maryam Alsuwayigh",email:"Maryam.Al-suwayigh@almanahospital.com.sa",code:""},{name:"Nehal Alfarhan",email:"Nehal.Alfarhan@almanahospital.com.sa",code:""},{name:"Rawan Al-Naghmoush",email:"Rawan.Al-Naghmoush@almanahospital.com.sa",code:""},{name:"Rima Alqahtani",email:"Rima.Alqahtani@almanahospital.com.sa",code:""},{name:"Ruqaia AlShammery",email:"Ruqaia.AlShammery@almanahospital.com.sa",code:""},{name:"Ruqaia Zarei",email:"Ruqaia.Zarei@almanahospital.com.sa",code:""},{name:"Saif Alruwaili",email:"Saif.Alruwaili@almanahospital.com.sa",code:""},{name:"Salman Alrhiman",email:"Salman.Alrhiman@almanahospital.com.sa",code:""},{name:"Sara Aldossary",email:"Sara.Aldossary@almanahospital.com.sa",code:""},{name:"Shahad Al-Harbi",email:"Shahad.Al-Harbi@almanahospital.com.sa",code:""},{name:"Sheikah Alkhelaiwi",email:"Sheikah.Alkhelaiwi@almanahospital.com.sa",code:""},{name:"Shouq Al-Harbi",email:"Shouq.Al-Harbi@almanahospital.com.sa",code:""},{name:"Tahani AlSahluli",email:"Tahani.AlSahluli@almanahospital.com.sa",code:""},{name:"Khadijah Almalki",email:"Khadijah.Almalki@almanahospital.com.sa",code:""}]}
+  // Load from localStorage FIRST (instant, no waiting for server)
+  let lsCD=ld("bs_cd",{});if(Object.keys(lsCD).length)CD=lsCD;
+  let lsEM=ld("bs_emp_bk",[]);if(lsEM.length){EM=lsEM;EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
   adminPw=ld("bs_admin_pw","admin123");
   adminOn=sessionStorage.getItem("bs_admin")=="1";
   if(adminOn){document.getElementById("lkBtn").textContent="🔓 مدير";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis")}
@@ -455,6 +476,34 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
   setInterval(async()=>{const ls=sn;await svLoad();if(ls!==sn){};checkReminders()},5000);
   setInterval(()=>{const n=new Date();if(n.getHours()===0&&n.getMinutes()===0){REM={};sv("bs_rmd",{})}},15000);
   setTimeout(checkReminders,1000);
+  // Load from server in background (with retry for cold start)
+  (async function bgLoad(){
+    // Load employees from dedicated API
+    try{const er=await fetch(SV+"/api/emp-list");if(er.ok){const el=await er.json();if(el.length){EM=el;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code});r();rAdm()}}}catch(e){}
+    // Load badge codes from dedicated API (never cleared by reset)
+    try{const br=await fetch(SV+"/api/badges");if(br.ok){const bc=await br.json();for(const[nm,cd]of Object.entries(bc)){CD[nm]=cd;const e=EM.find(x=>x.name==nm);if(e)e.code=cd}};sv("bs_cd",CD)}catch(e){}
+    for(let i=0;i<25;i++){
+      try{const r=await fetch(SV+"/api/data");if(!r.ok){await new Promise(r=>setTimeout(r,2000));continue}
+        const d=await r.json();
+        if(d.employees&&d.employees.length){const bk=ld("bs_emp_bk",[]);bk.forEach(e=>{if(!d.employees.find(x=>x.name==e.name))d.employees.push(e)});EM=d.employees;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
+        if(d.assignments)AS=d.assignments;
+        if(d.shifts){for(const k of Object.keys(SH_DF)){if(d.shifts[k]&&d.shifts[k].ts)SH[k].ts=d.shifts[k].ts}}
+        if(d.view_only)VO=d.view_only;if(d.custom_durations)CDUR=d.custom_durations;if(d.recipients)RS=d.recipients;
+        if(d.durations&&d.durations.length==4)DP=d.durations;
+        let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;let lsSUP=ld("bs_sup",[]);if(lsSUP.length)SUP=lsSUP;
+        // Push badge codes back to dedicated API
+        const bd={};EM.forEach(e=>{const c=CD[e.name]||e.code;if(c)bd[e.name]=c});
+        if(Object.keys(bd).length)fetch(SV+"/api/badges",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(bd)});
+        sv("bs_cd",CD);r();rAdm();return
+      }catch(e){await new Promise(r=>setTimeout(r,2000))}
+    }
+    if(!EM.length){let bk=ld("bs_emp_bk",[]);if(bk.length)EM=bk;else EM=JSON.parse(JSON.stringify(EMP_DF));r();rAdm()}
+  })();
+  // Auto-save badge codes every 60 seconds (no more re-entering!)
+  setInterval(async()=>{
+    const bd={};EM.forEach(e=>{const c=CD[e.name]||e.code;if(c)bd[e.name]=c});
+    if(Object.keys(bd).length)try{await fetch(SV+"/api/badges",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(bd)})}catch(e){}
+  },60000);
 })();
 </script>
 </body></html>

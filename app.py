@@ -60,6 +60,14 @@ def init_db():
             d2 INTEGER DEFAULT 20,
             d3 INTEGER DEFAULT 10
         );
+        CREATE TABLE IF NOT EXISTS reports(
+            date TEXT PRIMARY KEY,
+            data TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS store(
+            key TEXT PRIMARY KEY,
+            val TEXT
+        );
     """)
     # Ensure default duration pattern
     cur = con.execute("SELECT COUNT(*) FROM duration_pattern")
@@ -152,6 +160,30 @@ def api_data():
         d = request.json
         if not d: return jsonify({"error":"no data"}), 400
 
+        # ⏰ Auto-save report if assignments are being cleared (daily reset)
+        old_ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
+        new_ass = d.get("assignments",{})
+        if old_ass and not new_ass:
+            now = datetime.now()
+            date = now.strftime("%Y-%m-%d")
+            old_row = con.execute("SELECT data FROM reports WHERE date=?", (date,)).fetchone()
+            if not old_row:
+                # Build and save a report before clearing
+                emps = [{"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees").fetchall()]
+                cdur = {r["slot_key"]:r["duration"] for r in con.execute("SELECT * FROM custom_durations").fetchall()}
+                dp = con.execute("SELECT * FROM duration_pattern WHERE id=1").fetchone()
+                dur = [dp["d0"],dp["d1"],dp["d2"],dp["d3"]]
+                sh = {"morning":{"lb":"🌅 Morning (8-5)"},"afternoon":{"lb":"☀️ Afternoon (11-8)"},"night":{"lb":"🌙 Night (1-10)"}}
+                for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx"):
+                    if "ts" not in sh[r["shift"]]: sh[r["shift"]]["ts"] = []
+                    sh[r["shift"]]["ts"].append(r["time"])
+                vo = {}
+                for r in con.execute("SELECT * FROM view_only"):
+                    if r["shift"] not in vo: vo[r["shift"]] = []
+                    vo[r["shift"]].append(r["time"])
+                report = {"date":date,"saved_at":now.isoformat(),"employees":emps,"assignments":old_ass,"shifts":sh,"view_only":vo,"custom_durations":cdur,"durations":dur}
+                con.execute("INSERT OR REPLACE INTO reports(date,data) VALUES(?,?)", (date, json.dumps(report)))
+
         con.execute("DELETE FROM employees")
         for e in d.get("employees",[]):
             con.execute("INSERT INTO employees(name,email,code) VALUES(?,?,?)", (e["name"],e.get("email",""),e.get("code","")))
@@ -201,6 +233,97 @@ def api_sync():
     con.commit()
     con.close()
     return jsonify({"ok":True})
+
+
+
+# ═══════════════ BADGE CODES (تخزين منفصل عن التصفير) ═══════════════
+@app.route("/api/badges", methods=["GET","POST"])
+def api_badges():
+    """Get or set badge codes independently — never cleared by daily reset"""
+    con = get_db()
+    if request.method == "GET":
+        codes = {r["name"]:r["code"] for r in con.execute("SELECT name, code FROM employees WHERE code != ''").fetchall()}
+        con.close()
+        return jsonify(codes)
+    else:
+        d = request.json
+        if not d: return jsonify({"error":"no data"}), 400
+        for name, code in d.items():
+            con.execute("UPDATE employees SET code=? WHERE name=?", (str(code), name))
+        con.commit()
+        con.close()
+        return jsonify({"ok":True, "message":"✅ تم حفظ البادجات"})
+# ═══════════════ REPORTS (حفظ تقارير يومية) ═══════════════
+
+@app.route("/api/emp-list", methods=["GET","POST"])
+def api_emp_list():
+    """Get/set employee list independently — not cleared by daily reset"""
+    con = get_db()
+    if request.method == "GET":
+        row = con.execute("SELECT val FROM store WHERE key='emp_list'").fetchone()
+        con.close()
+        return jsonify(json.loads(row["val"]) if row else [])
+    else:
+        d = request.json
+        if d is None: return jsonify({"error":"no data"}), 400
+        con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("emp_list", json.dumps(d)))
+        con.commit()
+        con.close()
+        return jsonify({"ok":True, "message":"✅ تم حفظ الموظفين"})
+
+@app.route("/api/report/save", methods=["POST"])
+def api_save_report():
+    """Save current assignments as a daily report (date-based)"""
+    con = get_db()
+    now = datetime.now()
+    date = now.strftime("%Y-%m-%d")
+
+    emps = [{"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees").fetchall()]
+    ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
+    cdur = {r["slot_key"]:r["duration"] for r in con.execute("SELECT * FROM custom_durations").fetchall()}
+    dp = con.execute("SELECT * FROM duration_pattern WHERE id=1").fetchone()
+    dur = [dp["d0"],dp["d1"],dp["d2"],dp["d3"]]
+    sh = {"morning":{"lb":"🌅 Morning (8-5)"},"afternoon":{"lb":"☀️ Afternoon (11-8)"},"night":{"lb":"🌙 Night (1-10)"}}
+    for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx"):
+        if "ts" not in sh[r["shift"]]: sh[r["shift"]]["ts"] = []
+        sh[r["shift"]]["ts"].append(r["time"])
+    vo = {}
+    for r in con.execute("SELECT * FROM view_only"):
+        if r["shift"] not in vo: vo[r["shift"]] = []
+        vo[r["shift"]].append(r["time"])
+
+    report = {
+        "date": date,
+        "saved_at": now.isoformat(),
+        "employees": emps,
+        "assignments": ass,
+        "shifts": sh,
+        "view_only": vo,
+        "custom_durations": cdur,
+        "durations": dur
+    }
+
+    con.execute("INSERT OR REPLACE INTO reports(date,data) VALUES(?,?)", (date, json.dumps(report)))
+    con.commit()
+    count_breaks = len(ass)
+    con.close()
+    return jsonify({"ok":True, "date":date, "breaks":count_breaks, "message":f"✅ تم حفظ تقرير {date}"})
+
+@app.route("/api/report/list", methods=["GET"])
+def api_list_reports():
+    con = get_db()
+    rows = con.execute("SELECT date FROM reports ORDER BY date DESC").fetchall()
+    con.close()
+    return jsonify([r["date"] for r in rows])
+
+@app.route("/api/report/get/<date>", methods=["GET"])
+def api_get_report(date):
+    con = get_db()
+    row = con.execute("SELECT data FROM reports WHERE date = ?", (date,)).fetchone()
+    con.close()
+    if not row:
+        return jsonify({"error":"not found"}), 404
+    return jsonify(json.loads(row["data"]))
 
 # ═══════════════ STATIC FILES ═══════════════
 @app.route("/")
