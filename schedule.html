@@ -57,17 +57,11 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 .modal-in .mb .ok{background:#008080;color:#fff}
 .modal-in .mb .no{background:#ddd;color:#666}
 .ft{text-align:center;color:#aaa;font-size:9px;padding:6px;margin-bottom:36px}
-#loading{position:fixed;top:0;left:0;width:100%;height:100%;background:#f0f4f8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;font-family:tahoma,sans-serif}
-#loading .sp{width:40px;height:40px;border:4px solid #ddd;border-top:4px solid #008080;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
-@keyframes spin{to{transform:rotate(360deg)}}
-#loading p{color:#666;font-size:14px;margin:0}
-#loading .sm{color:#999;font-size:11px;margin-top:4px}
 .nf{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#005f6a;color:#fff;padding:6px 14px;border-radius:20px;font-size:10px;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
 .nf.g{background:#27ae60;opacity:1}.nf.r{background:#e74c3c;opacity:1}.nf.b{background:#008080;opacity:1}
 @media(max-width:480px){.clk{font-size:20px}.hd h1{font-size:14px}.hd .lg{width:32px;height:32px}.hd p{font-size:9px}.gr span{font-size:9px;padding:2px 5px}.rw input[type=text]{font-size:10px!important}.btn,.btn-sm{font-size:10px!important;padding:4px 8px!important}.pn{padding:3px!important}.pn h3{font-size:11px!important}.nb .inp{min-width:60px!important;font-size:12px!important}}@media(max-width:375px){.rw{flex-wrap:wrap!important}.rw input{max-width:50px!important}}
 </style>
 </head><body>
-<div id="loading"><div class="sp"></div><p>🚀 جاري التحميل...</p><p class="sm">Break System · مستشفيات المانع</p></div>
 <div class="c">
 <div class="hd">
   <div class="lg"><img src="logo.png" alt="المانع"></div>
@@ -445,10 +439,12 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
   let lsCD=ld("bs_cd",{});
   if(Object.keys(lsCD).length)CD=lsCD;
   let lsEM=ld("bs_emp_bk",[]);
-  if(lsEM.length){EM=lsEM;r();rAdm();document.getElementById("loading").style.display="none"}
+  if(lsEM.length)EM=lsEM;
   
   await svLoad();
-  if(!EM.length){let bk=ld("bs_emp_bk",[]);if(bk.length)EM=bk;else EM=[{name:"Afaf Alkhaldi",email:"Afaf.Alkhaldi@almanahospital.com.sa",code:""},{name:"Aisha Jezan",email:"Aisha.Jezan@almanahospital.com.sa",code:""},{name:"Aljawhara Almelifi",email:"Aljawhara.Almelifi@almanahospital.com.sa",code:""},{name:"Aljazi Al-Anazi",email:"Aljazi.Al-Anazi@almanahospital.com.sa",code:""},{name:"Amna Albrari",email:"Amna.Albrari@almanahospital.com.sa",code:""},{name:"Fatimah Busaeed",email:"Fatimah.Busaeed@almanahospital.com.sa",code:""},{name:"Hussain Albaqshi",email:"Hussain.Albaqshi@almanahospital.com.sa",code:""},{name:"Khadra alqahtani",email:"Khadra.alqahtani@almanahospital.com.sa",code:""},{name:"Lina Alshshri",email:"Lina.Alshshri@almanahospital.com.sa",code:""},{name:"Manal Alfarhan",email:"Manal.Alfarhan@almanahospital.com.sa",code:""},{name:"Mariam Almahawsh",email:"Mariam.Almahawsh@almanahospital.com.sa",code:""},{name:"Maryam Alsuwayigh",email:"Maryam.Al-suwayigh@almanahospital.com.sa",code:""},{name:"Nehal Alfarhan",email:"Nehal.Alfarhan@almanahospital.com.sa",code:""},{name:"Rawan Al-Naghmoush",email:"Rawan.Al-Naghmoush@almanahospital.com.sa",code:""},{name:"Rima Alqahtani",email:"Rima.Alqahtani@almanahospital.com.sa",code:""},{name:"Ruqaia AlShammery",email:"Ruqaia.AlShammery@almanahospital.com.sa",code:""},{name:"Ruqaia Zarei",email:"Ruqaia.Zarei@almanahospital.com.sa",code:""},{name:"Saif Alruwaili",email:"Saif.Alruwaili@almanahospital.com.sa",code:""},{name:"Salman Alrhiman",email:"Salman.Alrhiman@almanahospital.com.sa",code:""},{name:"Sara Aldossary",email:"Sara.Aldossary@almanahospital.com.sa",code:""},{name:"Shahad Al-Harbi",email:"Shahad.Al-Harbi@almanahospital.com.sa",code:""},{name:"Sheikah Alkhelaiwi",email:"Sheikah.Alkhelaiwi@almanahospital.com.sa",code:""},{name:"Shouq Al-Harbi",email:"Shouq.Al-Harbi@almanahospital.com.sa",code:""},{name:"Tahani AlSahluli",email:"Tahani.AlSahluli@almanahospital.com.sa",code:""},{name:"Khadijah Almalki",email:"Khadijah.Almalki@almanahospital.com.sa",code:""}]}
+  if(!EM.length){
+    let bk=ld("bs_emp_bk",[]);
+    if(bk.length)EM=bk;else EM=[{name:"Afaf Alkhaldi",email:"Afaf.Alkhaldi@almanahospital.com.sa",code:""},{name:"Aisha Jezan",email:"Aisha.Jezan@almanahospital.com.sa",code:""},{name:"Aljawhara Almelifi",email:"Aljawhara.Almelifi@almanahospital.com.sa",code:""},{name:"Aljazi Al-Anazi",email:"Aljazi.Al-Anazi@almanahospital.com.sa",code:""},{name:"Amna Albrari",email:"Amna.Albrari@almanahospital.com.sa",code:""},{name:"Fatimah Busaeed",email:"Fatimah.Busaeed@almanahospital.com.sa",code:""},{name:"Hussain Albaqshi",email:"Hussain.Albaqshi@almanahospital.com.sa",code:""},{name:"Khadra alqahtani",email:"Khadra.alqahtani@almanahospital.com.sa",code:""},{name:"Lina Alshshri",email:"Lina.Alshshri@almanahospital.com.sa",code:""},{name:"Manal Alfarhan",email:"Manal.Alfarhan@almanahospital.com.sa",code:""},{name:"Mariam Almahawsh",email:"Mariam.Almahawsh@almanahospital.com.sa",code:""},{name:"Maryam Alsuwayigh",email:"Maryam.Al-suwayigh@almanahospital.com.sa",code:""},{name:"Nehal Alfarhan",email:"Nehal.Alfarhan@almanahospital.com.sa",code:""},{name:"Rawan Al-Naghmoush",email:"Rawan.Al-Naghmoush@almanahospital.com.sa",code:""},{name:"Rima Alqahtani",email:"Rima.Alqahtani@almanahospital.com.sa",code:""},{name:"Ruqaia AlShammery",email:"Ruqaia.AlShammery@almanahospital.com.sa",code:""},{name:"Ruqaia Zarei",email:"Ruqaia.Zarei@almanahospital.com.sa",code:""},{name:"Saif Alruwaili",email:"Saif.Alruwaili@almanahospital.com.sa",code:""},{name:"Salman Alrhiman",email:"Salman.Alrhiman@almanahospital.com.sa",code:""},{name:"Sara Aldossary",email:"Sara.Aldossary@almanahospital.com.sa",code:""},{name:"Shahad Al-Harbi",email:"Shahad.Al-Harbi@almanahospital.com.sa",code:""},{name:"Sheikah Alkhelaiwi",email:"Sheikah.Alkhelaiwi@almanahospital.com.sa",code:""},{name:"Shouq Al-Harbi",email:"Shouq.Al-Harbi@almanahospital.com.sa",code:""},{name:"Tahani AlSahluli",email:"Tahani.AlSahluli@almanahospital.com.sa",code:""},{name:"Khadijah Almalki",email:"Khadijah.Almalki@almanahospital.com.sa",code:""}]}
   adminPw=ld("bs_admin_pw","admin123");
   adminOn=sessionStorage.getItem("bs_admin")=="1";
   if(adminOn){document.getElementById("lkBtn").textContent="🔓 مدير";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis")}
@@ -458,15 +454,6 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
   setInterval(async()=>{const ls=sn;await svLoad();if(ls!==sn){};checkReminders()},5000);
   setInterval(()=>{const n=new Date();if(n.getHours()===0&&n.getMinutes()===0){REM={};sv("bs_rmd",{})}},15000);
   setTimeout(checkReminders,1000);
-  // Remove loading overlay
-  const ld=document.getElementById("loading");if(ld)ld.style.display="none";
 })();
-// Safety timeout - update loading message after 10s  
-setTimeout(function(){
-  var ld=document.getElementById("loading");
-  if(ld&&ld.style.display!="none"){
-    document.querySelector("#loading .sm").textContent="🔄 جاري بدء تشغيل السيرفر...";
-  }
-},10000);
 </script>
 </body></html>
