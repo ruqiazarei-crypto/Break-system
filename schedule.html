@@ -455,6 +455,8 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
   if(Object.keys(lsCD).length)CD=lsCD;
   
   await svLoad();
+  // Retry if server was cold (empty data)
+  while(!EM.length){await new Promise(r=>setTimeout(r,2000));await svLoad()}
   adminPw=ld("bs_admin_pw","admin123");
   adminOn=sessionStorage.getItem("bs_admin")=="1";
   if(adminOn){document.getElementById("lkBtn").textContent="🔓 مدير";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis")}
