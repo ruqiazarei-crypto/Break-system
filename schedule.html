@@ -64,7 +64,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 #loading .sm{color:#999;font-size:11px;margin-top:4px}
 .nf{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#005f6a;color:#fff;padding:6px 14px;border-radius:20px;font-size:10px;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
 .nf.g{background:#27ae60;opacity:1}.nf.r{background:#e74c3c;opacity:1}.nf.b{background:#008080;opacity:1}
-@media(max-width:480px){.clk{font-size:20px}.hd h1{font-size:14px}.hd .lg{width:32px;height:32px}.gr span{font-size:9px;padding:2px 5px}}
+@media(max-width:480px){.clk{font-size:20px}.hd h1{font-size:14px}.hd .lg{width:32px;height:32px}.hd p{font-size:9px}.gr span{font-size:9px;padding:2px 5px}.rw input[type=text]{font-size:10px!important}.btn,.btn-sm{font-size:10px!important;padding:4px 8px!important}.pn{padding:3px!important}.pn h3{font-size:11px!important}.nb .inp{min-width:60px!important;font-size:12px!important}}@media(max-width:375px){.rw{flex-wrap:wrap!important}.rw input{max-width:50px!important}}
 </style>
 </head><body>
 <div id="loading"><div class="sp"></div><p>🚀 جاري التحميل...</p><p class="sm">Break System · مستشفيات المانع</p></div>
@@ -203,7 +203,10 @@ async function svLoad(){
   try{
     const r=await fetch(SV+"/api/data");if(!r.ok)return;
     const d=await r.json();
-    if(d.employees&&d.employees.length)EM=d.employees;else if(!EM.length){EM=[{name:"Afaf Alkhaldi",email:"Afaf.Alkhaldi@almanahospital.com.sa",code:""},{name:"Aisha Jezan",email:"Aisha.Jezan@almanahospital.com.sa",code:""},{name:"Aljawhara Almelifi",email:"Aljawhara.Almelifi@almanahospital.com.sa",code:""},{name:"Aljazi Al-Anazi",email:"Aljazi.Al-Anazi@almanahospital.com.sa",code:""},{name:"Amna Albrari",email:"Amna.Albrari@almanahospital.com.sa",code:""},{name:"Fatimah Busaeed",email:"Fatimah.Busaeed@almanahospital.com.sa",code:""},{name:"Hussain Albaqshi",email:"Hussain.Albaqshi@almanahospital.com.sa",code:""},{name:"Khadra alqahtani",email:"Khadra.alqahtani@almanahospital.com.sa",code:""},{name:"Lina Alshshri",email:"Lina.Alshshri@almanahospital.com.sa",code:""},{name:"Manal Alfarhan",email:"Manal.Alfarhan@almanahospital.com.sa",code:""},{name:"Mariam Almahawsh",email:"Mariam.Almahawsh@almanahospital.com.sa",code:""},{name:"Maryam Alsuwayigh",email:"Maryam.Al-suwayigh@almanahospital.com.sa",code:""},{name:"Nehal Alfarhan",email:"Nehal.Alfarhan@almanahospital.com.sa",code:""},{name:"Rawan Al-Naghmoush",email:"Rawan.Al-Naghmoush@almanahospital.com.sa",code:""},{name:"Rima Alqahtani",email:"Rima.Alqahtani@almanahospital.com.sa",code:""},{name:"Ruqaia AlShammery",email:"Ruqaia.AlShammery@almanahospital.com.sa",code:""},{name:"Ruqaia Zarei",email:"Ruqaia.Zarei@almanahospital.com.sa",code:""},{name:"Saif Alruwaili",email:"Saif.Alruwaili@almanahospital.com.sa",code:""},{name:"Salman Alrhiman",email:"Salman.Alrhiman@almanahospital.com.sa",code:""},{name:"Sara Aldossary",email:"Sara.Aldossary@almanahospital.com.sa",code:""},{name:"Shahad Al-Harbi",email:"Shahad.Al-Harbi@almanahospital.com.sa",code:""},{name:"Sheikah Alkhelaiwi",email:"Sheikah.Alkhelaiwi@almanahospital.com.sa",code:""},{name:"Shouq Al-Harbi",email:"Shouq.Al-Harbi@almanahospital.com.sa",code:""},{name:"Tahani AlSahluli",email:"Tahani.AlSahluli@almanahospital.com.sa",code:""},{name:"Khadijah Almalki",email:"Khadijah.Almalki@almanahospital.com.sa",code:""}]}
+    if(d.employees&&d.employees.length){EM=d.employees;sv("bs_emp_bk",EM)}
+    else{
+      let bk=ld("bs_emp_bk",[]);
+      if(bk.length)EM=bk;else EM=[{name:"Afaf Alkhaldi",email:"Afaf.Alkhaldi@almanahospital.com.sa",code:""},{name:"Aisha Jezan",email:"Aisha.Jezan@almanahospital.com.sa",code:""},{name:"Aljawhara Almelifi",email:"Aljawhara.Almelifi@almanahospital.com.sa",code:""},{name:"Aljazi Al-Anazi",email:"Aljazi.Al-Anazi@almanahospital.com.sa",code:""},{name:"Amna Albrari",email:"Amna.Albrari@almanahospital.com.sa",code:""},{name:"Fatimah Busaeed",email:"Fatimah.Busaeed@almanahospital.com.sa",code:""},{name:"Hussain Albaqshi",email:"Hussain.Albaqshi@almanahospital.com.sa",code:""},{name:"Khadra alqahtani",email:"Khadra.alqahtani@almanahospital.com.sa",code:""},{name:"Lina Alshshri",email:"Lina.Alshshri@almanahospital.com.sa",code:""},{name:"Manal Alfarhan",email:"Manal.Alfarhan@almanahospital.com.sa",code:""},{name:"Mariam Almahawsh",email:"Mariam.Almahawsh@almanahospital.com.sa",code:""},{name:"Maryam Alsuwayigh",email:"Maryam.Al-suwayigh@almanahospital.com.sa",code:""},{name:"Nehal Alfarhan",email:"Nehal.Alfarhan@almanahospital.com.sa",code:""},{name:"Rawan Al-Naghmoush",email:"Rawan.Al-Naghmoush@almanahospital.com.sa",code:""},{name:"Rima Alqahtani",email:"Rima.Alqahtani@almanahospital.com.sa",code:""},{name:"Ruqaia AlShammery",email:"Ruqaia.AlShammery@almanahospital.com.sa",code:""},{name:"Ruqaia Zarei",email:"Ruqaia.Zarei@almanahospital.com.sa",code:""},{name:"Saif Alruwaili",email:"Saif.Alruwaili@almanahospital.com.sa",code:""},{name:"Salman Alrhiman",email:"Salman.Alrhiman@almanahospital.com.sa",code:""},{name:"Sara Aldossary",email:"Sara.Aldossary@almanahospital.com.sa",code:""},{name:"Shahad Al-Harbi",email:"Shahad.Al-Harbi@almanahospital.com.sa",code:""},{name:"Sheikah Alkhelaiwi",email:"Sheikah.Alkhelaiwi@almanahospital.com.sa",code:""},{name:"Shouq Al-Harbi",email:"Shouq.Al-Harbi@almanahospital.com.sa",code:""},{name:"Tahani AlSahluli",email:"Tahani.AlSahluli@almanahospital.com.sa",code:""},{name:"Khadijah Almalki",email:"Khadijah.Almalki@almanahospital.com.sa",code:""}]}
     if(d.assignments)AS=d.assignments;
     if(d.shifts){for(const k of Object.keys(SH_DF)){if(d.shifts[k]&&d.shifts[k].ts)SH[k].ts=d.shifts[k].ts}}
     if(d.view_only)VO=d.view_only;
@@ -217,9 +220,9 @@ async function svLoad(){
     let lsSUP=ld("bs_sup",[]);if(lsSUP.length)SUP=lsSUP;
     let lsLG=ld("bs_lg",[]);LG=lsLG;
     nf("☁️ تم التحديث","g");r();sn++;
-  }catch(e){console.log("❌ svLoad error:",e)}
+  }catch(e){console.log("❌ svLoad error:",e);let bk=ld("bs_emp_bk",[]);if(bk.length&&!EM.length)EM=bk}
 }
-async function svSave(){
+async function svSave(){sv("bs_emp_bk",EM);
   try{
     // Sync codes to employee data
     const empData=EM.map(e=>{const cd=CD.hasOwnProperty(e.name)?CD[e.name]:(e.code||"");return{name:e.name,email:e.email,code:cd}});
