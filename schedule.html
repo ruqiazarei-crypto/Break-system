@@ -331,16 +331,17 @@ function chgPw(){
 let adTab=1;
 function adSw(n){adTab=n;document.querySelectorAll("#admSec .adm-tabs button").forEach((b,i)=>b.classList.toggle("ok",i+1==n));document.getElementById("adPanel1").style.display=n==1?"":"none";document.getElementById("adPanel2").style.display=n==2?"":"none";if(n==2)rAll()}
 function rAdm(){
-  if(!EM.length)return;
-  let h=`<div class="rw" style="display:flex;font-weight:700;border-bottom:2px solid #ddd;padding:2px 0;font-size:9px;color:#666"><span style="flex:1">الاسم | الإيميل | 🔑 | ⏱</span><span style="width:35px">النوع</span><span style="width:15px"></span></div>`;
-  EM.forEach((e,i)=>{const s=SUP.includes(e.name),cd=CD[e.name]||"",cur=EDP[e.name]||DP,ds=cur.join("·");
-    const val=e.name+" | "+e.email+" | "+cd+" | "+ds;
-    h+=`<div class="rw" style="display:flex;gap:2px;align-items:center;padding:2px 0;font-size:10px">
-<input value="${val}" style="flex:1;font-size:9px;direction:ltr" onchange="parseEmp(${i},this.value)">
+  let h=`<div class="rw" style="display:flex;font-weight:700;border-bottom:2px solid #ddd;padding:2px 0;font-size:9px;color:#666"><span style="flex:1;min-width:70px">الاسم</span><span style="flex:1;min-width:70px">الإيميل</span><span style="width:50px;text-align:center">🔑</span><span style="width:65px;text-align:center">⏱</span><span style="width:35px">نوع</span><span style="width:15px"></span></div>`;
+  EM.forEach((e,i)=>{const s=SUP.includes(e.name),cd=CD[e.name]||"",cur=EDP[e.name]||DP,ds=cur.join("·");h+=`<div class="rw" style="display:flex;gap:2px;align-items:center;padding:2px 0;font-size:10px;flex-wrap:wrap">
+<span style="flex:1;min-width:70px;font-weight:600">${e.name}</span>
+<input value="${e.email||""}" placeholder="الإيميل" style="flex:1;min-width:70px;font-size:9px" onchange="EM[${i}].email=this.value;sv('bs_emp',EM)">
+<input value="${cd}" placeholder="Badge" style="width:50px;font-size:9px;text-align:center;direction:ltr" oninput="CD['${e.name}']=this.value;sv('bs_cd',CD);svSave()">
+<input value="${ds}" placeholder="${DP.join("·")}" style="width:65px;font-size:9px;direction:ltr" onchange="setEDP('${e.name}',this.value)">
 <span onclick="togSup('${e.name}')" style="cursor:pointer;background:${s?"#008080":"#ddd"};color:${s?"#fff":"#666"};padding:1px 4px;border-radius:4px;font-size:8px;white-space:nowrap">${s?"👁️":"خدمة"}</span>
 <button class="btn btn-dan btn-sm" onclick="dEmp(${i})" style="padding:1px 3px;font-size:8px">✕</button>
 </div>`});
   document.getElementById("emps").innerHTML=h;
+  // Slots
   // Slots
   // Recipients
   let r=`<div class="rw" style="display:flex;font-weight:700;border-bottom:2px solid #ddd;padding:2px 0;font-size:10px"><span style="flex:2">الاسم</span><span>الإيميل</span></div>`;
