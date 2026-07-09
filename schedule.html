@@ -211,7 +211,7 @@ async function svLoad(){
     let lsSUP=ld("bs_sup",[]);if(lsSUP.length)SUP=lsSUP;
     let lsLG=ld("bs_lg",[]);LG=lsLG;
     nf("☁️ تم التحديث","g");r();sn++;
-  }catch(e){console.log("sync err",e)}
+  }catch(e){console.log("❌ svLoad error:",e)}
 }
 async function svSave(){
   try{
@@ -220,7 +220,7 @@ async function svSave(){
     await fetch(SV+"/api/data",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({employees:empData,assignments:AS,shifts:SH,view_only:VO,custom_durations:CDUR,recipients:RS,durations:DP})});
     nf("☁️ تم الحفظ","g");
-  }catch(e){}
+  }catch(e){console.log("❌ svSave error:",e)}
 }
 async function svAs(){try{await fetch(SV+"/api/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({assignments:AS})})}catch(e){}}
 
@@ -440,7 +440,12 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
     .then(r=>r.json()).then(d=>{document.getElementById("emailStatus").textContent=d.message||d.error}).catch(e=>{document.getElementById("emailStatus").textContent="⚠️"})}
 
 // ═══════════ INIT ═══════════
-(async function init(){await svLoad();
+(async function init(){
+  // Load CD from localStorage first (before server)
+  let lsCD=ld("bs_cd",{});
+  if(Object.keys(lsCD).length)CD=lsCD;
+  
+  await svLoad();
   adminPw=ld("bs_admin_pw","admin123");
   adminOn=sessionStorage.getItem("bs_admin")=="1";
   if(adminOn){document.getElementById("lkBtn").textContent="🔓 مدير";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis")}
