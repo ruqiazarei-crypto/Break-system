@@ -2,7 +2,7 @@
 <html dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>نظام البريكات - مستشفيات المانع</title>
+<title>نظام البريكات - R.Zareiart</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;direction:rtl}
@@ -65,7 +65,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 <div class="hd">
   <div class="lg">المانع</div>
   <h1>🏥 نظام البريكات</h1>
-  <p>مستشفيات المانع العامة · Al Mana General Hospitals</p>
+  <p>R.Zareiart · Al Mana General Hospitals</p>
 </div>
 <div class="clk" id="tclk">--:--:--</div>
 <div class="rmd" id="rmdBar"></div>
@@ -155,7 +155,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
     <div id="slots"></div>
   </div>
 </div>
-<div class="ft">مستشفيات المانع العامة · 4 بريكات 15·15·20·10</div>
+<div class="ft">R.Zareiart · 4 بريكات 15·15·20·10</div>
 </div>
 
 <button class="lk" id="lkBtn" onclick="toggleAdmin()">🔑 دخول المدير</button>
@@ -215,7 +215,7 @@ async function svLoad(){
 async function svSave(){
   try{
     // Sync codes to employee data
-    const empData=EM.map(e=>{const cd=CD[e.name]||"";return{name:e.name,email:e.email,code:cd}});
+    const empData=EM.map(e=>{const cd=CD.hasOwnProperty(e.name)?CD[e.name]:(e.code||"");return{name:e.name,email:e.email,code:cd}});
     await fetch(SV+"/api/data",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({employees:empData,assignments:AS,shifts:SH,view_only:VO,custom_durations:CDUR,recipients:RS,durations:DP})});
     nf("☁️ تم الحفظ","g");
