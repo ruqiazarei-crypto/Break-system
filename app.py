@@ -81,6 +81,40 @@ def init_db():
         for shift, times in vo_defaults.items():
             for t in times:
                 con.execute("INSERT OR IGNORE INTO view_only(shift,time) VALUES(?,?)", (shift,t))
+
+    # Seed default employees if table empty
+    cur = con.execute("SELECT COUNT(*) FROM employees")
+    if cur.fetchone()[0] == 0:
+        default_emps = [
+            ("Afaf Alkhaldi","Afaf.Alkhaldi@almanahospital.com.sa"),
+            ("Aisha Jezan","Aisha.Jezan@almanahospital.com.sa"),
+            ("Aljawhara Almelifi","Aljawhara.Almelifi@almanahospital.com.sa"),
+            ("Aljazi Al-Anazi","Aljazi.Al-Anazi@almanahospital.com.sa"),
+            ("Amna Albrari","Amna.Albrari@almanahospital.com.sa"),
+            ("Fatimah Busaeed","Fatimah.Busaeed@almanahospital.com.sa"),
+            ("Hussain Albaqshi","Hussain.Albaqshi@almanahospital.com.sa"),
+            ("Khadra alqahtani","Khadra.alqahtani@almanahospital.com.sa"),
+            ("Lina Alshshri","Lina.Alshshri@almanahospital.com.sa"),
+            ("Manal Alfarhan","Manal.Alfarhan@almanahospital.com.sa"),
+            ("Mariam Almahawsh","Mariam.Almahawsh@almanahospital.com.sa"),
+            ("Maryam Alsuwayigh","Maryam.Al-suwayigh@almanahospital.com.sa"),
+            ("Nehal Alfarhan","Nehal.Alfarhan@almanahospital.com.sa"),
+            ("Rawan Al-Naghmoush","Rawan.Al-Naghmoush@almanahospital.com.sa"),
+            ("Rima Alqahtani","Rima.Alqahtani@almanahospital.com.sa"),
+            ("Ruqaia AlShammery","Ruqaia.AlShammery@almanahospital.com.sa"),
+            ("Ruqaia Zarei","Ruqaia.Zarei@almanahospital.com.sa"),
+            ("Saif Alruwaili","Saif.Alruwaili@almanahospital.com.sa"),
+            ("Salman Alrhiman","Salman.Alrhiman@almanahospital.com.sa"),
+            ("Sara Aldossary","Sara.Aldossary@almanahospital.com.sa"),
+            ("Shahad Al-Harbi","Shahad.Al-Harbi@almanahospital.com.sa"),
+            ("Sheikah Alkhelaiwi","Sheikah.Alkhelaiwi@almanahospital.com.sa"),
+            ("Shouq Al-Harbi","Shouq.Al-Harbi@almanahospital.com.sa"),
+            ("Tahani AlSahluli","Tahani.AlSahluli@almanahospital.com.sa"),
+            ("Khadijah Almalki","Khadijah.Almalki@almanahospital.com.sa"),
+        ]
+        for name, email in default_emps:
+            con.execute("INSERT OR IGNORE INTO employees(name,email,code) VALUES(?,?,?)", (name,email,""))
+
     con.commit()
     con.close()
 
