@@ -86,6 +86,13 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 <div class="my">
   <h3>✅ بريكاتي</h3>
   <div class="mt" id="myList"><span style="color:#999;font-size:11px">سجل الدخول ب Badge Num</span></div>
+  <div id="timerArea"></div>
+</div>
+
+<!-- TIMER -->
+<div class="my" id="timerS" style="display:none">
+  <h3>⏱ عداد البريك</h3>
+  <div id="timerUI" style="text-align:center;padding:6px"></div>
 </div>
 
 <!-- AVAILABLE -->
@@ -185,7 +192,7 @@ const VO_DF = {morning:["12:00","13:10","15:10"],afternoon:["15:00","18:00","17:
 const DP_DF = [15,15,20,10];
 
 let SH=JSON.parse(JSON.stringify(SH_DF)),VO=JSON.parse(JSON.stringify(VO_DF)),DP=[...DP_DF];
-let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={};
+let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={},BT={};
 let ME="",myCode="",adminPw="admin123",adminOn=false,isSup=false,notifOn=false;
 let sn=0; // sync counter
 
@@ -259,6 +266,7 @@ function r(){
   for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+'_'+t;if(AS[k]==ME){const dr=gd(sk,t,i,ME);mh.push({s:fm(t),d:dr,k:k})}})}
   if(!mh)mh=`<span style="color:#999;font-size:11px">${ME?"ما اخترت بريكات":"سجل الدخول ب Badge Num"}</span>`;
   document.getElementById("myList").innerHTML=mh;
+  renderTimer();
   if(!ME){document.getElementById("availSlots").innerHTML=`<div style="text-align:center;color:#e74c3c;font-size:11px;padding:5px">👆 أدخل Badge Num من المشرف</div>`;document.getElementById("upcPn").style.display="none";return}
   // Available
   let ah="",avail=[],myTimes=[];mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
@@ -274,6 +282,7 @@ function r(){
   document.getElementById("upcPn").style.display="block";let uh="";
   sorted.forEach(x=>{const d=x.tm-cm,hh=Math.floor(d/60),mm=d%60;uh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${fm(x.t)} (${x.dr}د)</span><span style="color:#008080;font-weight:600">بعد ${hh?hh+"س ":""}${mm}د</span></div>`});
   document.getElementById("upcList").innerHTML=uh;
+  renderTimer();
 }
 
 function empAs(sk,t,k){
@@ -303,7 +312,60 @@ function notifySup(emp,sk,t,act){
   b.innerHTML=`🔔 <strong>${msg}</strong>`;if(notifOn)new Notification("👁️",{body:msg});setTimeout(()=>b.style.display="none",6000);
 }
 
-// ═══════════ ADMIN TOGGLE ═══════════
+// ═══════════ BREAK TIMER ␣(عداد البريك) ═══════════
+function loadBT(d){if(d&&d.break_timer)BT=d.break_timer;const ldbt=ld("bs_bt",{});if(Object.keys(ldbt).length)BT=ldbt}
+async function saveBT(){sv("bs_bt",BT);try{await fetch(SV+"/api/break-timer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(BT)})}catch(e){}}
+function td(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function ts(){const d=new Date();return`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`}
+function startBreak(){
+  if(!ME){nf("⚠️ سجل الدخول","r");return}
+  const today=td();if(!BT[today])BT[today]={};
+  // Check if already on break
+  for(const nm of Object.keys(BT[today])){const a=BT[today][nm].active;if(a)return void nf(`⏳ ${nm} في بريك من ${a.start}`,"r")}
+  const nm=ME;if(!BT[today][nm])BT[today][nm]={active:null,history:[]};
+  BT[today][nm].active={start:ts()};
+  BT[today][nm].history.push({start:ts()});
+  saveBT();renderTimer();nf("🚶 بداية بريك ✅","g");addLog(nm,"","","🚶 بداية بريك")
+}
+function endBreak(){
+  if(!ME){nf("⚠️ سجل الدخول","r");return}
+  const today=td();if(!BT[today]||!BT[today][ME]||!BT[today][ME].active){nf("⚠️ ما في بريك فعال","r");return}
+  const now=ts();const s=BT[today][ME].active.start;
+  const[sH,sM]=s.split(":").map(Number);const[eH,eM]=now.split(":").map(Number);
+  const dur=eH*60+eM-sH*60-sM;if(dur<0)return void nf("⚠️ خطأ في الوقت","r");
+  BT[today][ME].active=null;
+  const hx=BT[today][ME].history;hx[hx.length-1].end=now;hx[hx.length-1].dur=dur;
+  saveBT();renderTimer();nf(`🏁 العودة ✅ (${dur} دقيقة)`,"g");addLog(ME,"","","🏁 عودة ("+dur+"د)")
+}
+function renderTimer(){
+  const s=document.getElementById("timerS");const u=document.getElementById("timerUI");
+  if(!ME){s.style.display="none";return}
+  s.style.display="block";
+  const today=td();let h="";
+  const active=BT[today]&&BT[today][ME]&&BT[today][ME].active;
+  if(active){
+    const[sH,sM]=active.start.split(":").map(Number);
+    const now=new Date(),cm=now.getHours()*60+now.getMinutes(),sm=sH*60+sM,el=cm-sm;
+    h+=`<div style="font-size:16px;font-weight:700;color:#e74c3c">🔴 في بريك</div>`;
+    h+=`<div style="font-size:22px;font-weight:700;color:#c0392b" id="timerTick">${Math.floor(el/60)}:${String(el%60).padStart(2,"0")}</div>`;
+    h+=`<div style="font-size:11px;color:#666">منذ ${fm(active.start)}</div>`;
+    h+=`<button class="btn btn-dan" style="margin-top:4px;font-size:12px" onclick="endBreak()">🏁 العودة</button>`;
+  }else{
+    h+=`<div style="font-size:14px;font-weight:600;color:#27ae60">🟢 متاح</div>`;
+    h+=`<button class="btn btn-suc" style="margin-top:4px;font-size:12px" onclick="startBreak()">🚶 بداية بريك</button>`;
+  }
+  // Today's history
+  if(BT[today]&&BT[today][ME]&&BT[today][ME].history.length){
+    h+=`<div style="margin-top:6px;font-size:9px;color:#999;text-align:right">📋 بريكات اليوم:`;
+    BT[today][ME].history.forEach((x,i)=>{const e=x.end||"...",d=x.dur||"جاري";
+      h+=`<div style="padding:1px 0">${i+1}. ${fm(x.start)} → ${e=="..."?"جاري":fm(e)} (${d=="جاري"?"⏳":d+"د"})</div>`})
+    h+=`</div>`;
+  }
+  u.innerHTML=h;
+  // Update timer tick every 10s if active
+  if(active)setTimeout(renderTimer,10000);
+}
+
 let modCb=null;
 function openModal(t,pl,cb){document.getElementById("modTitle").textContent=t;document.getElementById("modInput").value="";document.getElementById("modInput").placeholder=pl||"********";document.getElementById("modErr").textContent="";document.getElementById("pwModal").style.display="flex";setTimeout(()=>document.getElementById("modInput").focus(),100);modCb=cb}
 function closeModal(){document.getElementById("pwModal").style.display="none";modCb=null}
@@ -472,16 +534,23 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
   adminOn=sessionStorage.getItem("bs_admin")=="1";
   if(adminOn){document.getElementById("lkBtn").textContent="🔓 مدير";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis")}
   if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}
-  r();rAdm();
+  loadBT();r();rAdm();
+  // Load timer from localStorage
+  let lsBT=ld("bs_bt",{});if(Object.keys(lsBT).length)BT=lsBT;
   // Auto-refresh
   setInterval(async()=>{const ls=sn;await svLoad();if(ls!==sn){};checkReminders()},5000);
   setInterval(()=>{const n=new Date();if(n.getHours()===0&&n.getMinutes()===0){REM={};sv("bs_rmd",{})}},15000);
   setTimeout(checkReminders,1000);
+  
+  // Auto-save badge codes every 60 seconds (no more re-entering!)
+  setInterval(async()=>{
+    const bd={};EM.forEach(e=>{const c=CD[e.name]||e.code;if(c)bd[e.name]=c});
+    if(Object.keys(bd).length)try{await fetch(SV+"/api/badges",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(bd)})}catch(e){}
+  },60000);
   // Load from server in background (with retry for cold start)
   (async function bgLoad(){
-    // Load employees from dedicated API
+    try{const tr=await fetch(SV+"/api/break-timer");if(tr.ok){BT=await tr.json();sv("bs_bt",BT);r()}}catch(e){}
     try{const er=await fetch(SV+"/api/emp-list");if(er.ok){const el=await er.json();if(el.length){EM=el;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code});r();rAdm()}}}catch(e){}try{const sr=await fetch(SV+"/api/sup-list");if(sr.ok){SUP=await sr.json();sv("bs_sup",SUP)}}catch(e){}
-    // Load badge codes from dedicated API (never cleared by reset)
     try{const br=await fetch(SV+"/api/badges");if(br.ok){const bc=await br.json();for(const[nm,cd]of Object.entries(bc)){CD[nm]=cd;const e=EM.find(x=>x.name==nm);if(e)e.code=cd}};sv("bs_cd",CD)}catch(e){}
     for(let i=0;i<25;i++){
       try{const r=await fetch(SV+"/api/data");if(!r.ok){await new Promise(r=>setTimeout(r,2000));continue}
@@ -492,7 +561,6 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
         if(d.view_only)VO=d.view_only;if(d.custom_durations)CDUR=d.custom_durations;if(d.recipients)RS=d.recipients;
         if(d.durations&&d.durations.length==4)DP=d.durations;
         let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;let lsSUP=ld("bs_sup",[]);if(lsSUP.length)SUP=lsSUP;
-        // Push badge codes back to dedicated API
         const bd={};EM.forEach(e=>{const c=CD[e.name]||e.code;if(c)bd[e.name]=c});
         if(Object.keys(bd).length)fetch(SV+"/api/badges",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(bd)});
         sv("bs_cd",CD);r();rAdm();return
@@ -500,11 +568,9 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
     }
     if(!EM.length){let bk=ld("bs_emp_bk",[]);if(bk.length)EM=bk;else EM=JSON.parse(JSON.stringify(EMP_DF));r();rAdm()}
   })();
-  // Auto-save badge codes every 60 seconds (no more re-entering!)
-  setInterval(async()=>{
-    const bd={};EM.forEach(e=>{const c=CD[e.name]||e.code;if(c)bd[e.name]=c});
-    if(Object.keys(bd).length)try{await fetch(SV+"/api/badges",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(bd)})}catch(e){}
-  },60000);
+  // Auto-save break timer every 30s
+  setInterval(()=>{if(Object.keys(BT).length)saveBT()},30000);
+  renderTimer();
 })();
 </script>
 </body></html>
