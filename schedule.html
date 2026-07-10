@@ -215,7 +215,7 @@ async function svLoad(){  try{
     if(d.custom_durations)CDUR=d.custom_durations;
     if(d.recipients)RS=d.recipients;
     if(d.durations&&d.durations.length==4)DP=d.durations;
-    let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;let lsSUP=ld("bs_sup",[]);if(lsSUP.length)SUP=lsSUP;
+    let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
   }catch(e){}
 }
 async function svSave(){const empData=EM.map(e=>{const cd=CD.hasOwnProperty(e.name)?CD[e.name]:(e.code||"");return{name:e.name,email:e.email,code:cd}});
@@ -559,7 +559,7 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
   adminPw=ld("bs_admin_pw","admin123");
   adminOn=sessionStorage.getItem("bs_admin")=="1";
   if(adminOn){document.getElementById("lkBtn").textContent="🔓 مدير";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis")}
-  if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}
+  if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}let lsSUP0=ld("bs_sup",[]);if(lsSUP0.length)SUP=lsSUP0;
   loadBT();r();rAdm();
   // Load timer from localStorage
   let lsBT=ld("bs_bt",{});if(Object.keys(lsBT).length)BT=lsBT;
@@ -576,7 +576,7 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
   // Load from server in background (with retry for cold start)
   (async function bgLoad(){
     try{const tr=await fetch(SV+"/api/break-timer");if(tr.ok){BT=await tr.json();sv("bs_bt",BT);r()}}catch(e){}
-    try{const er=await fetch(SV+"/api/emp-list");if(er.ok){const el=await er.json();if(el.length){EM=el;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code});r();rAdm()}}}catch(e){}try{const sr=await fetch(SV+"/api/sup-list");if(sr.ok){SUP=await sr.json();sv("bs_sup",SUP)}}catch(e){}
+    try{const er=await fetch(SV+"/api/emp-list");if(er.ok){const el=await er.json();if(el.length){EM=el;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code});r();rAdm()}}}catch(e){}try{const sr=await fetch(SV+"/api/sup-list");if(sr.ok){const sl=await sr.json();if(sl.length){SUP=sl;sv("bs_sup",SUP)}}}catch(e){}
     try{const br=await fetch(SV+"/api/badges");if(br.ok){const bc=await br.json();for(const[nm,cd]of Object.entries(bc)){CD[nm]=cd;const e=EM.find(x=>x.name==nm);if(e)e.code=cd}};sv("bs_cd",CD)}catch(e){}
     for(let i=0;i<25;i++){
       try{const r=await fetch(SV+"/api/data");if(!r.ok){await new Promise(r=>setTimeout(r,2000));continue}
@@ -586,7 +586,7 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
         if(d.shifts){for(const k of Object.keys(SH_DF)){if(d.shifts[k]&&d.shifts[k].ts)SH[k].ts=d.shifts[k].ts}}
         if(d.view_only)VO=d.view_only;if(d.custom_durations)CDUR=d.custom_durations;if(d.recipients)RS=d.recipients;
         if(d.durations&&d.durations.length==4)DP=d.durations;
-        let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;let lsSUP=ld("bs_sup",[]);if(lsSUP.length)SUP=lsSUP;
+        let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
         const bd={};EM.forEach(e=>{const c=CD[e.name]||e.code;if(c)bd[e.name]=c});
         if(Object.keys(bd).length)fetch(SV+"/api/badges",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(bd)});
         sv("bs_cd",CD);r();rAdm();return
