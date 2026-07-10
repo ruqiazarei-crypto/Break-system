@@ -215,6 +215,7 @@ async function svSave(){const empData=EM.map(e=>{const cd=CD.hasOwnProperty(e.na
   try{
     await fetch(SV+"/api/data",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({employees:empData,assignments:AS,shifts:SH,view_only:VO,custom_durations:CDUR,recipients:RS,durations:DP})});
+    fetch(SV+"/api/sup-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(SUP)});
     nf("☁️ تم الحفظ","g");
     fetch(SV+"/api/emp-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(EM)});
   }catch(e){console.log("❌ svSave error:",e)}
@@ -373,7 +374,7 @@ function rAll(){
   document.getElementById("st").innerHTML=`<span>🟢 متاح: ${ta}</span><span>🔴 مأخوذ: ${tv}</span><span>📋 إجمالي: ${tt}</span>`;
 }
 
-function togSup(nm){const i=SUP.indexOf(nm);if(i>-1)SUP.splice(i,1);else SUP.push(nm);sv("bs_sup",SUP);rAdm();nf(`👁️ ${nm}: ${i>-1?"خدمة عملاء":"مشرف"}`,"b")}
+function togSup(nm){const i=SUP.indexOf(nm);if(i>-1)SUP.splice(i,1);else SUP.push(nm);sv("bs_sup",SUP);fetch(SV+"/api/sup-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(SUP)});rAdm();nf(`👁️ ${nm}: ${i>-1?"خدمة عملاء":"مشرف"}`,"b")}
 function togSupSlot(sk,t){const k="_sl_"+sk+"_"+t;const i=SUP.indexOf(k);if(i>-1)SUP.splice(i,1);else SUP.push(k);sv("bs_sup",SUP);rAdm()}
 function setEDP(nm,v){if(!nm||!v)return;const a=v.split(/[·,،\s]+/).map(Number).filter(x=>x>=5&&x<=60);if(!a.length){nf("⚠️ أدخل أرقام","r");return}EDP[nm]=a;sv("bs_edp",EDP);nf(`✅ ${a.join("·")}د`,"g");rAdm()}
 function parseEmp(i,v){if(!v)return;const p=v.split("|").map(x=>x.trim());if(!p[0]){nf("⚠️ الاسم مطلوب","r");return}
@@ -479,7 +480,7 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
   // Load from server in background (with retry for cold start)
   (async function bgLoad(){
     // Load employees from dedicated API
-    try{const er=await fetch(SV+"/api/emp-list");if(er.ok){const el=await er.json();if(el.length){EM=el;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code});r();rAdm()}}}catch(e){}
+    try{const er=await fetch(SV+"/api/emp-list");if(er.ok){const el=await er.json();if(el.length){EM=el;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code});r();rAdm()}}}catch(e){}try{const sr=await fetch(SV+"/api/sup-list");if(sr.ok){SUP=await sr.json();sv("bs_sup",SUP)}}catch(e){}
     // Load badge codes from dedicated API (never cleared by reset)
     try{const br=await fetch(SV+"/api/badges");if(br.ok){const bc=await br.json();for(const[nm,cd]of Object.entries(bc)){CD[nm]=cd;const e=EM.find(x=>x.name==nm);if(e)e.code=cd}};sv("bs_cd",CD)}catch(e){}
     for(let i=0;i<25;i++){

@@ -271,6 +271,23 @@ def api_emp_list():
         con.close()
         return jsonify({"ok":True, "message":"✅ تم حفظ الموظفين"})
 
+
+@app.route("/api/sup-list", methods=["GET","POST"])
+def api_sup_list():
+    """Get/set supervisor list independently — not cleared by daily reset"""
+    con = get_db()
+    if request.method == "GET":
+        row = con.execute("SELECT val FROM store WHERE key='sup_list'").fetchone()
+        con.close()
+        return jsonify(json.loads(row["val"]) if row else [])
+    else:
+        d = request.json
+        if d is None: return jsonify({"error":"no data"}), 400
+        con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("sup_list", json.dumps(d)))
+        con.commit()
+        con.close()
+        return jsonify({"ok":True, "message":"✅ تم حفظ المشرفين"})
+
 @app.route("/api/report/save", methods=["POST"])
 def api_save_report():
     """Save current assignments as a daily report (date-based)"""
