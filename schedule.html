@@ -172,7 +172,8 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 <button class="lk" id="lkBtn" onclick="toggleAdmin()">🔑 دخول المدير</button>
 <div class="modal" id="pwModal" style="display:none" onclick="if(event.target==this)closeModal()">
   <div class="modal-in"><h3 id="modTitle">🔑</h3>
-    <input type="password" id="modInput" placeholder="********" autocomplete="off">
+    <input type="password" id="modInput" placeholder="********" autocomplete="off" style="display:none">
+    <div id="modBody"></div>
     <div class="mb"><button class="no" onclick="closeModal()">إلغاء</button><button class="ok" id="modOkBtn" onclick="modalOk()">دخول</button></div>
     <span id="modErr" style="color:#e74c3c;font-size:11px"></span>
   </div>
@@ -367,7 +368,13 @@ function renderTimer(){
 }
 
 let modCb=null;
-function openModal(t,pl,cb){document.getElementById("modTitle").textContent=t;document.getElementById("modInput").value="";document.getElementById("modInput").placeholder=pl||"********";document.getElementById("modErr").textContent="";document.getElementById("pwModal").style.display="flex";setTimeout(()=>document.getElementById("modInput").focus(),100);modCb=cb}
+function openModal(t,pl,cb){
+  document.getElementById("modTitle").textContent=t;
+  document.getElementById("modErr").textContent="";
+  const mi=document.getElementById("modInput"),mb=document.getElementById("modBody");
+  if(pl&&pl.startsWith("<")){mi.style.display="none";mb.style.display="block";mb.innerHTML=pl}
+  else{mi.style.display="block";mb.style.display="none";mi.value="";mi.placeholder=pl||"********";setTimeout(()=>mi.focus(),100)}
+  document.getElementById("pwModal").style.display="flex";modCb=cb}
 function closeModal(){document.getElementById("pwModal").style.display="none";modCb=null}
 function modalOk(){const v=document.getElementById("modInput").value.trim();if(v==="admin123")localStorage.setItem("bs_admin_pw",JSON.stringify("admin123"));if(modCb)modCb(v);}
 document.getElementById("modInput").addEventListener("keydown",function(e){if(e.key==="Enter")modalOk();if(e.key==="Escape")closeModal()});
@@ -437,8 +444,8 @@ function rAll(){
 }
 
 function togSup(nm){const i=SUP.indexOf(nm);if(i>-1)SUP.splice(i,1);else SUP.push(nm);sv("bs_sup",SUP);fetch(SV+"/api/sup-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(SUP)});rAdm();nf(`👁️ ${nm}: ${i>-1?"خدمة عملاء":"مشرف"}`,"b")}
-function togSupSlot(sk,t){const k="_sl_"+sk+"_"+t;const i=SUP.indexOf(k);if(i>-1)SUP.splice(i,1);else SUP.push(k);sv("bs_sup",SUP);rAdm()}
-function setEDP(nm,v){if(!nm||!v)return;const a=v.split(/[·,،\s]+/).map(Number).filter(x=>x>=5&&x<=60);if(!a.length){nf("⚠️ أدخل أرقام","r");return}EDP[nm]=a;sv("bs_edp",EDP);nf(`✅ ${a.join("·")}د`,"g");rAdm()}
+function togSupSlot(sk,t){const k="_sl_"+sk+"_"+t;const i=SUP.indexOf(k);if(i>-1)SUP.splice(i,1);else SUP.push(k);sv("bs_sup",SUP);fetch(SV+"/api/sup-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(SUP)});rAdm()}
+function setEDP(nm,v){if(!nm||!v)return;const a=v.split(/[·,،\s]+/).map(Number).filter(x=>x>=5&&x<=60);if(!a.length){nf("⚠️ أدخل أرقام","r");return}EDP[nm]=a;sv("bs_edp",EDP);svSave();nf(`✅ ${a.join("·")}د`,"g");rAdm()}
 function parseEmp(i,v){if(!v)return;const p=v.split("|").map(x=>x.trim());if(!p[0]){nf("⚠️ الاسم مطلوب","r");return}
   const nm=p[0],em=p[1]||"",cd=p[2]||"";
   EM[i]=EM[i]||{};EM[i].name=nm;EM[i].email=em;
@@ -449,9 +456,23 @@ function parseEmp(i,v){if(!v)return;const p=v.split("|").map(x=>x.trim());if(!p[
 
 function addEmp(){const n=prompt("الاسم:");if(!n)return;const m=prompt("الإيميل:");if(!m)return;EM.push({name:n,email:m,code:""});sv("bs_emp",EM);svSave();fetch(SV+"/api/emp-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(EM)});rAdm();nf("✅","g")}
 function dEmp(i){if(!confirm(`حذف ${EM[i].name}؟`))return;const nm=EM[i].name;Object.keys(AS).forEach(k=>{if(AS[k]==nm)delete AS[k]});EM.splice(i,1);sv("bs_emp",EM);sv("bs_as",AS);svSave();rAdm();r();nf("✅","g")}
-function addSlot(){const sk=prompt("الوردية:\n1=صباح\n2=عصر\n3=ليل");const sn={1:"morning",2:"afternoon",3:"night"}[parseInt(sk)];if(!sn)return;const t=prompt("الوقت (مثال: 14:30):");if(!t||!/^\d{1,2}:\d{2}$/.test(t))return;if(SH[sn].ts.includes(t)){nf("⚠️ موجود","r");return}SH[sn].ts.push(t);SH[sn].ts.sort((a,b)=>a.localeCompare(b));rAdm();r()}
-function dSlot(sk,t){if(!confirm(`حذف ${fm(t)}؟`))return;delete AS[sk+"_"+t];SH[sk].ts=SH[sk].ts.filter(x=>x!=t);sv("bs_as",AS);rAdm();r()}
-function tv(sk,t){if(!VO[sk])VO[sk]=[];const i=VO[sk].indexOf(t);if(i>-1)VO[sk].splice(i,1);else VO[sk].push(t);rAdm();r()}
+function addSlot(){
+  // Build shift picker UI
+  const shNames={morning:"🌅 صباحي",afternoon:"☀️ مسائي",night:"🌙 ليلي"};
+  let opts="";for(const[k,v]of Object.entries(shNames))opts+=`<option value="${k}">${v}</option>`;
+  const html=`<div style="text-align:center">
+<div style="margin-bottom:6px"><label style="font-size:11px;display:block;margin-bottom:2px">الوردية:</label><select id="modSk" style="width:100%;padding:4px;font-size:11px">${opts}</select></div>
+<div style="margin-bottom:6px"><label style="font-size:11px;display:block;margin-bottom:2px">الوقت (مثال: 14:30):</label><input id="modTm" type="text" placeholder="مثال: 14:30" style="width:100%;padding:4px;font-size:11px;text-align:center"></div>
+</div>`;
+  openModal("🕐 إضافة وقت",html,function(){
+    const sn=document.getElementById("modSk").value;
+    const t=document.getElementById("modTm").value.trim();
+    if(!t||!/^\d{1,2}:\d{2}$/.test(t)){document.getElementById("modErr").textContent="⚠️ صيغة الوقت غير صحيحة (مثال: 14:30)";return}
+    if(SH[sn].ts.includes(t)){document.getElementById("modErr").textContent="⚠️ هذا الوقت موجود بالفعل";return}
+    SH[sn].ts.push(t);SH[sn].ts.sort((a,b)=>a.localeCompare(b));svSave();closeModal();rAdm();r();nf("✅ تمت الإضافة","g")
+  })
+}function dSlot(sk,t){if(!confirm(`حذف ${fm(t)}؟`))return;delete AS[sk+"_"+t];SH[sk].ts=SH[sk].ts.filter(x=>x!=t);sv("bs_as",AS);svSave();rAdm();r()}
+function tv(sk,t){if(!VO[sk])VO[sk]=[];const i=VO[sk].indexOf(t);if(i>-1)VO[sk].splice(i,1);else VO[sk].push(t);svSave();rAdm();r()}
 function edDur(sk,t,i){const cur=gd(sk,t,i);const n=prompt(`⏱ مدة ${fm(t)} (5-60):`,cur);if(!n||isNaN(n)||parseInt(n)<5||parseInt(n)>60)return;CDUR[sk+"_"+t]=parseInt(n);sv("bs_dur",CDUR);nf(`✅ ${parseInt(n)} د`,"g");rAdm();r()}
 function rs(){if(!confirm("تصفير التوزيعات؟"))return;AS={};sv("bs_as",AS);svAs();r();rAll();nf("🔄","b")}
 function rstSlots(){if(!confirm("استعادة 81 وقت؟"))return;SH=JSON.parse(JSON.stringify(SH_DF));VO=JSON.parse(JSON.stringify(VO_DF));rAdm();r();nf("✅ 81 وقت","g")}
