@@ -79,7 +79,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
   <span class="nm" id="loggedNm" style="display:none"></span>
   <span class="ct" id="myCnt">0/4</span>
   <button class="rmbtn" id="rmBtn" onclick="reqNotif()">🔔 تفعيل</button>
-  <span style="font-size:9px;color:#008080;width:100%;display:block;padding:2px 0 0">👆 أدخل Badge Num | 👇 المدير: اضغط "🔑 دخول المدير" بالأزرار السفلية</span>
+  <span style="font-size:9px;color:#008080;width:100%;display:block;padding:2px 0 0">👆 أدخل Badge Num | 👇 المدير: 🔑 بالأزرار السفلية</span>
 </div>
 
 <!-- MY BREAKS -->
@@ -175,7 +175,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 <div class="ft">R.Zareiart</div>
 </div>
 
-<button class="lk" id="lkBtn" onclick="toggleAdmin()">🔑 دخول المدير</button>
+<button class="lk" id="lkBtn" onclick="toggleAdmin()" title="دخول المدير">🔑</button>
 <div class="modal" id="pwModal" style="display:none" onclick="if(event.target==this)closeModal()">
   <div class="modal-in"><h3 id="modTitle">🔑</h3>
     <input type="password" id="modInput" placeholder="********" autocomplete="off" style="display:none">
@@ -393,9 +393,9 @@ function closeModal(){document.getElementById("pwModal").style.display="none";mo
 function modalOk(){const v=document.getElementById("modInput").value.trim();if(v==="admin123")localStorage.setItem("bs_admin_pw",JSON.stringify("admin123"));if(modCb)modCb(v);}
 document.getElementById("modInput").addEventListener("keydown",function(e){if(e.key==="Enter")modalOk();if(e.key==="Escape")closeModal()});
 function toggleAdmin(){
-  if(adminOn){adminOn=false;sessionStorage.removeItem("bs_admin");document.getElementById("lkBtn").textContent="🔑 دخول المدير";document.getElementById("lkBtn").classList.remove("lk-on");document.getElementById("admSec").classList.remove("vis");nf("🔒 خروج","b");return}
+  if(adminOn){adminOn=false;sessionStorage.removeItem("bs_admin");document.getElementById("lkBtn").textContent="🔑";document.getElementById("lkBtn").classList.remove("lk-on");document.getElementById("admSec").classList.remove("vis");nf("🔒 خروج","b");return}
   openModal("🔑 كلمة سر المدير","أدخل كلمة السر",function(p){if(!p){closeModal();return}
-    if(p==adminPw||p=="admin123"){if(p=="admin123"&&adminPw!="admin123"){adminPw="admin123";sv("bs_admin_pw","admin123")}adminOn=true;sessionStorage.setItem("bs_admin","1");document.getElementById("lkBtn").textContent="🔓 مدير";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis");nf("✅ أهلاً","g");rAdm();closeModal()}else{document.getElementById("modErr").textContent="❌ خطأ"}
+    if(p==adminPw||p=="admin123"){if(p=="admin123"&&adminPw!="admin123"){adminPw="admin123";sv("bs_admin_pw","admin123")}adminOn=true;sessionStorage.setItem("bs_admin","1");document.getElementById("lkBtn").textContent="🔓";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis");nf("✅ أهلاً","g");rAdm();closeModal()}else{document.getElementById("modErr").textContent="❌ خطأ"}
   });
 }
 function chgPw(){
@@ -591,7 +591,7 @@ function downloadXLSX(){window.open("/api/export/xlsx","_blank");nf("📥 جار
   let lsEM=ld("bs_emp_bk",[]);if(lsEM.length){EM=lsEM;EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
   adminPw=ld("bs_admin_pw","admin123");
   adminOn=sessionStorage.getItem("bs_admin")=="1";
-  if(adminOn){document.getElementById("lkBtn").textContent="🔓 مدير";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis")}
+  if(adminOn){document.getElementById("lkBtn").textContent="🔓";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis")}
   if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}let lsSUP0=ld("bs_sup",[]);if(lsSUP0.length)SUP=lsSUP0;
   let lsSH=ld("bs_sh",null);if(lsSH)SH=lsSH;
   let lsVO=ld("bs_vo",null);if(lsVO)VO=lsVO;
