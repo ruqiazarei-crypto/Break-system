@@ -78,7 +78,6 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
   <button class="btn btn-pri btn-sm" id="loginBtn" onclick="logIn()">دخول</button>
   <span class="nm" id="loggedNm" style="display:none"></span>
   <span class="ct" id="myCnt">0/4</span>
-  <button class="rmbtn" id="langBtn" onclick="toggleLang()" title="Language">🇬🇧</button>
   <button class="rmbtn" id="rmBtn" onclick="reqNotif()">🔔 تفعيل</button>
   <span id="loginInfo" style="font-size:9px;color:#008080;width:100%;display:block;padding:2px 0 0">👆 أدخل Badge Num | 👇 المدير: 🔑</span>
 </div>
@@ -202,7 +201,7 @@ const DP_DF = [15,15,20,10];
 let SH=JSON.parse(JSON.stringify(SH_DF)),VO=JSON.parse(JSON.stringify(VO_DF)),DP=[...DP_DF];
 let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={},BT={},BTN={};
 let lang="ar";
-function t(en,ar){return lang=="en"?en:ar}
+function t(en,ar){return ar}
 function updateStaticLang(){
   document.getElementById("adTab1").textContent=t("⚙️ Admin","⚙️ إدارة");
   document.getElementById("adTab2").textContent=t("📋 Schedule","📋 جدول");
