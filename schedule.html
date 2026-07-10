@@ -201,7 +201,7 @@ const DP_DF = [15,15,20,10];
 
 let SH=JSON.parse(JSON.stringify(SH_DF)),VO=JSON.parse(JSON.stringify(VO_DF)),DP=[...DP_DF];
 let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={},BT={},BTN={};
-let lang=ld("bs_lang","ar");document.getElementById("langBtn").textContent=lang=="ar"?"🇬🇧":"🇸🇦";document.getElementById("rmBtn").textContent=t("🔔 Enable","🔔 تفعيل");
+let lang="ar";
 function t(en,ar){return lang=="en"?en:ar}
 function updateStaticLang(){
   document.getElementById("adTab1").textContent=t("⚙️ Admin","⚙️ إدارة");
@@ -615,6 +615,7 @@ function downloadXLSX(){window.open("/api/export/xlsx","_blank");nf(t("📥 Down
 
 // ═══════════ INIT ═══════════
 (async function init(){
+  lang=ld("bs_lang","ar");document.getElementById("langBtn").textContent=lang=="ar"?"🇬🇧":"🇸🇦";
   // Load from localStorage FIRST (instant, no waiting for server)
   let lsCD=ld("bs_cd",{});if(Object.keys(lsCD).length)CD=lsCD;
   let lsEM=ld("bs_emp_bk",[]);if(lsEM.length){EM=lsEM;EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
