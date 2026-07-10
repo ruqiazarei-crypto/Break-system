@@ -492,6 +492,21 @@ async function viewReport(dt){const v=document.getElementById("rptView");v.inner
         h+='<span>'+fm(t)+' ('+dr+'د)</span><span>'+(emp?emp:vw?"📖 مراجعة":"🟢")+'</span></div>'
       });
     }
+    // Break timer history
+    const bt=r.break_timer;let btBody="";
+    if(bt)for(const[dt2,emps]of Object.entries(bt)){
+      if(btBody)btBody+="<hr style='margin:2px 0'>";
+      btBody+=`<div style="font-size:9px;color:#666;margin-bottom:2px">📅 ${dt2}</div>`;
+      for(const[nm,bd]of Object.entries(emps)){
+        btBody+=`<div style="font-size:9px;padding:1px 2px"><b>${nm}</b>`;
+        if(bd.history)bd.history.forEach((x,i)=>{
+          const e=x.end||"جاري",d=x.dur?" ("+x.dur+"د)":" ⏳";
+          btBody+=`<div style="padding:0 4px;font-size:8px;color:#555">${i+1}. ${fm(x.start)} → ${e=="جاري"?e:fm(e)}${d}</div>`
+        });
+        btBody+=`</div>`
+      }
+    }
+    if(btBody)h+='<div style="margin-top:4px;border:1px solid #8e44ad;border-radius:6px;padding:4px;background:#faf0ff"><div style="font-size:10px;font-weight:700;color:#8e44ad">🚶 عداد البريك</div>'+btBody+'</div>';
     h+='<div style="text-align:left;color:#999;font-size:8px;margin-top:3px">💾 '+(r.saved_at?.substring(0,19)||"")+'</div>';
     v.innerHTML=h
   }catch(e){v.innerHTML="❌ خطأ"}}

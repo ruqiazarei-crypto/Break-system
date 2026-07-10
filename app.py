@@ -336,7 +336,8 @@ def api_save_report():
         "shifts": sh,
         "view_only": vo,
         "custom_durations": cdur,
-        "durations": dur
+        "durations": dur,
+        "break_timer": json.loads(con.execute("SELECT val FROM store WHERE key='break_timer'").fetchone()["val"]) if con.execute("SELECT val FROM store WHERE key='break_timer'").fetchone() else {}
     }
 
     con.execute("INSERT OR REPLACE INTO reports(date,data) VALUES(?,?)", (date, json.dumps(report)))
