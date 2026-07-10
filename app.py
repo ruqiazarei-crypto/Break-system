@@ -13,7 +13,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE, "break_schedule.db")
 
 COL_MAP = {"morning":(2,3),"afternoon":(5,6),"night":(8,9)}
-SLB = {"morning":"🌅 صباحي","afternoon":"☀️ مسائي","night":"🌙 ليلي"}
+SLB = {"morning":"🌅 Morning (8-5)","afternoon":"☀️ Afternoon (11-8)","night":"🌙 Night (1-10)"}
 
 # ═══════════════ DB SETUP ═══════════════
 def get_db():
@@ -140,7 +140,7 @@ def api_data():
         # Load all data
         emps = [{"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees").fetchall()]
         ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
-        sh = {"morning":{"lb":"🌅 صباحي","ts":[]},"afternoon":{"lb":"☀️ مسائي","ts":[]},"night":{"lb":"🌙 ليلي","ts":[]}}
+        sh = {"morning":{"lb":"🌅 Morning (8-5)","ts":[]},"afternoon":{"lb":"☀️ Afternoon (11-8)","ts":[]},"night":{"lb":"🌙 Night (1-10)","ts":[]}}
         for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx"):
             sh[r["shift"]]["ts"].append(r["time"])
         vo = {}
@@ -173,7 +173,7 @@ def api_data():
                 cdur = {r["slot_key"]:r["duration"] for r in con.execute("SELECT * FROM custom_durations").fetchall()}
                 dp = con.execute("SELECT * FROM duration_pattern WHERE id=1").fetchone()
                 dur = [dp["d0"],dp["d1"],dp["d2"],dp["d3"]]
-                sh = {"morning":{"lb":"🌅 صباحي"},"afternoon":{"lb":"☀️ مسائي"},"night":{"lb":"🌙 ليلي"}}
+                sh = {"morning":{"lb":"🌅 Morning (8-5)"},"afternoon":{"lb":"☀️ Afternoon (11-8)"},"night":{"lb":"🌙 Night (1-10)"}}
                 for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx"):
                     if "ts" not in sh[r["shift"]]: sh[r["shift"]]["ts"] = []
                     sh[r["shift"]]["ts"].append(r["time"])
@@ -319,7 +319,7 @@ def api_save_report():
     cdur = {r["slot_key"]:r["duration"] for r in con.execute("SELECT * FROM custom_durations").fetchall()}
     dp = con.execute("SELECT * FROM duration_pattern WHERE id=1").fetchone()
     dur = [dp["d0"],dp["d1"],dp["d2"],dp["d3"]]
-    sh = {"morning":{"lb":"🌅 صباحي"},"afternoon":{"lb":"☀️ مسائي"},"night":{"lb":"🌙 ليلي"}}
+    sh = {"morning":{"lb":"🌅 Morning (8-5)"},"afternoon":{"lb":"☀️ Afternoon (11-8)"},"night":{"lb":"🌙 Night (1-10)"}}
     for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx"):
         if "ts" not in sh[r["shift"]]: sh[r["shift"]]["ts"] = []
         sh[r["shift"]]["ts"].append(r["time"])
@@ -618,7 +618,7 @@ def api_export_backup():
 
 # ═══════════════ EMAIL ═══════════════
 def build_email_body(assigns, shifts, vo, dur, cdur, emps, extras):
-    slb = {"morning":"🌅 صباحي","afternoon":"☀️ مسائي","night":"🌙 ليلي"}
+    slb = {"morning":"🌅 Morning (8AM-5PM)","afternoon":"☀️ Afternoon (11AM-8PM)","night":"🌙 Night (1PM-10PM)"}
     lines = ["="*55,
              f"  BREAK SCHEDULE — {datetime.now().strftime('%A, %B %d, %Y')}",
              "  Al Mana General Hospitals - مستشفيات المانع العامة",

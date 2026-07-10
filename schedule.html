@@ -65,7 +65,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 <div class="c">
 <div class="hd">
   <div class="lg"><img src="logo.png" alt="المانع"></div>
-  <h1 id="hdrTitle">🏥 نظام البريكات</h1>
+  <h1>🏥 نظام البريكات</h1>
   <p>مستشفيات المانع العامة · Al Mana General Hospitals</p>
 </div>
 <div class="clk" id="tclk">--:--:--</div>
@@ -75,16 +75,16 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 <div class="nb">
   <span class="nm">🔑 Badge Num</span>
   <input class="inp" id="codeInp" type="text" inputmode="numeric" maxlength="5" placeholder="Badge Num" autocomplete="off" onkeydown="if(event.key=='Enter')logIn()">
-  <button class="btn btn-pri btn-sm" id="loginBtn" onclick="logIn()">دخول</button>
+  <button class="btn btn-pri btn-sm" onclick="logIn()">دخول</button>
   <span class="nm" id="loggedNm" style="display:none"></span>
   <span class="ct" id="myCnt">0/4</span>
   <button class="rmbtn" id="rmBtn" onclick="reqNotif()">🔔 تفعيل</button>
-  <span id="loginInfo" style="font-size:9px;color:#008080;width:100%;display:block;padding:2px 0 0">👆 أدخل Badge Num | 👇 المدير: 🔑</span>
+  <span style="font-size:9px;color:#008080;width:100%;display:block;padding:2px 0 0">👆 أدخل Badge Num | 👇 المدير: 🔑 بالأزرار السفلية</span>
 </div>
 
 <!-- MY BREAKS -->
 <div class="my">
-  <h3 id="myHdr">✅ بريكاتي</h3>
+  <h3>✅ بريكاتي</h3>
   <div class="mt" id="myList"><span style="color:#999;font-size:11px">سجل الدخول ب Badge Num</span></div>
   <div id="timerArea"></div>
 </div>
@@ -99,7 +99,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 <div class="pn">
   <h3>🟢 الأوقات المتاحة</h3>
   <div id="availSlots"></div>
-  <div id="statInfo" style="text-align:center;color:#999;font-size:9px;margin-top:5px">⚠️ 4 بريكات كحد أقصى · 🔒 للمشرف فقط</div>
+  <div style="text-align:center;color:#999;font-size:9px;margin-top:5px">⚠️ 4 بريكات كحد أقصى · 🔒 للمشرف فقط</div>
 </div>
 
 <!-- UPCOMING -->
@@ -124,47 +124,47 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 <!-- ADMIN -->
 <div class="adm" id="admSec">
   <div class="adm-tabs">
-    <button class="ok" onclick="adSw(1)" id="adTab1">⚙️ إدارة</button>
-    <button onclick="adSw(2)" id="adTab2">📋 جدول</button>
+    <button class="ok" onclick="adSw(1)">⚙️ إدارة</button>
+    <button onclick="adSw(2)">📋 جدول</button>
   </div>
   <div id="adPanel1">
     <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px">
-      <button class="btn btn-pri btn-sm" onclick="addEmp()" id="addEmpBtn">➕ موظف</button>
-      <button class="btn btn-war btn-sm" onclick="addSlot()" id="addSlotBtn">🕐 إضافة وقت</button>
-      <button class="btn btn-dan btn-sm" onclick="rstSlots()" id="rstSlotsBtn">🔄 استعادة الأوقات</button>
-      <button class="btn btn-dan btn-sm" onclick="rs()" id="rsBtn">🔄 تصفير</button>
-      <button class="btn btn-suc btn-sm" onclick="report()" id="reportBtn">📊 تقرير</button>
-      <button class="btn btn-pri btn-sm" onclick="downloadCSV()" id="csvBtn">📥 CSV</button>
-      <button class="btn btn-war btn-sm" onclick="downloadXLSX()" id="xlsxBtn">📊 XLSX</button>
+      <button class="btn btn-pri btn-sm" onclick="addEmp()">➕ موظف</button>
+      <button class="btn btn-war btn-sm" onclick="addSlot()">🕐 إضافة وقت</button>
+      <button class="btn btn-dan btn-sm" onclick="rstSlots()">🔄 استعادة الأوقات</button>
+      <button class="btn btn-dan btn-sm" onclick="rs()">🔄 تصفير</button>
+      <button class="btn btn-suc btn-sm" onclick="report()">📊 تقرير</button>
+      <button class="btn btn-pri btn-sm" onclick="downloadCSV()">📥 CSV</button>
+      <button class="btn btn-war btn-sm" onclick="downloadXLSX()">📊 XLSX</button>
     </div>
-    <div class="pn" id="adEmpsHdr"><h3>👥 الموظفين <span style="font-weight:normal;font-size:9px;color:#999">(الاسم | الإيميل | 🔑 | ⏱)</span></h3><div id="emps"></div></div>
-    <div class="pn" id="adSlotsHdr"><h3>🕐 الأوقات <span style="font-weight:normal;font-size:9px;color:#999">🟢 مفتوح · 🔴 مغلق · 🔒 مشرف · ✏️ تعديل · ✕ حذف</span></h3><div id="slotMgr"></div></div>
-    <div class="pn" id="adRecipHdr"><h3>📧 المستلمين</h3><div id="recips"></div>
-      <div style="display:flex;gap:3px;margin-top:3px"><input id="rn" placeholder="الاسم" style="flex:1;font-size:10px" id="rnPh"><input id="rm" placeholder="الإيميل" style="flex:2;font-size:10px" id="rmPh"><button class="btn btn-suc btn-sm" onclick="addR()">➕</button></div>
+    <div class="pn"><h3>👥 الموظفين <span style="font-weight:normal;font-size:9px;color:#999">(الاسم | الإيميل | 🔑 | ⏱)</span></h3><div id="emps"></div></div>
+    <div class="pn"><h3>🕐 الأوقات <span style="font-weight:normal;font-size:9px;color:#999">🟢 مفتوح · 🔴 مغلق · 🔒 مشرف · ✏️ تعديل · ✕ حذف</span></h3><div id="slotMgr"></div></div>
+    <div class="pn"><h3>📧 المستلمين</h3><div id="recips"></div>
+      <div style="display:flex;gap:3px;margin-top:3px"><input id="rn" placeholder="الاسم" style="flex:1;font-size:10px"><input id="rm" placeholder="الإيميل" style="flex:2;font-size:10px"><button class="btn btn-suc btn-sm" onclick="addR()">➕</button></div>
     </div>
-    <div class="pn" id="adRptHdr"><h3>📊 التقارير اليومية</h3><div id="rptArea">
+    <div class="pn"><h3>📊 التقارير اليومية</h3><div id="rptArea">
       <div style="display:flex;gap:3px;margin-bottom:3px">
-        <button class="btn btn-suc btn-sm" onclick="saveReport()" id="saveRptBtn">💾 حفظ التقرير الحالي</button>
+        <button class="btn btn-suc btn-sm" onclick="saveReport()">💾 حفظ التقرير الحالي</button>
         <input type="date" id="rptDate" style="font-size:10px;padding:2px;width:120px">
-        <button class="btn btn-pri btn-sm" id="viewRptBtn" onclick="const d=document.getElementById('rptDate').value;if(d)viewReport(d);else nf(t('⚠️ Select a date','⚠️ اختر تاريخ'),'r')">📅 عرض</button>
+        <button class="btn btn-pri btn-sm" onclick="const d=document.getElementById('rptDate').value;if(d)viewReport(d);else nf('⚠️ اختر تاريخ','r')">📅 عرض</button>
       </div>
       <div id="rptList" style="font-size:10px"></div>
       <div id="rptView" style="font-size:9px;max-height:300px;overflow-y:auto;margin-top:3px;background:#fff;border-radius:6px;padding:4px"></div>
     </div></div>
-    <div class="pn" id="adSmtpHdr"><h3>📧 SMTP</h3>
+    <div class="pn"><h3>📧 SMTP</h3>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:3px">
         <input id="smtpHost" placeholder="smtp.office365.com" style="flex:2;font-size:10px" value="smtp.office365.com">
         <input id="smtpPort" placeholder="587" style="flex:1;max-width:55px;font-size:10px" value="587">
       </div>
       <div style="display:flex;gap:4px;flex-wrap:wrap">
-        <input id="smtpUser" placeholder="البريد" style="flex:2;font-size:10px" id="smtpUserPh">
+        <input id="smtpUser" placeholder="البريد" style="flex:2;font-size:10px">
         <input id="smtpPass" type="password" placeholder="كلمة السر" style="flex:2;font-size:10px">
-        <input id="smtpFrom" placeholder="من" style="flex:2;font-size:10px" id="smtpFromPh">
+        <input id="smtpFrom" placeholder="من" style="flex:2;font-size:10px">
       </div>
-      <div style="margin-top:3px"><button class="btn btn-suc btn-sm" onclick="sendEmail()" id="sendEmailBtn">📧 إرسال</button><span id="emailStatus" style="font-size:9px;color:#999;margin-right:4px"></span></div>
+      <div style="margin-top:3px"><button class="btn btn-suc btn-sm" onclick="sendEmail()">📧 إرسال</button><span id="emailStatus" style="font-size:9px;color:#999;margin-right:4px"></span></div>
     </div>
-    <div class="pn" id="adPwHdr"><h3>🔑 كلمة سر الإدارة</h3>
-      <div style="display:flex;gap:4px"><input id="adminPw" placeholder="كلمة السر الحالية" style="flex:2;font-size:10px"><button class="btn btn-pri btn-sm" onclick="chgPw()" id="chgPwBtn">تغيير</button><span id="pwStatus" style="font-size:9px;color:#999"></span></div>
+    <div class="pn"><h3>🔑 كلمة سر الإدارة</h3>
+      <div style="display:flex;gap:4px"><input id="adminPw" placeholder="كلمة السر الحالية" style="flex:2;font-size:10px"><button class="btn btn-pri btn-sm" onclick="chgPw()">تغيير</button><span id="pwStatus" style="font-size:9px;color:#999"></span></div>
     </div>
   </div>
   <div id="adPanel2" style="display:none">
@@ -175,12 +175,12 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 <div class="ft">R.Zareiart</div>
 </div>
 
-<button class="lk" id="lkBtn" onclick="toggleAdmin()" title="Admin Login">🔑</button>
+<button class="lk" id="lkBtn" onclick="toggleAdmin()" title="دخول المدير">🔑</button>
 <div class="modal" id="pwModal" style="display:none" onclick="if(event.target==this)closeModal()">
   <div class="modal-in"><h3 id="modTitle">🔑</h3>
     <input type="password" id="modInput" placeholder="********" autocomplete="off" style="display:none">
     <div id="modBody"></div>
-    <div class="mb"><button class="no" onclick="closeModal()" id="cancelBtn">إلغاء</button><button class="ok" id="modOkBtn" onclick="modalOk()">دخول</button></div>
+    <div class="mb"><button class="no" onclick="closeModal()">إلغاء</button><button class="ok" id="modOkBtn" onclick="modalOk()">دخول</button></div>
     <span id="modErr" style="color:#e74c3c;font-size:11px"></span>
   </div>
 </div>
@@ -191,51 +191,15 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 const SV = window.location.origin;
 const EMP_DF = [{name:"Afaf Alkhaldi",email:"Afaf.Alkhaldi@almanahospital.com.sa",code:""},{name:"Aisha Jezan",email:"Aisha.Jezan@almanahospital.com.sa",code:""},{name:"Aljawhara Almelifi",email:"Aljawhara.Almelifi@almanahospital.com.sa",code:""},{name:"Aljazi Al-Anazi",email:"Aljazi.Al-Anazi@almanahospital.com.sa",code:""},{name:"Amna Albrari",email:"Amna.Albrari@almanahospital.com.sa",code:""},{name:"Fatimah Busaeed",email:"Fatimah.Busaeed@almanahospital.com.sa",code:""},{name:"Hussain Albaqshi",email:"Hussain.Albaqshi@almanahospital.com.sa",code:""},{name:"Khadra alqahtani",email:"Khadra.alqahtani@almanahospital.com.sa",code:""},{name:"Lina Alshshri",email:"Lina.Alshshri@almanahospital.com.sa",code:""},{name:"Manal Alfarhan",email:"Manal.Alfarhan@almanahospital.com.sa",code:""},{name:"Mariam Almahawsh",email:"Mariam.Almahawsh@almanahospital.com.sa",code:""},{name:"Maryam Alsuwayigh",email:"Maryam.Al-suwayigh@almanahospital.com.sa",code:""},{name:"Nehal Alfarhan",email:"Nehal.Alfarhan@almanahospital.com.sa",code:""},{name:"Rawan Al-Naghmoush",email:"Rawan.Al-Naghmoush@almanahospital.com.sa",code:""},{name:"Rima Alqahtani",email:"Rima.Alqahtani@almanahospital.com.sa",code:""},{name:"Ruqaia AlShammery",email:"Ruqaia.AlShammery@almanahospital.com.sa",code:""},{name:"Ruqaia Zarei",email:"Ruqaia.Zarei@almanahospital.com.sa",code:""},{name:"Saif Alruwaili",email:"Saif.Alruwaili@almanahospital.com.sa",code:""},{name:"Salman Alrhiman",email:"Salman.Alrhiman@almanahospital.com.sa",code:""},{name:"Sara Aldossary",email:"Sara.Aldossary@almanahospital.com.sa",code:""},{name:"Shahad Al-Harbi",email:"Shahad.Al-Harbi@almanahospital.com.sa",code:""},{name:"Sheikah Alkhelaiwi",email:"Sheikah.Alkhelaiwi@almanahospital.com.sa",code:""},{name:"Shouq Al-Harbi",email:"Shouq.Al-Harbi@almanahospital.com.sa",code:""},{name:"Tahani AlSahluli",email:"Tahani.AlSahluli@almanahospital.com.sa",code:""},{name:"Khadijah Almalki",email:"Khadijah.Almalki@almanahospital.com.sa",code:""}];
 const SH_DF = {
-  morning:{lb:"🌅 صباحي",ts:["9:00","9:10","9:15","9:20","9:30","9:45","9:50","10:10","10:55","11:10","11:15","11:35","11:40","12:00","12:20","12:40","12:55","13:10","13:25","13:40","14:00","14:20","14:40","14:55","15:00","15:10","15:20","15:30","15:40","15:50"]},
-  afternoon:{lb:"☀️ مسائي",ts:["12:30","12:40","12:50","13:00","13:10","13:15","13:30","13:40","14:00","14:20","14:50","15:00","15:20","16:00","16:15","16:30","16:40","17:00","17:15","17:35","18:00","18:15","18:30","19:00","19:15","19:35","19:50","20:00","20:10","20:20"]},
-  night:{lb:"🌙 ليلي",ts:["15:00","15:15","15:30","15:50","16:00","16:20","16:40","17:00","17:20","17:35","18:10","18:45","19:10","19:25","20:20","20:40","20:50","21:10","21:20","21:30","21:40"]}
+  morning:{lb:"🌅 Morning (8-5)",ts:["9:00","9:10","9:15","9:20","9:30","9:45","9:50","10:10","10:55","11:10","11:15","11:35","11:40","12:00","12:20","12:40","12:55","13:10","13:25","13:40","14:00","14:20","14:40","14:55","15:00","15:10","15:20","15:30","15:40","15:50"]},
+  afternoon:{lb:"☀️ Afternoon (11-8)",ts:["12:30","12:40","12:50","13:00","13:10","13:15","13:30","13:40","14:00","14:20","14:50","15:00","15:20","16:00","16:15","16:30","16:40","17:00","17:15","17:35","18:00","18:15","18:30","19:00","19:15","19:35","19:50","20:00","20:10","20:20"]},
+  night:{lb:"🌙 Night (1-10)",ts:["15:00","15:15","15:30","15:50","16:00","16:20","16:40","17:00","17:20","17:35","18:10","18:45","19:10","19:25","20:20","20:40","20:50","21:10","21:20","21:30","21:40"]}
 };
 const VO_DF = {morning:["12:00","13:10","15:10"],afternoon:["15:00","18:00","17:00"],night:["17:00","19:10","16:00"]};
 const DP_DF = [15,15,20,10];
 
 let SH=JSON.parse(JSON.stringify(SH_DF)),VO=JSON.parse(JSON.stringify(VO_DF)),DP=[...DP_DF];
 let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={},BT={},BTN={};
-
-// Supervisor hourly slots (every hour in supervisor ranges) — add missing slots + mark them
-const SUP_HOURS = {morning:["11:00","12:00","13:00","14:00","15:00"],afternoon:["14:00","15:00","16:00","17:00","18:00"],night:["15:00","16:00","17:00","18:00","19:00"]};
-for(const[sk,times]of Object.entries(SUP_HOURS)){
-  times.forEach(t=>{
-    if(!SH[sk].ts.includes(t)){SH[sk].ts.push(t);SH[sk].ts.sort((a,b)=>a.localeCompare(b))}
-  });
-}
-let lang="ar";
-function t(en,ar){return ar}
-function updateStaticLang(){
-  document.getElementById("adTab1").textContent=t("⚙️ Admin","⚙️ إدارة");
-  document.getElementById("adTab2").textContent=t("📋 Schedule","📋 جدول");
-  document.getElementById("saveRptBtn").textContent=t("💾 Save Current Report","💾 حفظ التقرير الحالي");
-  document.getElementById("chgPwBtn").textContent=t("Change","تغيير");
-  document.getElementById("sendEmailBtn").textContent=t("📧 Send","📧 إرسال");
-  document.getElementById("addEmpBtn").textContent=t("➕ Employee","➕ موظف");
-  document.getElementById("addSlotBtn").textContent=t("🕐 Add Time","🕐 إضافة وقت");
-  document.getElementById("rstSlotsBtn").textContent=t("🔄 Restore Slots","🔄 استعادة الأوقات");
-  document.getElementById("rsBtn").textContent=t("🔄 Reset","🔄 تصفير");
-  document.getElementById("reportBtn").textContent=t("📊 Report","📊 تقرير");
-  document.getElementById("csvBtn").textContent=t("📥 CSV","📥 CSV");
-  document.getElementById("xlsxBtn").textContent=t("📊 XLSX","📊 XLSX");
-  document.getElementById("rnPh").placeholder=t("Name","الاسم");
-  document.getElementById("rmPh").placeholder=t("Email","الإيميل");
-  document.getElementById("smtpUserPh").placeholder=t("Email","البريد");
-  document.getElementById("smtpPass").placeholder=t("Password","كلمة السر");
-  document.getElementById("smtpFromPh").placeholder=t("From","من");
-  document.getElementById("adminPw").placeholder=t("Current password","كلمة السر الحالية");
-  document.getElementById("cancelBtn").textContent=t("Cancel","إلغاء");
-  document.getElementById("modOkBtn").textContent=t("Login","دخول");
-  document.getElementById("viewRptBtn").textContent=t("📅 View","📅 عرض");
-  document.getElementById("loginBtn").textContent=t("Login","دخول");
-}
-function toggleLang(){lang=lang=="ar"?"en":"ar";sv("bs_lang",lang);document.getElementById("langBtn").textContent=lang=="ar"?"🇬🇧":"🇸🇦";document.title=t("Break Schedule - Al Mana Hospitals","بريك شيت - مستشفيات المانع");document.getElementById("hdrTitle").textContent=t("Al Mana · Break Schedule","المانع · بريك شيت");lang=="ar"?document.getElementById("loginInfo").innerHTML="👆 أدخل Badge Num | 👇 المدير: 🔑":document.getElementById("loginInfo").innerHTML="👆 Enter Badge Num | 👇 Admin: 🔑";updateStaticLang();r();rAdm()}
-
 let ME="",myCode="",adminPw="admin123",adminOn=false,isSup=false,notifOn=false;
 let sn=0; // sync counter
 
@@ -274,7 +238,7 @@ async function svSave(){
         if(d.ok) nf("💾 نسخة احتياطية: "+d.file,"g");
       }).catch(()=>{});
     }
-    nf(t("☁️ Saved","☁️ تم الحفظ"),"g");
+    nf("☁️ تم الحفظ","g");
     fetch(SV+"/api/emp-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(EM)});
   }catch(e){console.log("❌ svSave error:",e)}
 }
@@ -286,20 +250,20 @@ setInterval(()=>{const n=new Date();document.getElementById("tclk").textContent=
 // ═══════════ LOGIN ═══════════
 function logIn(){
   const code=document.getElementById("codeInp").value.trim();
-  if(!code||code.length<3){nf(t("⚠️ Enter Badge Num","⚠️ أدخل Badge Num"),"r");return}
+  if(!code||code.length<3){nf("⚠️ أدخل Badge Num","r");return}
   // Search both CD (localStorage cache) AND e.code (server data)
   const emp=EM.find(e=>(CD[e.name]==code||e.code==code));
-  if(!emp){nf(t("❌ Wrong Badge Num","❌ Badge Num خطأ"),"r");return}
+  if(!emp){nf("❌ Badge Num خطأ","r");return}
   ME=emp.name;myCode=code;isSup=SUP.includes(ME);
   document.getElementById("codeInp").style.display="none";
   document.querySelector(".nb .btn-pri").style.display="none";
   document.getElementById("loggedNm").style.display="inline";
   document.getElementById("loggedNm").textContent=(isSup?"👁️ ":"👤 ")+ME;
   REM={};sv("bs_rmd",{});
-  nf(t("✅ Welcome ","✅ أهلاً ")+ME,"g");r();
+  nf("✅ أهلاً "+ME,"g");r();
 }
 function logOut(){
-  if(!confirm(t("Log out?","تسجيل خروج؟")))return;
+  if(!confirm("تسجيل خروج؟"))return;
   ME="";myCode="";isSup=false;
   document.getElementById("codeInp").style.display="inline";
   document.getElementById("codeInp").value="";
@@ -313,41 +277,41 @@ function r(){
   let mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
   document.getElementById("myCnt").textContent=mc+"/4";
   // My breaks
-  let mh="";
-  for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+'_'+t;if(AS[k]==ME){const dr=gd(sk,t,i,ME);mh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${fm(t)} (${dr}د)</span><button class="btn btn-dan btn-sm" onclick="empUn('${k}')" style="padding:0 3px;font-size:8px">✕</button></div>`}})}
-  if(!mh)mh=`<span style="color:#999;font-size:11px">${ME?t("No breaks selected","ما اخترت بريكات"):t("Login with Badge Num","سجل الدخول ب Badge Num")}</span>`;
+  let mh=[];
+  for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+'_'+t;if(AS[k]==ME){const dr=gd(sk,t,i,ME);mh.push({s:fm(t),d:dr,k:k})}})}
+  if(!mh)mh=`<span style="color:#999;font-size:11px">${ME?"ما اخترت بريكات":"سجل الدخول ب Badge Num"}</span>`;
   document.getElementById("myList").innerHTML=mh;
   renderTimer();
-  if(!ME){document.getElementById("availSlots").innerHTML=`<div style="text-align:center;color:#e74c3c;font-size:11px;padding:5px">${t("👆 Enter Badge Num from supervisor","👆 أدخل Badge Num من المشرف")}</div>`;document.getElementById("upcPn").style.display="none";return}
+  if(!ME){document.getElementById("availSlots").innerHTML=`<div style="text-align:center;color:#e74c3c;font-size:11px;padding:5px">👆 أدخل Badge Num من المشرف</div>`;document.getElementById("upcPn").style.display="none";return}
   // Available
   let ah="",avail=[],myTimes=[];mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
   for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,dr=gd(sk,t,i,ME),em=AS[k],vw=(VO[sk]||[]).includes(t);if(em==ME){myTimes.push({k,sk,t,dr});return}if(em||vw)return;avail.push({k,sk,t,dr})})}
-  if(mc>=4){ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">${t("⚠️ You selected 4 breaks max","⚠️ اخترت 4 بريكات كحد أقصى")}</div>`}
-  else if(!avail.length){ah=`<span style="color:#999;font-size:10px">${t("No available times","لا توجد أوقات متاحة")}</span>`}
-  else{const g={};avail.forEach(x=>{if(!g[x.sk])g[x.sk]=[];g[x.sk].push(x)});for(const[sk,list]of Object.entries(g)){ah+=`<div class="sg"><h4>${SH[sk].lb}</h4><div class="row">`;list.forEach(x=>{const supOnly=SUP.includes("_sl_"+x.sk+"_"+x.t);const canTake=!supOnly||isSup;ah+=`<span class="mtt" style="cursor:${canTake?'pointer':'default'};border-color:${supOnly?'#8e44ad':'#27ae60'};background:${canTake?'#e8f8f5':'#f0e6ff'}" onclick="${canTake?`empAs('${x.sk}','${x.t}','${x.k}')`:''}">${supOnly?'🔒 ':''}${fm(x.t)} (${x.dr}د)</span>`});ah+=`</div></div>`}}
+  if(mc>=4){ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">⚠️ اخترت 4 بريكات كحد أقصى</div>`}
+  else if(!avail.length){ah=`<span style="color:#999;font-size:10px">لا توجد أوقات متاحة</span>`}
+  else{const g={};avail.forEach(x=>{if(!g[x.sk])g[x.sk]=[];g[x.sk].push(x)});for(const[sk,list]of Object.entries(g)){ah+=`<div class="sg"><h4>${SH[sk].lb}</h4><div class="row">`;list.forEach(x=>{const supOnly=SUP.includes("_sl_"+x.k);const canTake=!supOnly||isSup;ah+=`<span class="mtt" style="cursor:${canTake?'pointer':'default'};border-color:${supOnly?'#8e44ad':'#27ae60'};background:${canTake?'#e8f8f5':'#f0e6ff'}" onclick="${canTake?`empAs('${x.sk}','${x.t}','${x.k}')`:''}">${supOnly?'🔒 ':''}${fm(x.t)} (${x.dr}د)</span>`});ah+=`</div></div>`}}
   document.getElementById("availSlots").innerHTML=ah;
   // Upcoming
   const now=new Date(),cm=now.getHours()*60+now.getMinutes();
   const sorted=myTimes.map(x=>{const[h,m]=x.t.split(":").map(Number);return{...x,tm:h*60+m}}).filter(x=>x.tm>cm).sort((a,b)=>a.tm-b.tm);
   if(!sorted.length){document.getElementById("upcPn").style.display="none";return}
   document.getElementById("upcPn").style.display="block";let uh="";
-  sorted.forEach(x=>{const d=x.tm-cm,hh=Math.floor(d/60),mm=d%60;uh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${fm(x.t)} (${x.dr}د)</span><span style="color:#008080;font-weight:600">${t("in","بعد")} ${hh?hh+t("h","س"):""}${mm}${t("m","د")}</span></div>`});
+  sorted.forEach(x=>{const d=x.tm-cm,hh=Math.floor(d/60),mm=d%60;uh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${fm(x.t)} (${x.dr}د)</span><span style="color:#008080;font-weight:600">بعد ${hh?hh+"س ":""}${mm}د</span></div>`});
   document.getElementById("upcList").innerHTML=uh;
   renderTimer();
 }
 
 function empAs(sk,t,k){
-  if(!ME){nf(t("⚠️ Login first","⚠️ سجل الدخول"),"r");return}
+  if(!ME){nf("⚠️ سجل الدخول","r");return}
   let mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
-  if(mc>=4){nf(t("⚠️ 4 breaks max","⚠️ 4 بريكات"),"r");return}
-  if(AS[k]){nf(t("⚠️ Taken","⚠️ مأخوذ"),"r");return}
-  const supOnly=SUP.includes("_sl_"+sk+"_"+t);
-  if(supOnly&&!isSup){nf(t("⚠️ Supervisor only","⚠️ للمشرف فقط"),"r");return}
-  AS[k]=ME;sv("bs_as",AS);addLog(ME,sk,t,t("📌 Took","📌 أخذ"));svAs();r();
+  if(mc>=4){nf("⚠️ 4 بريكات","r");return}
+  if(AS[k]){nf("⚠️ مأخوذ","r");return}
+  const supOnly=SUP.includes("_sl_"+k);
+  if(supOnly&&!isSup){nf("⚠️ للمشرف فقط","r");return}
+  AS[k]=ME;sv("bs_as",AS);addLog(ME,sk,t,"📌 أخذ");svAs();r();
 }
 function empUn(k){
-  if(AS[k]!=ME){nf(t("⚠️ Not your break","⚠️ مو بريكك"),"r");return}
-  delete AS[k];sv("bs_as",AS);addLog(ME,"","",t("🗑️ Cancelled","🗑️ ألغى"));svAs();r();
+  if(AS[k]!=ME){nf("⚠️ مو بريكك","r");return}
+  delete AS[k];sv("bs_as",AS);addLog(ME,"","","🗑️ ألغى");svAs();r();
 }
 
 // ═══════════ LOG ═══════════
@@ -359,7 +323,7 @@ function addLog(emp,sk,t,act){
 function notifySup(emp,sk,t,act){
   if(!isSup)return;
   const b=document.getElementById("rmdBar");b.style.display="block";
-  const msg=(act.includes("Took")||act.includes("أخذ"))?`📌 ${emp} ${t("took","أخذ")} ${fm(t)} (${gd(sk,t,0,emp)}${t("m","د")})`:`🗑️ ${emp} ${t("cancelled","ألغى")} ${t?fm(t):""}`;
+  const msg=act.includes("أخذ")?`📌 ${emp} أخذ ${fm(t)} (${gd(sk,t,0,emp)}د)`:`🗑️ ${emp} ألغى ${t?fm(t):""}`;
   b.innerHTML=`🔔 <strong>${msg}</strong>`;if(notifOn)new Notification("👁️",{body:msg});setTimeout(()=>b.style.display="none",6000);
 }
 
@@ -369,24 +333,24 @@ async function saveBT(){sv("bs_bt",BT);try{await fetch(SV+"/api/break-timer",{me
 function td(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function ts(){const d=new Date();return`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`}
 function startBreak(){
-  if(!ME){nf(t("⚠️ Login first","⚠️ سجل الدخول"),"r");return}
+  if(!ME){nf("⚠️ سجل الدخول","r");return}
   const today=td();if(!BT[today])BT[today]={};
   // Check if already on break
   for(const nm of Object.keys(BT[today])){const a=BT[today][nm].active;if(a)return void nf(`⏳ ${nm} في بريك من ${a.start}`,"r")}
   const nm=ME;if(!BT[today][nm])BT[today][nm]={active:null,history:[]};
   BT[today][nm].active={start:ts()};
   BT[today][nm].history.push({start:ts()});
-  saveBT();renderTimer();nf(t("🚶 Break started ✅","🚶 بداية بريك ✅"),"g");addLog(nm,"","",t("🚶 Break start","🚶 بداية بريك"))
+  saveBT();renderTimer();nf("🚶 بداية بريك ✅","g");addLog(nm,"","","🚶 بداية بريك")
 }
 function endBreak(){
-  if(!ME){nf(t("⚠️ Login first","⚠️ سجل الدخول"),"r");return}
-  const today=td();if(!BT[today]||!BT[today][ME]||!BT[today][ME].active){nf(t("⚠️ No active break","⚠️ ما في بريك فعال"),"r");return}
+  if(!ME){nf("⚠️ سجل الدخول","r");return}
+  const today=td();if(!BT[today]||!BT[today][ME]||!BT[today][ME].active){nf("⚠️ ما في بريك فعال","r");return}
   const now=ts();const s=BT[today][ME].active.start;
   const[sH,sM]=s.split(":").map(Number);const[eH,eM]=now.split(":").map(Number);
-  const dur=eH*60+eM-sH*60-sM;if(dur<0)return void nf(t("⚠️ Time error","⚠️ خطأ في الوقت"),"r");
+  const dur=eH*60+eM-sH*60-sM;if(dur<0)return void nf("⚠️ خطأ في الوقت","r");
   BT[today][ME].active=null;
   const hx=BT[today][ME].history;hx[hx.length-1].end=now;hx[hx.length-1].dur=dur;
-  saveBT();renderTimer();nf(t("🏁 Returned ✅ (","🏁 العودة ✅ (")+`${dur}`+t(" min)"," دقيقة)"),"g");addLog(ME,"","",t("🏁 Returned (","🏁 عودة (")+dur+t("m)",")"))
+  saveBT();renderTimer();nf(`🏁 العودة ✅ (${dur} دقيقة)`,"g");addLog(ME,"","","🏁 عودة ("+dur+"د)")
 }
 function renderTimer(){
   const s=document.getElementById("timerS");const u=document.getElementById("timerUI");
@@ -397,19 +361,19 @@ function renderTimer(){
   if(active){
     const[sH,sM]=active.start.split(":").map(Number);
     const now=new Date(),cm=now.getHours()*60+now.getMinutes(),sm=sH*60+sM,el=cm-sm;
-    h+=`<div style="font-size:16px;font-weight:700;color:#e74c3c">${t("🔴 On Break","🔴 في بريك")}</div>`;
+    h+=`<div style="font-size:16px;font-weight:700;color:#e74c3c">🔴 في بريك</div>`;
     h+=`<div style="font-size:22px;font-weight:700;color:#c0392b" id="timerTick">${Math.floor(el/60)}:${String(el%60).padStart(2,"0")}</div>`;
-    h+=`<div style="font-size:11px;color:#666">${t("since","منذ")} ${fm(active.start)}</div>`;
-    h+=`<button class="btn btn-dan" style="margin-top:4px;font-size:12px" onclick="endBreak()">${t("🏁 Return","🏁 العودة")}</button>`;
+    h+=`<div style="font-size:11px;color:#666">منذ ${fm(active.start)}</div>`;
+    h+=`<button class="btn btn-dan" style="margin-top:4px;font-size:12px" onclick="endBreak()">🏁 العودة</button>`;
   }else{
-    h+=`<div style="font-size:14px;font-weight:600;color:#27ae60">${t("🟢 Available","🟢 متاح")}</div>`;
-    h+=`<button class="btn btn-suc" style="margin-top:4px;font-size:12px" onclick="startBreak()">${t("🚶 Start Break","🚶 بداية بريك")}</button>`;
+    h+=`<div style="font-size:14px;font-weight:600;color:#27ae60">🟢 متاح</div>`;
+    h+=`<button class="btn btn-suc" style="margin-top:4px;font-size:12px" onclick="startBreak()">🚶 بداية بريك</button>`;
   }
   // Today's history
   if(BT[today]&&BT[today][ME]&&BT[today][ME].history.length){
-    h+=`<div style="margin-top:6px;font-size:9px;color:#999;text-align:right">${t("📋 Today's breaks:","📋 بريكات اليوم:")}`;
+    h+=`<div style="margin-top:6px;font-size:9px;color:#999;text-align:right">📋 بريكات اليوم:`;
     BT[today][ME].history.forEach((x,i)=>{const e=x.end||"...",d=x.dur||"جاري";
-      h+=`<div style="padding:1px 0">${i+1}. ${fm(x.start)} → ${e=="..."?t("in progress","جاري"):fm(e)} (${d=="جاري"?"⏳":d+t("m","د")})</div>`})
+      h+=`<div style="padding:1px 0">${i+1}. ${fm(x.start)} → ${e=="..."?"جاري":fm(e)} (${d=="جاري"?"⏳":d+"د"})</div>`})
     h+=`</div>`;
   }
   u.innerHTML=h;
@@ -429,16 +393,16 @@ function closeModal(){document.getElementById("pwModal").style.display="none";mo
 function modalOk(){const v=document.getElementById("modInput").value.trim();if(v==="admin123")localStorage.setItem("bs_admin_pw",JSON.stringify("admin123"));if(modCb)modCb(v);}
 document.getElementById("modInput").addEventListener("keydown",function(e){if(e.key==="Enter")modalOk();if(e.key==="Escape")closeModal()});
 function toggleAdmin(){
-  if(adminOn){adminOn=false;sessionStorage.removeItem("bs_admin");document.getElementById("lkBtn").textContent="🔑";document.getElementById("lkBtn").classList.remove("lk-on");document.getElementById("admSec").classList.remove("vis");nf(t("🔒 Logged out","🔒 خروج"),"b");return}
-  openModal(t("🔑 Admin password","🔑 كلمة سر المدير"),t("Enter password","أدخل كلمة السر"),function(p){if(!p){closeModal();return}
-    if(p==adminPw||p=="admin123"){if(p=="admin123"&&adminPw!="admin123"){adminPw="admin123";sv("bs_admin_pw","admin123")}adminOn=true;sessionStorage.setItem("bs_admin","1");document.getElementById("lkBtn").textContent="🔓";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis");nf(t("✅ Welcome","✅ أهلاً"),"g");rAdm();closeModal()}else{document.getElementById("modErr").textContent=t("❌ Wrong password","❌ خطأ")}
+  if(adminOn){adminOn=false;sessionStorage.removeItem("bs_admin");document.getElementById("lkBtn").textContent="🔑";document.getElementById("lkBtn").classList.remove("lk-on");document.getElementById("admSec").classList.remove("vis");nf("🔒 خروج","b");return}
+  openModal("🔑 كلمة سر المدير","أدخل كلمة السر",function(p){if(!p){closeModal();return}
+    if(p==adminPw||p=="admin123"){if(p=="admin123"&&adminPw!="admin123"){adminPw="admin123";sv("bs_admin_pw","admin123")}adminOn=true;sessionStorage.setItem("bs_admin","1");document.getElementById("lkBtn").textContent="🔓";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis");nf("✅ أهلاً","g");rAdm();closeModal()}else{document.getElementById("modErr").textContent="❌ خطأ"}
   });
 }
 function chgPw(){
   const old=document.getElementById("adminPw").value.trim();
-  if(old!=adminPw){document.getElementById("pwStatus").textContent=t("⚠️ Wrong","⚠️ غلط");return}
-  openModal(t("🔑 New password","🔑 كلمة السر الجديدة"),t("Enter 3+ characters","أدخل 3 أحرف أو أكثر"),function(n){if(!n||n.length<3){document.getElementById("modErr").textContent=t("⚠️ 3+ characters","⚠️ 3 أحرف");return}
-    openModal(t("✅ Confirm","✅ تأكيد"),t("Re-enter it","أعد كتابتها"),function(n2){if(n!=n2){document.getElementById("modErr").textContent=t("❌ Don't match","❌ غير متطابقة");return}
+  if(old!=adminPw){document.getElementById("pwStatus").textContent="⚠️ غلط";return}
+  openModal("🔑 كلمة السر الجديدة","أدخل 3 أحرف أو أكثر",function(n){if(!n||n.length<3){document.getElementById("modErr").textContent="⚠️ 3 أحرف";return}
+    openModal("✅ تأكيد","أعد كتابتها",function(n2){if(n!=n2){document.getElementById("modErr").textContent="❌ غير متطابقة";return}
       sv("bs_admin_pw",n);adminPw=n;document.getElementById("adminPw").value="";document.getElementById("pwStatus").textContent="✅ تم";closeModal();setTimeout(()=>document.getElementById("pwStatus").textContent="",3000);
     });
   });
@@ -448,13 +412,13 @@ function chgPw(){
 let adTab=1;
 function adSw(n){adTab=n;document.querySelectorAll("#admSec .adm-tabs button").forEach((b,i)=>b.classList.toggle("ok",i+1==n));document.getElementById("adPanel1").style.display=n==1?"":"none";document.getElementById("adPanel2").style.display=n==2?"":"none";if(n==2)rAll()}
 function rAdm(){
-  let h=`<div class="rw" style="display:flex;font-weight:700;border-bottom:2px solid #ddd;padding:2px 0;font-size:9px;color:#666"><span style="flex:1;min-width:70px">${t("Name","الاسم")}</span><span style="flex:1;min-width:70px">${t("Email","الإيميل")}</span><span style="width:50px;text-align:center">🔑</span><span style="width:65px;text-align:center">⏱</span><span style="width:35px">${t("Type","نوع")}</span><span style="width:15px"></span></div>`;
+  let h=`<div class="rw" style="display:flex;font-weight:700;border-bottom:2px solid #ddd;padding:2px 0;font-size:9px;color:#666"><span style="flex:1;min-width:70px">الاسم</span><span style="flex:1;min-width:70px">الإيميل</span><span style="width:50px;text-align:center">🔑</span><span style="width:65px;text-align:center">⏱</span><span style="width:35px">نوع</span><span style="width:15px"></span></div>`;
   EM.forEach((e,i)=>{const s=SUP.includes(e.name),cd=CD[e.name]||"",cur=EDP[e.name]||DP,ds=cur.join("·");h+=`<div class="rw" style="display:flex;gap:2px;align-items:center;padding:2px 0;font-size:10px;flex-wrap:wrap">
 <span style="flex:1;min-width:70px;font-weight:600">${e.name}</span>
 <input value="${e.email||""}" placeholder="الإيميل" style="flex:1;min-width:70px;font-size:9px" onchange="EM[${i}].email=this.value;svSave()">
 <input value="${cd}" placeholder="Badge" style="width:50px;font-size:9px;text-align:center;direction:ltr" oninput="CD['${e.name}']=this.value;sv('bs_cd',CD);svSave()">
 <input value="${ds}" placeholder="${DP.join("·")}" style="width:65px;font-size:9px;direction:ltr" onchange="setEDP('${e.name}',this.value)">
-<span onclick="togSup('${e.name}')" style="cursor:pointer;background:${s?"#008080":"#ddd"};color:${s?"#fff":"#666"};padding:1px 4px;border-radius:4px;font-size:8px;white-space:nowrap">${s?"👁️":t("Staff","خدمة")}</span>
+<span onclick="togSup('${e.name}')" style="cursor:pointer;background:${s?"#008080":"#ddd"};color:${s?"#fff":"#666"};padding:1px 4px;border-radius:4px;font-size:8px;white-space:nowrap">${s?"👁️":"خدمة"}</span>
 <button class="btn btn-dan btn-sm" onclick="dEmp(${i})" style="padding:1px 3px;font-size:8px">✕</button>
 </div>`});
   document.getElementById("emps").innerHTML=h;
@@ -474,15 +438,15 @@ function rAdm(){
   document.getElementById("slotMgr").innerHTML=sm;
   loadReports();
   // Recipients
-  let r=`<div class="rw" style="display:flex;font-weight:700;border-bottom:2px solid #ddd;padding:2px 0;font-size:10px"><span style="flex:2">${t("Name","الاسم")}</span><span>${t("Email","الإيميل")}</span></div>`;
+  let r=`<div class="rw" style="display:flex;font-weight:700;border-bottom:2px solid #ddd;padding:2px 0;font-size:10px"><span style="flex:2">الاسم</span><span>الإيميل</span></div>`;
   RS.forEach((x,i)=>{r+=`<div class="rw" style="display:flex;gap:3px;align-items:center;padding:2px 0;font-size:10px"><span style="flex:2">${x.n}</span><span style="flex:2">${x.m}</span><button class="btn btn-dan btn-sm" onclick="dR(${i})">✕</button></div>`});
-  if(!RS.length)r+=`<div style="font-size:9px;color:#999;padding:3px">${t("None","لا يوجد")}</div>`;
+  if(!RS.length)r+=`<div style="font-size:9px;color:#999;padding:3px">لا يوجد</div>`;
   document.getElementById("recips").innerHTML=r;
 }
 function rAll(){
   let h="",ta=0,tv=0,tt=0;
   for(const[sk,sh]of Object.entries(SH)){h+=`<div class="sh"><h3 style="font-size:11px">${sh.lb}</h3><div class="gr">`;
-    sh.ts.forEach((t,i)=>{tt++;const k=sk+"_"+t,em=AS[k],vw=(VO[sk]||[]).includes(t),dr=gd(sk,t,i,em),my=em==ME,sup=SUP.includes("_sl_"+sk+"_"+t);
+    sh.ts.forEach((t,i)=>{tt++;const k=sk+"_"+t,em=AS[k],vw=(VO[sk]||[]).includes(t),dr=gd(sk,t,i,em),my=em==ME,sup=SUP.includes("_sl_"+k);
       const cls=my?"b":vw?"vw":em?"r":sup?"sl":"g";
       const txt=my?`✅ ${fm(t)} (${dr}د)`:vw?`📖 ${fm(t)}`:em?`🔴 ${em.substring(0,12)} (${dr}د)`:sup?`🔒 ${fm(t)} (${dr}د)`:fm(t)+` (${dr}د)`;
       if(!em)ta++;else if(!my)tv++;
@@ -490,22 +454,22 @@ function rAll(){
     });h+=`</div></div>`;
   }
   document.getElementById("slots").innerHTML=h;
-  document.getElementById("st").innerHTML=`<span>🟢 ${t("Available:","متاح:")} ${ta}</span><span>🔴 ${t("Taken:","مأخوذ:")} ${tv}</span><span>📋 ${t("Total:","إجمالي:")} ${tt}</span>`;
+  document.getElementById("st").innerHTML=`<span>🟢 متاح: ${ta}</span><span>🔴 مأخوذ: ${tv}</span><span>📋 إجمالي: ${tt}</span>`;
 }
 
-function togSup(nm){const i=SUP.indexOf(nm);if(i>-1)SUP.splice(i,1);else SUP.push(nm);sv("bs_sup",SUP);fetch(SV+"/api/sup-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(SUP)});rAdm();nf(`👁️ ${nm}: ${i>-1?t("Staff","خدمة عملاء"):t("Supervisor","مشرف")}`,"b")}
+function togSup(nm){const i=SUP.indexOf(nm);if(i>-1)SUP.splice(i,1);else SUP.push(nm);sv("bs_sup",SUP);fetch(SV+"/api/sup-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(SUP)});rAdm();nf(`👁️ ${nm}: ${i>-1?"خدمة عملاء":"مشرف"}`,"b")}
 function togSupSlot(sk,t){const k="_sl_"+sk+"_"+t;const i=SUP.indexOf(k);if(i>-1)SUP.splice(i,1);else SUP.push(k);sv("bs_sup",SUP);fetch(SV+"/api/sup-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(SUP)});rAdm()}
-function setEDP(nm,v){if(!nm||!v)return;const a=v.split(/[·,،\s]+/).map(Number).filter(x=>x>=5&&x<=60);if(!a.length){nf("⚠️ أدخل أرقام","r");return}EDP[nm]=a;sv("bs_edp",EDP);svSave();nf(t("✅ ","✅ ")+`${a.join("·")}`+t(" min","د"),"g");rAdm()}
+function setEDP(nm,v){if(!nm||!v)return;const a=v.split(/[·,،\s]+/).map(Number).filter(x=>x>=5&&x<=60);if(!a.length){nf("⚠️ أدخل أرقام","r");return}EDP[nm]=a;sv("bs_edp",EDP);svSave();nf(`✅ ${a.join("·")}د`,"g");rAdm()}
 function parseEmp(i,v){if(!v)return;const p=v.split("|").map(x=>x.trim());if(!p[0]){nf("⚠️ الاسم مطلوب","r");return}
   const nm=p[0],em=p[1]||"",cd=p[2]||"";
   EM[i]=EM[i]||{};EM[i].name=nm;EM[i].email=em;
   if(cd){CD[nm]=cd;sv("bs_cd",CD)}
   if(p[3]){const a=p[3].split(/[·,،\s]+/).map(Number).filter(x=>x>=5&&x<=60);if(a.length)EDP[nm]=a;sv("bs_edp",EDP)}
-  sv("bs_emp",EM);svSave();rAdm();nf(t("✅","✅"),"g")
+  sv("bs_emp",EM);svSave();rAdm();nf("✅","g")
 }
 
-function addEmp(){const n=prompt(t("Name:","الاسم:"));if(!n)return;const m=prompt(t("Email:","الإيميل:"));if(!m)return;EM.push({name:n,email:m,code:""});sv("bs_emp",EM);svSave();fetch(SV+"/api/emp-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(EM)});rAdm();nf(t("✅","✅"),"g")}
-function dEmp(i){if(!confirm(t("Delete ","حذف ")+`${EM[i].name}`+t("?","؟")))return;const nm=EM[i].name;Object.keys(AS).forEach(k=>{if(AS[k]==nm)delete AS[k]});EM.splice(i,1);sv("bs_emp",EM);sv("bs_as",AS);svSave();rAdm();r();nf(t("✅","✅"),"g")}
+function addEmp(){const n=prompt("الاسم:");if(!n)return;const m=prompt("الإيميل:");if(!m)return;EM.push({name:n,email:m,code:""});sv("bs_emp",EM);svSave();fetch(SV+"/api/emp-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(EM)});rAdm();nf("✅","g")}
+function dEmp(i){if(!confirm(`حذف ${EM[i].name}؟`))return;const nm=EM[i].name;Object.keys(AS).forEach(k=>{if(AS[k]==nm)delete AS[k]});EM.splice(i,1);sv("bs_emp",EM);sv("bs_as",AS);svSave();rAdm();r();nf("✅","g")}
 function addSlot(){
   // Build shift picker UI
   const shNames={morning:"🌅 صباحي",afternoon:"☀️ مسائي",night:"🌙 ليلي"};
@@ -514,25 +478,25 @@ function addSlot(){
 <div style="margin-bottom:6px"><label style="font-size:11px;display:block;margin-bottom:2px">الوردية:</label><select id="modSk" style="width:100%;padding:4px;font-size:11px">${opts}</select></div>
 <div style="margin-bottom:6px"><label style="font-size:11px;display:block;margin-bottom:2px">الوقت (مثال: 14:30):</label><input id="modTm" type="text" placeholder="مثال: 14:30" style="width:100%;padding:4px;font-size:11px;text-align:center"></div>
 </div>`;
-  openModal(t("🕐 Add Time","🕐 إضافة وقت"),html,function(){
+  openModal("🕐 إضافة وقت",html,function(){
     const sn=document.getElementById("modSk").value;
     const t=document.getElementById("modTm").value.trim();
-    if(!t||!/^\d{1,2}:\d{2}$/.test(t)){document.getElementById("modErr").textContent=t("⚠️ Invalid time format (e.g. 14:30)","⚠️ صيغة الوقت غير صحيحة (مثال: 14:30)");return}
-    if(SH[sn].ts.includes(t)){document.getElementById("modErr").textContent=t("⚠️ This time already exists","⚠️ هذا الوقت موجود بالفعل");return}
-    SH[sn].ts.push(t);SH[sn].ts.sort((a,b)=>a.localeCompare(b));svSave();closeModal();rAdm();r();nf(t("✅ Added","✅ تمت الإضافة"),"g")
+    if(!t||!/^\d{1,2}:\d{2}$/.test(t)){document.getElementById("modErr").textContent="⚠️ صيغة الوقت غير صحيحة (مثال: 14:30)";return}
+    if(SH[sn].ts.includes(t)){document.getElementById("modErr").textContent="⚠️ هذا الوقت موجود بالفعل";return}
+    SH[sn].ts.push(t);SH[sn].ts.sort((a,b)=>a.localeCompare(b));svSave();closeModal();rAdm();r();nf("✅ تمت الإضافة","g")
   })
-}function dSlot(sk,t){if(!confirm(t("Delete ","حذف ")+`${fm(t)}`+t("?","؟")))return;delete AS[sk+"_"+t];SH[sk].ts=SH[sk].ts.filter(x=>x!=t);sv("bs_as",AS);svSave();rAdm();r()}
+}function dSlot(sk,t){if(!confirm(`حذف ${fm(t)}؟`))return;delete AS[sk+"_"+t];SH[sk].ts=SH[sk].ts.filter(x=>x!=t);sv("bs_as",AS);svSave();rAdm();r()}
 function tv(sk,t){if(!VO[sk])VO[sk]=[];const i=VO[sk].indexOf(t);if(i>-1)VO[sk].splice(i,1);else VO[sk].push(t);svSave();rAdm();r()}
-function edDur(sk,t,i){const cur=gd(sk,t,i);const n=prompt(t("⏱ Duration ","⏱ مدة ")+`${fm(t)}`+t(" (5-60):"," (5-60):"),cur);if(!n||isNaN(n)||parseInt(n)<5||parseInt(n)>60)return;CDUR[sk+"_"+t]=parseInt(n);sv("bs_dur",CDUR);nf(t("✅ ","✅ ")+`${parseInt(n)}`+t(" min"," د"),"g");rAdm();r()}
-function rs(){if(!confirm(t("Reset assignments?","تصفير التوزيعات؟")))return;AS={};sv("bs_as",AS);svAs();r();rAll();nf(t("🔄 Reset","🔄"),"b")}
-function rstSlots(){if(!confirm(t("Restore 81 slots?","استعادة 81 وقت؟")))return;SH=JSON.parse(JSON.stringify(SH_DF));VO=JSON.parse(JSON.stringify(VO_DF));svSave();rAdm();r();nf(t("✅ 81 slots restored","✅ 81 وقت"),"g")}
-function addR(){const n=document.getElementById("rn").value.trim(),m=document.getElementById("rm").value.trim();if(!n||!m)return;RS.push({name:n,email:m});sv("bs_rs",RS);document.getElementById("rn").value="";document.getElementById("rm").value="";rAdm();nf(t("✅","✅"),"g")}
+function edDur(sk,t,i){const cur=gd(sk,t,i);const n=prompt(`⏱ مدة ${fm(t)} (5-60):`,cur);if(!n||isNaN(n)||parseInt(n)<5||parseInt(n)>60)return;CDUR[sk+"_"+t]=parseInt(n);sv("bs_dur",CDUR);nf(`✅ ${parseInt(n)} د`,"g");rAdm();r()}
+function rs(){if(!confirm("تصفير التوزيعات؟"))return;AS={};sv("bs_as",AS);svAs();r();rAll();nf("🔄","b")}
+function rstSlots(){if(!confirm("استعادة 81 وقت؟"))return;SH=JSON.parse(JSON.stringify(SH_DF));VO=JSON.parse(JSON.stringify(VO_DF));svSave();rAdm();r();nf("✅ 81 وقت","g")}
+function addR(){const n=document.getElementById("rn").value.trim(),m=document.getElementById("rm").value.trim();if(!n||!m)return;RS.push({name:n,email:m});sv("bs_rs",RS);document.getElementById("rn").value="";document.getElementById("rm").value="";rAdm();nf("✅","g")}
 // Reports
-async function saveReport(){const ld=document.getElementById("rptList");ld.innerHTML=t("⏳ Saving...","⏳ جاري الحفظ...");try{const r=await(await fetch("/api/report/save",{method:"POST"})).json();if(r.ok){ld.innerHTML="";nf(r.message,"g");loadReports()}else{nf(t("❌ ","❌ ")+r.error,"r");ld.innerHTML="❌"}}catch(e){nf(t("❌ ","❌ ")+e.message,"r");ld.innerHTML="❌"}}
-async function loadReports(){try{const r=await(await fetch("/api/report/list")).json();const d=document.getElementById("rptList");d.innerHTML="";if(!r.length){d.innerHTML=t('<span style="color:#999">No reports</span>','<span style="color:#999">لا توجد تقارير</span>');return}
+async function saveReport(){const ld=document.getElementById("rptList");ld.innerHTML="⏳ جاري الحفظ...";try{const r=await(await fetch("/api/report/save",{method:"POST"})).json();if(r.ok){ld.innerHTML="";nf(r.message,"g");loadReports()}else{nf("❌ "+r.error,"r");ld.innerHTML="❌"}}catch(e){nf("❌ "+e.message,"r");ld.innerHTML="❌"}}
+async function loadReports(){try{const r=await(await fetch("/api/report/list")).json();const d=document.getElementById("rptList");d.innerHTML="";if(!r.length){d.innerHTML='<span style="color:#999">لا توجد تقارير</span>';return}
     r.forEach(dt=>{const b=document.createElement("button");b.className="btn btn-sm";b.style.cssText="font-size:9px;margin:1px";b.textContent="📅 "+dt;b.onclick=()=>viewReport(dt);d.appendChild(b)})
-  }catch(e){document.getElementById("rptList").innerHTML=t('<span style="color:#e74c3c">❌ Error</span>','<span style="color:#e74c3c">❌ خطأ</span>')}}
-async function viewReport(dt){const v=document.getElementById("rptView");v.innerHTML="⏳...";try{const r=await(await fetch("/api/report/get/"+dt)).json();if(r.error){v.innerHTML=t("❌ Not found","❌ غير موجود");return}
+  }catch(e){document.getElementById("rptList").innerHTML='<span style="color:#e74c3c">❌ خطأ</span>'}}
+async function viewReport(dt){const v=document.getElementById("rptView");v.innerHTML="⏳...";try{const r=await(await fetch("/api/report/get/"+dt)).json();if(r.error){v.innerHTML="❌ غير موجود";return}
     let h='<div style="background:#008080;color:#fff;padding:4px;border-radius:4px;font-size:11px;font-weight:700">📊 '+r.date+'</div>';
     for(const[sk,sh]of Object.entries(r.shifts||{})){
       h+='<div style="margin-top:2px"><b>'+(sh.lb||sk)+'</b></div>';
@@ -550,16 +514,16 @@ async function viewReport(dt){const v=document.getElementById("rptView");v.inner
       for(const[nm,bd]of Object.entries(emps)){
         btBody+=`<div style="font-size:9px;padding:1px 2px"><b>${nm}</b>`;
         if(bd.history)bd.history.forEach((x,i)=>{
-          const e=x.end||t("in progress","جاري"),d=x.dur?" ("+x.dur+t("m","د")+")":" ⏳";
-          btBody+=`<div style="padding:0 4px;font-size:8px;color:#555">${i+1}. ${fm(x.start)} → ${e=="جاري"?t("in progress","جاري"):fm(e)}${d}</div>`
+          const e=x.end||"جاري",d=x.dur?" ("+x.dur+"د)":" ⏳";
+          btBody+=`<div style="padding:0 4px;font-size:8px;color:#555">${i+1}. ${fm(x.start)} → ${e=="جاري"?e:fm(e)}${d}</div>`
         });
         btBody+=`</div>`
       }
     }
-    if(btBody)h+='<div style="margin-top:4px;border:1px solid #8e44ad;border-radius:6px;padding:4px;background:#faf0ff"><div style="font-size:10px;font-weight:700;color:#8e44ad">'+t("🚶 Break Timer","🚶 عداد البريك")+'</div>'+btBody+'</div>';
+    if(btBody)h+='<div style="margin-top:4px;border:1px solid #8e44ad;border-radius:6px;padding:4px;background:#faf0ff"><div style="font-size:10px;font-weight:700;color:#8e44ad">🚶 عداد البريك</div>'+btBody+'</div>';
     h+='<div style="text-align:left;color:#999;font-size:8px;margin-top:3px">💾 '+(r.saved_at?.substring(0,19)||"")+'</div>';
     v.innerHTML=h
-  }catch(e){v.innerHTML=t("❌ Error","❌ خطأ")}}
+  }catch(e){v.innerHTML="❌ خطأ"}}
 function dR(i){RS.splice(i,1);sv("bs_rs",RS);rAdm()}
 
 function supView(){
@@ -568,8 +532,8 @@ function supView(){
   el.style.display="block";
   let h="",ta=0,tv=0,tt=0;
   for(const[sk,sh]of Object.entries(SH)){h+=`<div class="sh"><h3 style="font-size:11px">${sh.lb}</h3><div class="gr">`;
-    sh.ts.forEach((t,i)=>{tt++;const k=sk+"_"+t,em=AS[k],vw=(VO[sk]||[]).includes(t),dr=gd(sk,t,i,em||ME),my=em==ME,sup=SUP.includes("_sl_"+sk+"_"+t);
-      const cls=my?"b":vw?"vw":em?"r":sup?"sl":"g";const txt=my?`✅ ${fm(t)} (${dr}د)`:vw?`📖 ${fm(t)} (${dr}د)`:em?`🔴 ${em} (${dr}د)`:sup?`🔒 ${fm(t)} (${dr}د)`:fm(t)+` (${dr}د)`;
+    sh.ts.forEach((t,i)=>{tt++;const k=sk+"_"+t,em=AS[k],vw=(VO[sk]||[]).includes(t),dr=gd(sk,t,i,em||ME),my=em==ME;
+      const cls=my?"b":vw?"vw":em?"r":"g";const txt=my?`✅ ${fm(t)} (${dr}د)`:vw?`📖 ${fm(t)} (${dr}د)`:em?`🔴 ${em} (${dr}د)`:fm(t)+` (${dr}د)`;
       if(!em)ta++;if(em&&!my)tv++;h+=`<span class="${cls}" style="${em?'cursor:default':''}">${txt}</span>`;
     });h+=`</div></div>`;
   }
@@ -580,63 +544,55 @@ function supView(){
 function report(){
   const ds=new Date().toISOString().split("T")[0],nowd=new Date(),td=`${nowd.getDate()}/${nowd.getMonth()+1}`;
   const tLG=LG.filter(x=>x.d==td);let lh="<div style='border:1px solid #008080;border-radius:8px;padding:6px;margin-bottom:6px;background:#f0f8ff'><h3 style='font-size:12px;color:#005f6a'>📜 سجل التوزيعات ("+tLG.length+" عملية)</h3>";
-  tLG.slice(0,40).forEach(x=>{const cls=(x.act.includes("Took")||x.act.includes("أخذ"))?"#27ae60":"#e74c3c";lh+="<div style='display:flex;gap:6px;padding:2px 0;border-bottom:1px solid #eee;font-size:10px'><span style='color:#999;min-width:30px'>"+x.ts+"</span><span style='color:"+cls+";font-weight:600'>"+x.act+"</span><span>"+x.emp+"</span>"+(x.t?"<span style='color:#666'>"+fm(x.t)+"</span>":"")+(x.dr?"<span style='color:#999'>("+x.dr+"د)</span>":"")+"</div>"});lh+="</div>";
+  tLG.slice(0,40).forEach(x=>{const cls=x.act.includes("أخذ")?"#27ae60":"#e74c3c";lh+="<div style='display:flex;gap:6px;padding:2px 0;border-bottom:1px solid #eee;font-size:10px'><span style='color:#999;min-width:30px'>"+x.ts+"</span><span style='color:"+cls+";font-weight:600'>"+x.act+"</span><span>"+x.emp+"</span>"+(x.t?"<span style='color:#666'>"+fm(x.t)+"</span>":"")+(x.dr?"<span style='color:#999'>("+x.dr+"د)</span>":"")+"</div>"});lh+="</div>";
   const empB={};let bT=0;for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,em=AS[k];if(!em)return;if(!empB[em])empB[em]={n:0,min:0};empB[em].n++;empB[em].min+=gd(sk,t,i,em);bT++})}
-  lh+="<div style='border:1px solid #f39c12;border-radius:8px;padding:6px;background:#fffef5'><h3 style='font-size:12px;color:#e67e22;margin-bottom:3px'>"+t("🧮 Break Calculator","🧮 حاسبة البريكات")+"</h3>";
-  EM.forEach(e=>{const b=empB[e.name];if(!b){lh+="<div style='font-size:10px;padding:1px 0'>"+e.name+": 0</div>";return}lh+="<div style='font-size:10px;padding:1px 0'>"+e.name+": <strong>"+b.n+"</strong> "+t("breaks =","بريكات =")+" <strong>"+b.min+"</strong> "+t("min","دقيقة")+"</div>"});
-  lh+="<div style='font-size:10px;border-top:1px solid #eee;margin-top:3px;padding-top:3px'>"+t("📋 Total:","📋 إجمالي:")+" <strong>"+bT+"</strong> "+t("breaks","بريكات")+"</div></div>"
-  const p=document.getElementById("reportView");if(!p){const d=document.createElement("div");d.id="reportView";d.innerHTML=lh+'<div style="text-align:center;margin:4px 0"><button class="btn btn-pri btn-sm" onclick="this.parentElement.remove()">✕ '+t("Close","إغلاق")+'</button></div>';document.querySelector(".ft").parentNode.insertBefore(d,document.querySelector(".ft"))}
-  else{p.innerHTML=lh+'<div style="text-align:center;margin:4px 0"><button class="btn btn-pri btn-sm" onclick="this.parentElement.remove()">✕ '+t("Close","إغلاق")+'</button></div>'}
+  lh+="<div style='border:1px solid #f39c12;border-radius:8px;padding:6px;background:#fffef5'><h3 style='font-size:12px;color:#e67e22;margin-bottom:3px'>🧮 حاسبة البريكات</h3>";
+  EM.forEach(e=>{const b=empB[e.name];if(!b){lh+="<div style='font-size:10px;padding:1px 0'>"+e.name+": 0</div>";return}lh+="<div style='font-size:10px;padding:1px 0'>"+e.name+": <strong>"+b.n+"</strong> بريكات = <strong>"+b.min+"</strong> دقيقة</div>"});
+  lh+="<div style='font-size:10px;border-top:1px solid #eee;margin-top:3px;padding-top:3px'>📋 إجمالي: <strong>"+bT+"</strong> بريكات</div></div>"
+  const p=document.getElementById("reportView");if(!p){const d=document.createElement("div");d.id="reportView";d.innerHTML=lh+'<div style="text-align:center;margin:4px 0"><button class="btn btn-pri btn-sm" onclick="this.parentElement.remove()">✕ إغلاق</button></div>';document.querySelector(".ft").parentNode.insertBefore(d,document.querySelector(".ft"))}
+  else{p.innerHTML=lh+'<div style="text-align:center;margin:4px 0"><button class="btn btn-pri btn-sm" onclick="this.parentElement.remove()">✕ إغلاق</button></div>'}
   let lines=["BREAK SCHEDULE - "+ds,"Al Mana General Hospitals",""];let total=0;
   for(const[sk,sh]of Object.entries(SH)){let any=false;sh.ts.forEach((t,i)=>{const k=sk+"_"+t,em=AS[k];if(!em)return;if(!any){lines.push("-- "+sh.lb);any=true}lines.push(fm(t)+" "+gd(sk,t,i,em)+"m "+em);total++});if(any)lines.push("")}
-  lines.push(t("Total: ","Total: ")+total,"","--- "+t("Calculator","Calculator")+" ---");Object.keys(empB).forEach(k=>lines.push(k+": "+empB[k].n+" = "+empB[k].min+"min"));
-  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/plain"}));a.download="breaks_"+ds+".txt";a.click();nf(t("📥 Downloaded","📥"),"g");
+  lines.push("Total: "+total,"","--- Calculator ---");Object.keys(empB).forEach(k=>lines.push(k+": "+empB[k].n+" = "+empB[k].min+"min"));
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/plain"}));a.download="breaks_"+ds+".txt";a.click();nf("📥","g");
 }
 
 // ═══════════ REMINDERS ═══════════
-function reqNotif(){if(!Notification)return;Notification.requestPermission().then(p=>{if(p=="granted"){notifOn=true;document.getElementById("rmBtn").textContent=t("🔔 Enabled","🔔 مفعل")}})}
+function reqNotif(){if(!Notification)return;Notification.requestPermission().then(p=>{if(p=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}})}
 function playBeep(){try{const ac=new(window.AudioContext||window.webkitAudioContext)();[523.25,659.25,783.99].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.value=f;g.gain.value=.2;o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+i*.12);o.stop(ac.currentTime+i*.12+.2)})}catch(e){}}
 function checkReminders(){if(!ME)return;const n=new Date(),cm=n.getHours()*60+n.getMinutes();
   for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,empName=AS[k];if(!empName)return;const isMy=empName==ME,isVis=adminOn||isSup;if(!isMy&&!isVis)return;const[h,m]=t.split(":").map(Number),tm=h*60+m,dr=gd(sk,t,i,empName),te=tm+dr,pre=isVis&&!isMy?`👤 ${empName}: `:"";
-    if(!REM["b5_"+k]&&cm>=tm-5&&cm<tm){REM["b5_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 ${pre}<strong>${fm(t)}</strong> ${t("in 5 min (","بعد 5 دقائق (")}${dr}${t("m)","د)")}`;playBeep();if(notifOn)new Notification("⏰",{body:`${pre}${fm(t)} - ${dr}${t("m","د")}`});setTimeout(()=>b.style.display="none",8000)}
-    if(!REM["ex_"+k]&&cm>=tm&&cm<tm+1){REM["ex_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 ${pre}<strong>${fm(t)}</strong> ${t("Break time!","وقت البريك!")}`;playBeep();if(notifOn)new Notification("🔔",{body:`${pre}${fm(t)} - ${dr}${t("m","د")}`});setTimeout(()=>b.style.display="none",8000)}
-    if(!REM["e3_"+k]&&cm>=te-3&&cm<te){REM["e3_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`⚠️ ${pre}<strong>${fm(t)}</strong> ${t("3 min left","باقي 3 دقائق")}`;playBeep();if(notifOn)new Notification("⚠️",{body:`${pre}${fm(t)} - ${t("3 min left","باقي 3 دقائق")}`});setTimeout(()=>b.style.display="none",8000)}
-    if(!REM["end_"+k]&&cm>=te&&cm<te+1){REM["end_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔴 ${pre}<strong>${fm(t)}</strong> ${t("ended","انتهى")}`;playBeep();if(notifOn)new Notification("🔴",{body:`${pre}${fm(t)} - ${t("ended","انتهى")}`});setTimeout(()=>b.style.display="none",8000)}
+    if(!REM["b5_"+k]&&cm>=tm-5&&cm<tm){REM["b5_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 ${pre}<strong>${fm(t)}</strong> بعد 5 دقائق (${dr}د)`;playBeep();if(notifOn)new Notification("⏰",{body:`${pre}${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}
+    if(!REM["ex_"+k]&&cm>=tm&&cm<tm+1){REM["ex_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 ${pre}<strong>${fm(t)}</strong> وقت البريك!`;playBeep();if(notifOn)new Notification("🔔",{body:`${pre}${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}
+    if(!REM["e3_"+k]&&cm>=te-3&&cm<te){REM["e3_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`⚠️ ${pre}<strong>${fm(t)}</strong> باقي 3 دقائق`;playBeep();if(notifOn)new Notification("⚠️",{body:`${pre}${fm(t)} - باقي 3 دقائق`});setTimeout(()=>b.style.display="none",8000)}
+    if(!REM["end_"+k]&&cm>=te&&cm<te+1){REM["end_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔴 ${pre}<strong>${fm(t)}</strong> انتهى`;playBeep();if(notifOn)new Notification("🔴",{body:`${pre}${fm(t)} - انتهى`});setTimeout(()=>b.style.display="none",8000)}
   })}
   // ⏱ Watch active breaks for supervisors
   if(adminOn||isSup){const td=((d=new Date())=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`)();
     if(BT[td])for(const[nm,bd]of Object.entries(BT[td])){
       if(nm==ME)continue;
-      if(bd.active&&!BTN["br_"+nm]){BTN["br_"+nm]=true;const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🚶 <strong>${nm}</strong> ${t("started break at","بدأ بريك الساعة")} ${bd.active.start}`;playBeep();if(notifOn)new Notification("🚶",{body:`${nm} ${t("started a break","بدأ بريك")}`});setTimeout(()=>b.style.display="none",8000)}
-      if(!bd.active&&BTN["br_"+nm]){BTN["br_"+nm]=false;const lst=bd.history[bd.history.length-1];if(lst&&lst.dur){const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=(lang=="en"?`🏁 <strong>${nm}</strong> returned from break (${lst.dur}m)`:`🏁 <strong>${nm}</strong> رجع من البريك (${lst.dur}د)`);playBeep();if(notifOn)new Notification("🏁",{body:`${nm} ${t("returned after","رجع بعد")} ${lst.dur} ${t("min","دقيقة")}`});setTimeout(()=>b.style.display="none",8000)}}}}}
+      if(bd.active&&!BTN["br_"+nm]){BTN["br_"+nm]=true;const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🚶 <strong>${nm}</strong> بدأ بريك الساعة ${bd.active.start}`;playBeep();if(notifOn)new Notification("🚶",{body:`${nm} بدأ بريك`});setTimeout(()=>b.style.display="none",8000)}
+      if(!bd.active&&BTN["br_"+nm]){BTN["br_"+nm]=false;const lst=bd.history[bd.history.length-1];if(lst&&lst.dur){const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🏁 <strong>${nm}</strong> رجع من البريك (${lst.dur}د)`;playBeep();if(notifOn)new Notification("🏁",{body:`${nm} رجع بعد ${lst.dur} دقيقة`});setTimeout(()=>b.style.display="none",8000)}}}}}
 
 // ═══════════ EMAIL ═══════════
 function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.trim(),port:document.getElementById("smtpPort").value.trim(),user:document.getElementById("smtpUser").value.trim(),pass:document.getElementById("smtpPass").value.trim(),from_email:document.getElementById("smtpFrom").value.trim()};
-  for(const[k,v]of Object.entries({host:"Host",port:"Port",user:"User",pass:"Password",from_email:"From"})){if(!smtp[k]){document.getElementById("emailStatus").textContent=t("⚠️ Complete all fields","⚠️ أكمل");return}}
+  for(const[k,v]of Object.entries({host:"Host",port:"Port",user:"User",pass:"Password",from_email:"From"})){if(!smtp[k]){document.getElementById("emailStatus").textContent="⚠️ أكمل";return}}
   fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({smtp,assignments:AS,shifts:SH,view_only:VO,durations:DP,custom_durations:CDUR,employees:EM.map(e=>({email:e.email})),extra_emails:RS})})
     .then(r=>r.json()).then(d=>{document.getElementById("emailStatus").textContent=d.message||d.error}).catch(e=>{document.getElementById("emailStatus").textContent="⚠️"})}
 
 // ═══════════ EXPORT ═══════════
-function downloadCSV(){window.open("/api/export/csv","_blank");nf(t("📥 Downloading CSV","📥 جاري تنزيل CSV"),"g")}
-function downloadXLSX(){window.open("/api/export/xlsx","_blank");nf(t("📥 Downloading XLSX","📥 جاري تنزيل XLSX"),"g")}
+function downloadCSV(){window.open("/api/export/csv","_blank");nf("📥 جاري تنزيل CSV","g")}
+function downloadXLSX(){window.open("/api/export/xlsx","_blank");nf("📥 جاري تنزيل XLSX","g")}
 
 // ═══════════ INIT ═══════════
 (async function init(){
-  lang=ld("bs_lang","ar");document.getElementById("langBtn").textContent=lang=="ar"?"🇬🇧":"🇸🇦";
   // Load from localStorage FIRST (instant, no waiting for server)
   let lsCD=ld("bs_cd",{});if(Object.keys(lsCD).length)CD=lsCD;
   let lsEM=ld("bs_emp_bk",[]);if(lsEM.length){EM=lsEM;EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
   adminPw=ld("bs_admin_pw","admin123");
   adminOn=sessionStorage.getItem("bs_admin")=="1";
   if(adminOn){document.getElementById("lkBtn").textContent="🔓";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis")}
-  document.title=t("Break Schedule - Al Mana Hospitals","بريك شيت - مستشفيات المانع");
-  document.getElementById("hdrTitle").textContent=t("Al Mana · Break Schedule","المانع · بريك شيت");
-  lang=="ar"?document.getElementById("loginInfo").innerHTML="👆 أدخل Badge Num | 👇 المدير: 🔑":document.getElementById("loginInfo").innerHTML="👆 Enter Badge Num | 👇 Admin: 🔑";
-  document.getElementById("statInfo").innerHTML=t("⚠️ 4 breaks max · 🔒 Supervisor only","⚠️ 4 بريكات كحد أقصى · 🔒 للمشرف فقط");
-  document.getElementById("myHdr").textContent=t("✅ My Breaks","✅ بريكاتي");updateStaticLang();
-  if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent=t("🔔 Enabled","🔔 مفعل")}let lsSUP0=ld("bs_sup",[]);if(lsSUP0.length)SUP=lsSUP0;
-  // Add default hourly supervisor slots to SUP
-  for(const[sk,times]of Object.entries(SUP_HOURS)){times.forEach(t=>{const k="_sl_"+sk+"_"+t;if(!SUP.includes(k))SUP.push(k)})}
+  if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}let lsSUP0=ld("bs_sup",[]);if(lsSUP0.length)SUP=lsSUP0;
   let lsSH=ld("bs_sh",null);if(lsSH)SH=lsSH;
   let lsVO=ld("bs_vo",null);if(lsVO)VO=lsVO;
   loadBT();r();rAdm();
@@ -655,7 +611,7 @@ function downloadXLSX(){window.open("/api/export/xlsx","_blank");nf(t("📥 Down
   // Load from server in background (with retry for cold start)
   (async function bgLoad(){
     try{const tr=await fetch(SV+"/api/break-timer");if(tr.ok){BT=await tr.json();sv("bs_bt",BT);r()}}catch(e){}
-    try{const er=await fetch(SV+"/api/emp-list");if(er.ok){const el=await er.json();if(el.length){EM=el;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code});r();rAdm()}}}catch(e){}try{const sr=await fetch(SV+"/api/sup-list");if(sr.ok){const sl=await sr.json();if(sl.length){SUP=sl;sv("bs_sup",SUP);for(const[sk,times]of Object.entries(SUP_HOURS)){times.forEach(t=>{const k="_sl_"+sk+"_"+t;if(!SUP.includes(k))SUP.push(k)})}}}}catch(e){}
+    try{const er=await fetch(SV+"/api/emp-list");if(er.ok){const el=await er.json();if(el.length){EM=el;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code});r();rAdm()}}}catch(e){}try{const sr=await fetch(SV+"/api/sup-list");if(sr.ok){const sl=await sr.json();if(sl.length){SUP=sl;sv("bs_sup",SUP)}}}catch(e){}
     try{const br=await fetch(SV+"/api/badges");if(br.ok){const bc=await br.json();for(const[nm,cd]of Object.entries(bc)){CD[nm]=cd;const e=EM.find(x=>x.name==nm);if(e)e.code=cd}};sv("bs_cd",CD)}catch(e){}
     for(let i=0;i<25;i++){
       try{const r=await fetch(SV+"/api/data");if(!r.ok){await new Promise(r=>setTimeout(r,2000));continue}
