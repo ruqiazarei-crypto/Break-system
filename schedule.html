@@ -201,13 +201,6 @@ const DP_DF = [15,15,20,10];
 let SH=JSON.parse(JSON.stringify(SH_DF)),VO=JSON.parse(JSON.stringify(VO_DF)),DP=[...DP_DF];
 let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={},BT={},BTN={};
 
-// Supervisor hourly slots (every hour in supervisor ranges) — add missing slots + mark them
-const SUP_HOURS = {morning:["11:00","12:00","13:00","14:00","15:00"],afternoon:["14:00","15:00","16:00","17:00","18:00"],night:["15:00","16:00","17:00","18:00","19:00"]};
-for(const[sk,times]of Object.entries(SUP_HOURS)){
-  times.forEach(t=>{
-    if(!SH[sk].ts.includes(t)){SH[sk].ts.push(t);SH[sk].ts.sort((a,b)=>a.localeCompare(b))}
-  });
-}
 let lang="ar";
 function t(en,ar){return ar}
 function updateStaticLang(){
@@ -635,8 +628,7 @@ function downloadXLSX(){window.open("/api/export/xlsx","_blank");nf(t("📥 Down
   document.getElementById("statInfo").innerHTML=t("⚠️ 4 breaks max · 🔒 Supervisor only","⚠️ 4 بريكات كحد أقصى · 🔒 للمشرف فقط");
   document.getElementById("myHdr").textContent=t("✅ My Breaks","✅ بريكاتي");updateStaticLang();
   if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent=t("🔔 Enabled","🔔 مفعل")}let lsSUP0=ld("bs_sup",[]);if(lsSUP0.length)SUP=lsSUP0;
-  // Add default hourly supervisor slots to SUP
-  for(const[sk,times]of Object.entries(SUP_HOURS)){times.forEach(t=>{const k="_sl_"+sk+"_"+t;if(!SUP.includes(k))SUP.push(k)})}
+
   let lsSH=ld("bs_sh",null);if(lsSH)SH=lsSH;
   let lsVO=ld("bs_vo",null);if(lsVO)VO=lsVO;
   loadBT();r();rAdm();
@@ -655,7 +647,7 @@ function downloadXLSX(){window.open("/api/export/xlsx","_blank");nf(t("📥 Down
   // Load from server in background (with retry for cold start)
   (async function bgLoad(){
     try{const tr=await fetch(SV+"/api/break-timer");if(tr.ok){BT=await tr.json();sv("bs_bt",BT);r()}}catch(e){}
-    try{const er=await fetch(SV+"/api/emp-list");if(er.ok){const el=await er.json();if(el.length){EM=el;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code});r();rAdm()}}}catch(e){}try{const sr=await fetch(SV+"/api/sup-list");if(sr.ok){const sl=await sr.json();if(sl.length){SUP=sl;sv("bs_sup",SUP)}for(const[sk,times]of Object.entries(SUP_HOURS)){times.forEach(t=>{const k="_sl_"+sk+"_"+t;if(!SUP.includes(k))SUP.push(k)})}}}catch(e){}
+    try{const er=await fetch(SV+"/api/emp-list");if(er.ok){const el=await er.json();if(el.length){EM=el;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code});r();rAdm()}}}catch(e){}try{const sr=await fetch(SV+"/api/sup-list");if(sr.ok){const sl=await sr.json();if(sl.length){SUP=sl;sv("bs_sup",SUP)}}}catch(e){}
     try{const br=await fetch(SV+"/api/badges");if(br.ok){const bc=await br.json();for(const[nm,cd]of Object.entries(bc)){CD[nm]=cd;const e=EM.find(x=>x.name==nm);if(e)e.code=cd}};sv("bs_cd",CD)}catch(e){}
     for(let i=0;i<25;i++){
       try{const r=await fetch(SV+"/api/data");if(!r.ok){await new Promise(r=>setTimeout(r,2000));continue}
