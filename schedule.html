@@ -210,8 +210,8 @@ async function svLoad(){  try{
     const d=await r.json();
     if(d.employees&&d.employees.length){const bk=ld("bs_emp_bk",[]);bk.forEach(e=>{if(!d.employees.find(x=>x.name==e.name))d.employees.push(e)});EM=d.employees;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
     if(d.assignments)AS=d.assignments;
-    if(d.shifts){for(const k of Object.keys(SH_DF)){if(d.shifts[k]&&d.shifts[k].ts&&d.shifts[k].ts.length)SH[k].ts=d.shifts[k].ts}}
     if(d.view_only)VO=d.view_only;
+    if(d.custom_durations)CDUR=d.custom_durations;
     if(d.custom_durations)CDUR=d.custom_durations;
     if(d.recipients)RS=d.recipients;
     if(d.durations&&d.durations.length==4)DP=d.durations;
@@ -600,7 +600,8 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
         const d=await r.json();
         if(d.employees&&d.employees.length){const bk=ld("bs_emp_bk",[]);bk.forEach(e=>{if(!d.employees.find(x=>x.name==e.name))d.employees.push(e)});EM=d.employees;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
         if(d.assignments)AS=d.assignments;
-        if(d.shifts){for(const k of Object.keys(SH_DF)){if(d.shifts[k]&&d.shifts[k].ts&&d.shifts[k].ts.length)SH[k].ts=d.shifts[k].ts}}
+        // Only load shifts from server if localStorage is empty (first visit)
+        const lsSH_chk=ld("bs_sh",null);if(!lsSH_chk&&d.shifts){for(const k of Object.keys(SH_DF)){if(d.shifts[k]&&d.shifts[k].ts&&d.shifts[k].ts.length)SH[k].ts=d.shifts[k].ts}}
         if(d.view_only)VO=d.view_only;if(d.custom_durations)CDUR=d.custom_durations;if(d.recipients)RS=d.recipients;
         if(d.durations&&d.durations.length==4)DP=d.durations;
         let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
