@@ -123,6 +123,14 @@ def init_db():
         for name, email in default_emps:
             con.execute("INSERT OR IGNORE INTO employees(name,email,code) VALUES(?,?,?)", (name,email,""))
 
+    # Seed emp_list and sup_list in store if empty
+    row = con.execute("SELECT val FROM store WHERE key='emp_list'").fetchone()
+    if not row:
+        emp_json = json.dumps([{"name":n,"email":e,"code":""} for n,e in default_emps], ensure_ascii=False)
+        con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("emp_list", emp_json))
+    row2 = con.execute("SELECT val FROM store WHERE key='sup_list'").fetchone()
+    if not row2:
+        con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("sup_list", json.dumps(["Shift Supervisor","Head Nurse - Morning","Head Nurse - Afternoon"])))
     con.commit()
     con.close()
 
@@ -184,9 +192,11 @@ def api_data():
                 report = {"date":date,"saved_at":now.isoformat(),"employees":emps,"assignments":old_ass,"shifts":sh,"view_only":vo,"custom_durations":cdur,"durations":dur}
                 con.execute("INSERT OR REPLACE INTO reports(date,data) VALUES(?,?)", (date, json.dumps(report)))
 
-        con.execute("DELETE FROM employees")
-        for e in d.get("employees",[]):
-            con.execute("INSERT INTO employees(name,email,code) VALUES(?,?,?)", (e["name"],e.get("email",""),e.get("code","")))
+        emps = d.get("employees",[])
+        if len(emps) >= 5:  # safety guard: only replace if 5+ employees (prevent accidental wipe)
+            con.execute("DELETE FROM employees")
+            for e in emps:
+                con.execute("INSERT INTO employees(name,email,code) VALUES(?,?,?)", (e["name"],e.get("email",""),e.get("code","")))
 
         con.execute("DELETE FROM assignments")
         for k,v in d.get("assignments",{}).items():
@@ -266,7 +276,10 @@ def api_emp_list():
     else:
         d = request.json
         if d is None: return jsonify({"error":"no data"}), 400
-        con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("emp_list", json.dumps(d)))
+        if isinstance(d, list) and len(d) > 3:  # safety: ignore empty/damaged payloads
+            con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("emp_list", json.dumps(d)))
+        elif isinstance(d, list) and len(d) <= 3:
+            return jsonify({"ok":True, "warning":"list too small — keeping existing"})
         con.commit()
         con.close()
         return jsonify({"ok":True, "message":"✅ تم حفظ الموظفين"})
@@ -285,7 +298,10 @@ def api_sup_list():
     else:
         d = request.json
         if d is None: return jsonify({"error":"no data"}), 400
-        con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("sup_list", json.dumps(d)))
+        if isinstance(d, list) and len(d) > 0:
+            con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("sup_list", json.dumps(d)))
+        elif isinstance(d, list) and len(d) == 0:
+            return jsonify({"ok":True, "warning":"empty list ignored — keeping existing"})
         con.commit()
         con.close()
         return jsonify({"ok":True, "message":"✅ تم حفظ المشرفين"})
