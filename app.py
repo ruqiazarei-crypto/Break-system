@@ -140,7 +140,7 @@ def api_data():
         # Load all data
         emps = [{"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees").fetchall()]
         ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
-        sh = {"morning":{"lb":"🌅 Morning (8-5)","ts":[]},"afternoon":{"lb":"☀️ Afternoon (11-8)","ts":[]},"night":{"lb":"🌙 Night (1-10)","ts":[]}}
+        sh = {"morning":{"lb":"🌅 صباحي (11-3)","ts":[]},"afternoon":{"lb":"☀️ مسائي (2-6)","ts":[]},"night":{"lb":"🌙 ليلي (3-7)","ts":[]}}
         for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx"):
             sh[r["shift"]]["ts"].append(r["time"])
         vo = {}
