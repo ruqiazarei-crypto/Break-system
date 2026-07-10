@@ -193,7 +193,7 @@ const VO_DF = {morning:["12:00","13:10","15:10"],afternoon:["15:00","18:00","17:
 const DP_DF = [15,15,20,10];
 
 let SH=JSON.parse(JSON.stringify(SH_DF)),VO=JSON.parse(JSON.stringify(VO_DF)),DP=[...DP_DF];
-let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={},BT={};
+let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={},BT={},BTN={};
 let ME="",myCode="",adminPw="admin123",adminOn=false,isSup=false,notifOn=false;
 let sn=0; // sync counter
 
@@ -532,13 +532,18 @@ function report(){
 function reqNotif(){if(!Notification)return;Notification.requestPermission().then(p=>{if(p=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}})}
 function playBeep(){try{const ac=new(window.AudioContext||window.webkitAudioContext)();[523.25,659.25,783.99].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.value=f;g.gain.value=.2;o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+i*.12);o.stop(ac.currentTime+i*.12+.2)})}catch(e){}}
 function checkReminders(){if(!ME)return;const n=new Date(),cm=n.getHours()*60+n.getMinutes();
-  for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t;if(AS[k]!=ME)return;const[h,m]=t.split(":").map(Number),tm=h*60+m,dr=gd(sk,t,i,ME),te=tm+dr;
-    if(!REM["b5_"+k]&&cm>=tm-5&&cm<tm){REM["b5_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 <strong>${fm(t)}</strong> بعد 5 دقائق (${dr}د) · ${ME}`;playBeep();if(notifOn)new Notification("⏰",{body:`${fm(t)} - ${dr}د · ${ME}`});setTimeout(()=>b.style.display="none",8000)}
-    if(!REM["ex_"+k]&&cm>=tm&&cm<tm+1){REM["ex_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 <strong>${fm(t)}</strong> وقت البريك! · ${ME}`;playBeep();if(notifOn)new Notification("🔔",{body:`${fm(t)} - ${dr}د · ${ME}`});setTimeout(()=>b.style.display="none",8000)}
-    if(!REM["e3_"+k]&&cm>=te-3&&cm<te){REM["e3_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`⚠️ <strong>${fm(t)}</strong> باقي 3 دقائق · ${ME}`;playBeep();if(notifOn)new Notification("⚠️",{body:`${fm(t)} - باقي 3 دقائق · ${ME}`});setTimeout(()=>b.style.display="none",8000)}
-    if(!REM["end_"+k]&&cm>=te&&cm<te+1){REM["end_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔴 <strong>${fm(t)}</strong> انتهى وقت البريك · ${ME}`;playBeep();if(notifOn)new Notification("🔴",{body:`${fm(t)} - انتهى · ${ME}`});setTimeout(()=>b.style.display="none",8000)}
+  for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,empName=AS[k];if(!empName)return;const isMy=empName==ME,isVis=adminOn||isSup;if(!isMy&&!isVis)return;const[h,m]=t.split(":").map(Number),tm=h*60+m,dr=gd(sk,t,i,empName),te=tm+dr,pre=isVis&&!isMy?`👤 ${empName}: `:"";
+    if(!REM["b5_"+k]&&cm>=tm-5&&cm<tm){REM["b5_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 ${pre}<strong>${fm(t)}</strong> بعد 5 دقائق (${dr}د)`;playBeep();if(notifOn)new Notification("⏰",{body:`${pre}${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}
+    if(!REM["ex_"+k]&&cm>=tm&&cm<tm+1){REM["ex_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 ${pre}<strong>${fm(t)}</strong> وقت البريك!`;playBeep();if(notifOn)new Notification("🔔",{body:`${pre}${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}
+    if(!REM["e3_"+k]&&cm>=te-3&&cm<te){REM["e3_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`⚠️ ${pre}<strong>${fm(t)}</strong> باقي 3 دقائق`;playBeep();if(notifOn)new Notification("⚠️",{body:`${pre}${fm(t)} - باقي 3 دقائق`});setTimeout(()=>b.style.display="none",8000)}
+    if(!REM["end_"+k]&&cm>=te&&cm<te+1){REM["end_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔴 ${pre}<strong>${fm(t)}</strong> انتهى`;playBeep();if(notifOn)new Notification("🔴",{body:`${pre}${fm(t)} - انتهى`});setTimeout(()=>b.style.display="none",8000)}
   })}
-}
+  // ⏱ Watch active breaks for supervisors
+  if(adminOn||isSup){const td=((d=new Date())=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`)();
+    if(BT[td])for(const[nm,bd]of Object.entries(BT[td])){
+      if(nm==ME)continue;
+      if(bd.active&&!BTN["br_"+nm]){BTN["br_"+nm]=true;const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🚶 <strong>${nm}</strong> بدأ بريك الساعة ${bd.active.start}`;playBeep();if(notifOn)new Notification("🚶",{body:`${nm} بدأ بريك`});setTimeout(()=>b.style.display="none",8000)}
+      if(!bd.active&&BTN["br_"+nm]){BTN["br_"+nm]=false;const lst=bd.history[bd.history.length-1];if(lst&&lst.dur){const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🏁 <strong>${nm}</strong> رجع من البريك (${lst.dur}د)`;playBeep();if(notifOn)new Notification("🏁",{body:`${nm} رجع بعد ${lst.dur} دقيقة`});setTimeout(()=>b.style.display="none",8000)}}}}}
 
 // ═══════════ EMAIL ═══════════
 function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.trim(),port:document.getElementById("smtpPort").value.trim(),user:document.getElementById("smtpUser").value.trim(),pass:document.getElementById("smtpPass").value.trim(),from_email:document.getElementById("smtpFrom").value.trim()};
