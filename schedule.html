@@ -134,6 +134,8 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
       <button class="btn btn-dan btn-sm" onclick="rstSlots()">🔄 استعادة الأوقات</button>
       <button class="btn btn-dan btn-sm" onclick="rs()">🔄 تصفير</button>
       <button class="btn btn-suc btn-sm" onclick="report()">📊 تقرير</button>
+      <button class="btn btn-pri btn-sm" onclick="downloadCSV()">📥 CSV</button>
+      <button class="btn btn-war btn-sm" onclick="downloadXLSX()">📊 XLSX</button>
     </div>
     <div class="pn"><h3>👥 الموظفين <span style="font-weight:normal;font-size:9px;color:#999">(الاسم | الإيميل | 🔑 | ⏱)</span></h3><div id="emps"></div></div>
     <div class="pn"><h3>🕐 الأوقات <span style="font-weight:normal;font-size:9px;color:#999">🟢 مفتوح · 🔴 مغلق · 🔒 مشرف · ✏️ تعديل · ✕ حذف</span></h3><div id="slotMgr"></div></div>
@@ -218,12 +220,23 @@ async function svLoad(){  try{
     let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
   }catch(e){}
 }
-async function svSave(){const empData=EM.map(e=>{const cd=CD.hasOwnProperty(e.name)?CD[e.name]:(e.code||"");return{name:e.name,email:e.email,code:cd}});
+async function svSave(){
+  // Auto-backup counter
+  let svCount = parseInt(localStorage.getItem("bs_svCount") || "0");
+  svCount++;
+  localStorage.setItem("bs_svCount", String(svCount));
+  const empData=EM.map(e=>{const cd=CD.hasOwnProperty(e.name)?CD[e.name]:(e.code||"");return{name:e.name,email:e.email,code:cd}});
   sv("bs_emp_bk",empData);sv("bs_sh",SH);sv("bs_vo",VO);
   try{
     await fetch(SV+"/api/data",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({employees:empData,assignments:AS,shifts:SH,view_only:VO,custom_durations:CDUR,recipients:RS,durations:DP})});
     fetch(SV+"/api/sup-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(SUP)});
+    // Every 10th save → trigger server-side backup
+    if(svCount % 10 === 0){
+      fetch("/api/export/backup",{method:"POST"}).then(r=>r.json()).then(d=>{
+        if(d.ok) nf("💾 نسخة احتياطية: "+d.file,"g");
+      }).catch(()=>{});
+    }
     nf("☁️ تم الحفظ","g");
     fetch(SV+"/api/emp-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(EM)});
   }catch(e){console.log("❌ svSave error:",e)}
@@ -565,6 +578,10 @@ function sendEmail(){const smtp={host:document.getElementById("smtpHost").value.
   for(const[k,v]of Object.entries({host:"Host",port:"Port",user:"User",pass:"Password",from_email:"From"})){if(!smtp[k]){document.getElementById("emailStatus").textContent="⚠️ أكمل";return}}
   fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({smtp,assignments:AS,shifts:SH,view_only:VO,durations:DP,custom_durations:CDUR,employees:EM.map(e=>({email:e.email})),extra_emails:RS})})
     .then(r=>r.json()).then(d=>{document.getElementById("emailStatus").textContent=d.message||d.error}).catch(e=>{document.getElementById("emailStatus").textContent="⚠️"})}
+
+// ═══════════ EXPORT ═══════════
+function downloadCSV(){window.open("/api/export/csv","_blank");nf("📥 جاري تنزيل CSV","g")}
+function downloadXLSX(){window.open("/api/export/xlsx","_blank");nf("📥 جاري تنزيل XLSX","g")}
 
 // ═══════════ INIT ═══════════
 (async function init(){

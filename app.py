@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Break Schedule - Al Mana General Hospitals (Server-Sync Version)"""
 from flask import Flask, send_from_directory, request, jsonify, send_file
-import json, io, os, smtplib, ssl, sqlite3
+import json, io, os, smtplib, ssl, sqlite3, csv
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
@@ -425,6 +425,196 @@ def export():
                          as_attachment=True, download_name=f"Break_Schedule_{datetime.now().strftime('%Y%m%d')}.xlsx")
     except Exception as e:
         return jsonify({"error":str(e)}), 500
+
+# ═══════════════ FULL DATA EXPORT (CSV) ═══════════════
+@app.route("/api/export/csv", methods=["GET"])
+def api_export_csv():
+    """Export ALL data as multi-section CSV file download"""
+    con = get_db()
+
+    emps = [{"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees").fetchall()]
+    ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
+    sh_rows = [{"shift":r["shift"],"time":r["time"]} for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx").fetchall()]
+    vo_rows = [{"shift":r["shift"],"time":r["time"]} for r in con.execute("SELECT * FROM view_only").fetchall()]
+    bt_row = con.execute("SELECT val FROM store WHERE key='break_timer'").fetchone()
+    bt_val = json.loads(bt_row["val"]) if bt_row else {}
+    sl_row = con.execute("SELECT val FROM store WHERE key='sup_list'").fetchone()
+    sl_val = json.loads(sl_row["val"]) if sl_row else []
+    dp = con.execute("SELECT * FROM duration_pattern WHERE id=1").fetchone()
+    cd_rows = [{"slot_key":r["slot_key"],"duration":r["duration"]} for r in con.execute("SELECT * FROM custom_durations").fetchall()]
+
+    con.close()
+
+    buf = io.StringIO()
+    w = csv.writer(buf)
+
+    w.writerow(["# Employees", "name", "email", "badge_code"])
+    for e in emps:
+        w.writerow(["", e["name"], e["email"], e["code"]])
+
+    w.writerow([])
+    w.writerow(["# Assignments", "slot_key", "employee_name"])
+    for k, v in ass.items():
+        w.writerow(["", k, v])
+
+    w.writerow([])
+    w.writerow(["# Shifts", "shift", "time"])
+    for r in sh_rows:
+        w.writerow(["", r["shift"], r["time"]])
+
+    w.writerow([])
+    w.writerow(["# View Only", "shift", "time"])
+    for r in vo_rows:
+        w.writerow(["", r["shift"], r["time"]])
+
+    w.writerow([])
+    w.writerow(["# Break Timer", "key", "value"])
+    w.writerow(["", "break_timer", json.dumps(bt_val, ensure_ascii=False)])
+
+    w.writerow([])
+    w.writerow(["# Supervisor List", "key", "value"])
+    w.writerow(["", "sup_list", json.dumps(sl_val, ensure_ascii=False)])
+
+    w.writerow([])
+    w.writerow(["# Duration Pattern", "id", "d0", "d1", "d2", "d3"])
+    if dp:
+        w.writerow(["", dp["id"], dp["d0"], dp["d1"], dp["d2"], dp["d3"]])
+
+    w.writerow([])
+    w.writerow(["# Custom Durations", "slot_key", "duration"])
+    for r in cd_rows:
+        w.writerow(["", r["slot_key"], r["duration"]])
+
+    out = io.BytesIO(buf.getvalue().encode("utf-8-sig"))
+    return send_file(out, mimetype="text/csv; charset=utf-8",
+                     as_attachment=True,
+                     download_name=f"BreakSchedule_Full_{datetime.now().strftime('%Y%m%d_%H%M')}.csv")
+
+# ═══════════════ FULL DATA EXPORT (XLSX) ═══════════════
+@app.route("/api/export/xlsx", methods=["GET"])
+def api_export_xlsx():
+    """Export ALL data as multi-sheet Excel file download"""
+    con = get_db()
+
+    emps = [{"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees").fetchall()]
+    ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
+    sh_rows = [{"shift":r["shift"],"time":r["time"]} for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx").fetchall()]
+    vo_rows = [{"shift":r["shift"],"time":r["time"]} for r in con.execute("SELECT * FROM view_only").fetchall()]
+    bt_row = con.execute("SELECT val FROM store WHERE key='break_timer'").fetchone()
+    bt_val = json.loads(bt_row["val"]) if bt_row else {}
+    sl_row = con.execute("SELECT val FROM store WHERE key='sup_list'").fetchone()
+    sl_val = json.loads(sl_row["val"]) if sl_row else []
+    dp = con.execute("SELECT * FROM duration_pattern WHERE id=1").fetchone()
+    cd_rows = [{"slot_key":r["slot_key"],"duration":r["duration"]} for r in con.execute("SELECT * FROM custom_durations").fetchall()]
+
+    con.close()
+
+    wb = openpyxl.Workbook()
+
+    # 1 — Employees
+    ws1 = wb.active
+    ws1.title = "Employees"
+    ws1.append(["name", "email", "badge_code"])
+    for e in emps:
+        ws1.append([e["name"], e["email"], e["code"]])
+
+    # 2 — Assignments
+    ws2 = wb.create_sheet("Assignments")
+    ws2.append(["slot_key", "employee_name"])
+    for k, v in ass.items():
+        ws2.append([k, v])
+
+    # 3 — Shifts
+    ws3 = wb.create_sheet("Shifts")
+    ws3.append(["shift", "time"])
+    for r in sh_rows:
+        ws3.append([r["shift"], r["time"]])
+
+    # 4 — View Only
+    ws4 = wb.create_sheet("View Only")
+    ws4.append(["shift", "time"])
+    for r in vo_rows:
+        ws4.append([r["shift"], r["time"]])
+
+    # 5 — Break Timer
+    ws5 = wb.create_sheet("Break Timer")
+    ws5.append(["key", "value"])
+    ws5.append(["break_timer", json.dumps(bt_val, ensure_ascii=False)])
+
+    # 6 — Supervisor List
+    ws6 = wb.create_sheet("Supervisor List")
+    ws6.append(["key", "value"])
+    ws6.append(["sup_list", json.dumps(sl_val, ensure_ascii=False)])
+
+    # 7 — Duration Pattern
+    ws7 = wb.create_sheet("Duration Pattern")
+    ws7.append(["id", "d0", "d1", "d2", "d3"])
+    if dp:
+        ws7.append([dp["id"], dp["d0"], dp["d1"], dp["d2"], dp["d3"]])
+
+    # 8 — Custom Durations
+    ws8 = wb.create_sheet("Custom Durations")
+    ws8.append(["slot_key", "duration"])
+    for r in cd_rows:
+        ws8.append([r["slot_key"], r["duration"]])
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return send_file(buf, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                     as_attachment=True,
+                     download_name=f"BreakSchedule_Full_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx")
+
+# ═══════════════ AUTO-BACKUP (triggered from JS every 10 saves) ═══════════════
+@app.route("/api/export/backup", methods=["POST"])
+def api_export_backup():
+    """Generate a timestamped XLSX backup file on the server"""
+    BACKUP_DIR = os.path.join(BASE, "backups")
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    now = datetime.now()
+    stamp = now.strftime("%Y%m%d_%H%M%S")
+    fname = f"BreakSchedule_Backup_{stamp}.xlsx"
+    fpath = os.path.join(BACKUP_DIR, fname)
+
+    con = get_db()
+    emps = [{"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees").fetchall()]
+    ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
+    sh_rows = [{"shift":r["shift"],"time":r["time"]} for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx").fetchall()]
+    vo_rows = [{"shift":r["shift"],"time":r["time"]} for r in con.execute("SELECT * FROM view_only").fetchall()]
+    bt_row = con.execute("SELECT val FROM store WHERE key='break_timer'").fetchone()
+    bt_val = json.loads(bt_row["val"]) if bt_row else {}
+    sl_row = con.execute("SELECT val FROM store WHERE key='sup_list'").fetchone()
+    sl_val = json.loads(sl_row["val"]) if sl_row else []
+    dp = con.execute("SELECT * FROM duration_pattern WHERE id=1").fetchone()
+    cd_rows = [{"slot_key":r["slot_key"],"duration":r["duration"]} for r in con.execute("SELECT * FROM custom_durations").fetchall()]
+    con.close()
+
+    wb = openpyxl.Workbook()
+    ws1 = wb.active; ws1.title = "Employees"
+    ws1.append(["name","email","badge_code"])
+    for e in emps: ws1.append([e["name"],e["email"],e["code"]])
+    ws2 = wb.create_sheet("Assignments")
+    ws2.append(["slot_key","employee_name"])
+    for k,v in ass.items(): ws2.append([k,v])
+    ws3 = wb.create_sheet("Shifts")
+    ws3.append(["shift","time"])
+    for r in sh_rows: ws3.append([r["shift"],r["time"]])
+    ws4 = wb.create_sheet("View Only")
+    ws4.append(["shift","time"])
+    for r in vo_rows: ws4.append([r["shift"],r["time"]])
+    ws5 = wb.create_sheet("Break Timer")
+    ws5.append(["key","value"]); ws5.append(["break_timer",json.dumps(bt_val,ensure_ascii=False)])
+    ws6 = wb.create_sheet("Supervisor List")
+    ws6.append(["key","value"]); ws6.append(["sup_list",json.dumps(sl_val,ensure_ascii=False)])
+    ws7 = wb.create_sheet("Duration Pattern")
+    ws7.append(["id","d0","d1","d2","d3"])
+    if dp: ws7.append([dp["id"],dp["d0"],dp["d1"],dp["d2"],dp["d3"]])
+    ws8 = wb.create_sheet("Custom Durations")
+    ws8.append(["slot_key","duration"])
+    for r in cd_rows: ws8.append([r["slot_key"],r["duration"]])
+    wb.save(fpath)
+
+    return jsonify({"ok":True,"file":fname,"path":fpath,"message":f"✅ تم حفظ النسخة الاحتياطية: {fname}"})
 
 # ═══════════════ EMAIL ═══════════════
 def build_email_body(assigns, shifts, vo, dur, cdur, emps, extras):
