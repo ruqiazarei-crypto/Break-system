@@ -99,7 +99,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 <div class="pn">
   <h3>🟢 الأوقات المتاحة</h3>
   <div id="availSlots"></div>
-  <div style="text-align:center;color:#999;font-size:9px;margin-top:5px">⚠️ 4 بريكات كحد أقصى · 🔒 للمشرف فقط</div>
+  <div style="text-align:center;color:#999;font-size:9px;margin-top:5px">⚠️ 4 بريكات كحد أقصى · 👁️ المشرف: 11-2|2-6|3-7</div>
 </div>
 
 <!-- UPCOMING -->
@@ -141,7 +141,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
       <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreBackup(event)">
     </div>
     <div class="pn"><h3>👥 الموظفين <span style="font-weight:normal;font-size:9px;color:#999">(الاسم | الإيميل | 🔑 | ⏱)</span></h3><div id="emps"></div></div>
-    <div class="pn"><h3>🕐 الأوقات <span style="font-weight:normal;font-size:9px;color:#999">🟢 مفتوح · 🔴 مغلق · 🔒 مشرف · ✏️ تعديل · ✕ حذف</span></h3><div id="slotMgr"></div></div>
+    <div class="pn"><h3>🕐 الأوقات <span style="font-weight:normal;font-size:9px;color:#999">🟢 مفتوح · 🔴 مغلق · 🔒 مشرف (11-2|2-6|3-7) · ✏️ تعديل · ✕ حذف</span></h3><div id="slotMgr"></div></div>
     <div class="pn"><h3>📧 المستلمين</h3><div id="recips"></div>
       <div style="display:flex;gap:3px;margin-top:3px"><input id="rn" placeholder="الاسم" style="flex:1;font-size:10px"><input id="rm" placeholder="الإيميل" style="flex:2;font-size:10px"><button class="btn btn-suc btn-sm" onclick="addR()">➕</button></div>
     </div>
@@ -200,6 +200,12 @@ const SH_DF = {
 };
 const VO_DF = {morning:["12:00","13:10","15:10"],afternoon:["15:00","18:00","17:00"],night:["17:00","19:10","16:00"]};
 const DP_DF = [15,15,20,10];
+const SUP_HOURS = {
+  morning:{start:"11:00",end:"14:00"},
+  afternoon:{start:"14:00",end:"18:00"},
+  night:{start:"15:00",end:"19:00"}
+};
+function tmMin(t){let[h,m]=t.split(":").map(Number);return h*60+m}
 
 let SH=JSON.parse(JSON.stringify(SH_DF)),VO=JSON.parse(JSON.stringify(VO_DF)),DP=[...DP_DF];
 let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={},BT={},BTN={};
@@ -287,7 +293,7 @@ function r(){
   if(!ME){document.getElementById("availSlots").innerHTML=`<div style="text-align:center;color:#e74c3c;font-size:11px;padding:5px">👆 أدخل Badge Num من المشرف</div>`;document.getElementById("upcPn").style.display="none";return}
   // Available
   let ah="",avail=[],myTimes=[];mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
-  for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,dr=gd(sk,t,i,ME),em=AS[k],vw=(VO[sk]||[]).includes(t),sup=SUP.includes("_sl_"+k);if(em==ME){myTimes.push({k,sk,t,dr});return}if(em||vw)return;if(sup&&!isSup)return;avail.push({k,sk,t,dr})})}
+  for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,dr=gd(sk,t,i,ME),em=AS[k],vw=(VO[sk]||[]).includes(t);if(em==ME){myTimes.push({k,sk,t,dr});return}if(em||vw)return;if(isSup){const shh=SUP_HOURS[sk];if(shh){const mt=tmMin(t);if(mt<tmMin(shh.start)||mt>=tmMin(shh.end))return}}else{if(SUP.includes("_sl_"+k))return}avail.push({k,sk,t,dr})})}
   if(mc>=4){ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">⚠️ اخترت 4 بريكات كحد أقصى</div>`}
   else if(!avail.length){ah=`<span style="color:#999;font-size:10px">لا توجد أوقات متاحة</span>`}
   else{const g={};avail.forEach(x=>{if(!g[x.sk])g[x.sk]=[];g[x.sk].push(x)});for(const[sk,list]of Object.entries(g)){ah+=`<div class="sg"><h4>${SH[sk].lb}</h4><div class="row">`;list.forEach(x=>{ah+=`<span class="mtt" style="cursor:pointer;border-color:#27ae60;background:#e8f8f5" onclick="empAs('${x.sk}','${x.t}','${x.k}')">${fm(x.t)} (${x.dr}د)</span>`});ah+=`</div></div>`}}
