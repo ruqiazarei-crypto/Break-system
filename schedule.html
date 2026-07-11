@@ -611,7 +611,7 @@ function downloadXLSX(){window.open("/api/export/xlsx","_blank");nf("📥 جار
   // Load from server in background (with retry for cold start)
   (async function bgLoad(){
     try{const tr=await fetch(SV+"/api/break-timer");if(tr.ok){BT=await tr.json();sv("bs_bt",BT);r()}}catch(e){}
-    try{const er=await fetch(SV+"/api/emp-list");if(er.ok){const el=await er.json();if(el.length){EM=el;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code});r();rAdm()}}}catch(e){}try{const sr=await fetch(SV+"/api/sup-list");if(sr.ok){const sl=await sr.json();if(sl.length){SUP=sl;sv("bs_sup",SUP)}}}catch(e){}
+    try{const er=await fetch(SV+"/api/emp-list");if(er.ok){const el=await er.json();if(el.length){const pre=EM;EM=el;pre.forEach(e=>{if(!EM.find(x=>x.name==e.name))EM.push(e)});sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code});r();rAdm()}}}catch(e){}try{const sr=await fetch(SV+"/api/sup-list");if(sr.ok){const sl=await sr.json();if(sl.length){const pre=SUP;SUP=sl;pre.forEach(s=>{if(!SUP.includes(s))SUP.push(s)});sv("bs_sup",SUP)}}}catch(e){}
     try{const br=await fetch(SV+"/api/badges");if(br.ok){const bc=await br.json();for(const[nm,cd]of Object.entries(bc)){CD[nm]=cd;const e=EM.find(x=>x.name==nm);if(e)e.code=cd}};sv("bs_cd",CD)}catch(e){}
     for(let i=0;i<25;i++){
       try{const r=await fetch(SV+"/api/data");if(!r.ok){await new Promise(r=>setTimeout(r,2000));continue}
