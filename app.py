@@ -270,9 +270,11 @@ def api_emp_list():
     """Get/set employee list independently — not cleared by daily reset"""
     con = get_db()
     if request.method == "GET":
-        row = con.execute("SELECT val FROM store WHERE key='emp_list'").fetchone()
+        # Return from employees table (authoritative source — always has full list)
+        rows = con.execute("SELECT name, email, code FROM employees ORDER BY id").fetchall()
+        emp_list = [{"name":r["name"],"email":r["email"],"code":r["code"]} for r in rows]
         con.close()
-        return jsonify(json.loads(row["val"]) if row else [])
+        return jsonify(emp_list)
     else:
         d = request.json
         if d is None: return jsonify({"error":"no data"}), 400
