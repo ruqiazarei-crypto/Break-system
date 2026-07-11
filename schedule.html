@@ -218,7 +218,6 @@ async function svLoad(){  try{
     if(d.assignments)AS=d.assignments;
     if(d.view_only)VO=d.view_only;
     if(d.custom_durations)CDUR=d.custom_durations;
-    if(d.custom_durations)CDUR=d.custom_durations;
     if(d.recipients)RS=d.recipients;
     if(d.durations&&d.durations.length==4)DP=d.durations;
     let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
@@ -485,9 +484,9 @@ function addSlot(){
     if(SH[sn].ts.includes(t)){document.getElementById("modErr").textContent="⚠️ هذا الوقت موجود بالفعل";return}
     SH[sn].ts.push(t);SH[sn].ts.sort((a,b)=>a.localeCompare(b));svSave();closeModal();rAdm();r();nf("✅ تمت الإضافة","g")
   })
-}function dSlot(sk,t){if(!confirm(`حذف ${fm(t)}؟`))return;delete AS[sk+"_"+t];SH[sk].ts=SH[sk].ts.filter(x=>x!=t);sv("bs_as",AS);svSave();rAdm();r()}
+}function dSlot(sk,t){if(!confirm(`حذف ${fm(t)}؟`))return;delete AS[sk+"_"+t];delete CDUR[sk+"_"+t];SH[sk].ts=SH[sk].ts.filter(x=>x!=t);sv("bs_as",AS);sv("bs_dur",CDUR);svSave();rAdm();r()}
 function tv(sk,t){if(!VO[sk])VO[sk]=[];const i=VO[sk].indexOf(t);if(i>-1)VO[sk].splice(i,1);else VO[sk].push(t);svSave();rAdm();r()}
-function edDur(sk,t,i){const cur=gd(sk,t,i);const n=prompt(`⏱ مدة ${fm(t)} (5-60):`,cur);if(!n||isNaN(n)||parseInt(n)<5||parseInt(n)>60)return;CDUR[sk+"_"+t]=parseInt(n);sv("bs_dur",CDUR);nf(`✅ ${parseInt(n)} د`,"g");rAdm();r()}
+function edDur(sk,t,i){const cur=gd(sk,t,i);const n=prompt(`⏱ مدة ${fm(t)} (5-60):`,cur);if(!n||isNaN(n)||parseInt(n)<5||parseInt(n)>60)return;CDUR[sk+"_"+t]=parseInt(n);sv("bs_dur",CDUR);svSave();nf(`✅ ${parseInt(n)} د`,"g");rAdm();r()}
 function rs(){if(!confirm("تصفير التوزيعات؟"))return;AS={};sv("bs_as",AS);svAs();r();rAll();nf("🔄","b")}
 function rstSlots(){if(!confirm("استعادة 81 وقت؟"))return;SH=JSON.parse(JSON.stringify(SH_DF));VO=JSON.parse(JSON.stringify(VO_DF));svSave();rAdm();r();nf("✅ 81 وقت","g")}
 function addR(){const n=document.getElementById("rn").value.trim(),m=document.getElementById("rm").value.trim();if(!n||!m)return;RS.push({name:n,email:m});sv("bs_rs",RS);document.getElementById("rn").value="";document.getElementById("rm").value="";rAdm();nf("✅","g")}
@@ -595,6 +594,7 @@ function downloadXLSX(){window.open("/api/export/xlsx","_blank");nf("📥 جار
   if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}let lsSUP0=ld("bs_sup",[]);if(lsSUP0.length)SUP=lsSUP0;
   let lsSH=ld("bs_sh",null);if(lsSH)SH=lsSH;
   let lsVO=ld("bs_vo",null);if(lsVO)VO=lsVO;
+  let lsCDUR=ld("bs_dur",{});if(Object.keys(lsCDUR).length)CDUR=lsCDUR;
   loadBT();r();rAdm();
   // Load timer from localStorage
   let lsBT=ld("bs_bt",{});if(Object.keys(lsBT).length)BT=lsBT;
