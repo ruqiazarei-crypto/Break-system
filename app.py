@@ -634,6 +634,95 @@ def api_export_backup():
 
     return jsonify({"ok":True,"file":fname,"path":fpath,"message":f"✅ تم حفظ النسخة الاحتياطية: {fname}"})
 
+# ═══════════════ BACKUP Download ═══════════════
+@app.route("/api/backup/download", methods=["GET"])
+def api_backup_download():
+    """Download full data as JSON"""
+    import json, io
+    con = get_db()
+    
+    emps = [{"id":r["id"],"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees ORDER BY id").fetchall()]
+    ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
+    store = {}
+    for r in con.execute("SELECT * FROM store").fetchall():
+        try: store[r["key"]] = json.loads(r["val"])
+        except: store[r["key"]] = r["val"]
+    sh = [{"shift":r["shift"],"time":r["time"],"idx":r["idx"]} for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx").fetchall()]
+    vo = [{"shift":r["shift"],"time":r["time"]} for r in con.execute("SELECT * FROM view_only").fetchall()]
+    cd = [{"slot_key":r["slot_key"],"duration":r["duration"]} for r in con.execute("SELECT * FROM custom_durations").fetchall()]
+    rcpts = [{"name":r["name"],"email":r["email"]} for r in con.execute("SELECT * FROM recipients").fetchall()]
+    dp = dict(con.execute("SELECT * FROM duration_pattern WHERE id=1").fetchone() or {})
+    
+    con.close()
+    
+    data = {
+        "backup_date": datetime.now().isoformat(),
+        "version": "2.0",
+        "employees": emps,
+        "assignments": ass,
+        "store": store,
+        "shifts": sh,
+        "view_only": vo,
+        "custom_durations": cd,
+        "recipients": rcpts,
+        "duration_pattern": dp
+    }
+    
+    buf = io.StringIO()
+    json.dump(data, buf, ensure_ascii=False, indent=2)
+    out = io.BytesIO(buf.getvalue().encode("utf-8"))
+    return send_file(out, mimetype="application/json", as_attachment=True,
+                     download_name=f"BreakSchedule_Backup_{datetime.now().strftime('%Y%m%d_%H%M')}.json")
+
+# ═══════════════ BACKUP Restore ═══════════════
+@app.route("/api/backup/restore", methods=["POST"])
+def api_backup_restore():
+    """Restore full data from uploaded JSON backup"""
+    try:
+        d = request.json
+        if not d or not d.get("employees"):
+            return jsonify({"error":"⚠️ ملف باك أب غير صحيح"}), 400
+        
+        con = get_db()
+        
+        # Restore employees
+        if d.get("employees"):
+            con.execute("DELETE FROM employees")
+            for e in d["employees"]:
+                con.execute("INSERT INTO employees(name,email,code) VALUES(?,?,?)",
+                          (e["name"], e.get("email",""), e.get("code","")))
+        
+        # Restore assignments
+        con.execute("DELETE FROM assignments")
+        for k, v in d.get("assignments",{}).items():
+            con.execute("INSERT INTO assignments(slot_key,employee_name) VALUES(?,?)", (k, v))
+        
+        # Restore store (emp_list, sup_list, break_timer)
+        for k, v in d.get("store",{}).items():
+            con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", (k, json.dumps(v, ensure_ascii=False)))
+        
+        # Restore shifts
+        con.execute("DELETE FROM shifts")
+        for s in d.get("shifts",[]):
+            con.execute("INSERT INTO shifts(shift,time,idx) VALUES(?,?,?)", (s["shift"], s["time"], s.get("idx",0)))
+        
+        # Restore view_only
+        con.execute("DELETE FROM view_only")
+        for v in d.get("view_only",[]):
+            con.execute("INSERT INTO view_only(shift,time) VALUES(?,?)", (v["shift"], v["time"]))
+        
+        # Restore custom_durations
+        con.execute("DELETE FROM custom_durations")
+        for c in d.get("custom_durations",[]):
+            con.execute("INSERT INTO custom_durations(slot_key,duration) VALUES(?,?)", (c["slot_key"], c["duration"]))
+        
+        con.commit()
+        con.close()
+        
+        return jsonify({"ok":True, "message":f"✅ تم استعادة {len(d.get('employees',[]))} موظف"})
+    except Exception as e:
+        return jsonify({"error":f"❌ فشل الاستعادة: {str(e)}"}), 500
+
 # ═══════════════ EMAIL ═══════════════
 def build_email_body(assigns, shifts, vo, dur, cdur, emps, extras):
     slb = {"morning":"🌅 Morning (8AM-5PM)","afternoon":"☀️ Afternoon (11AM-8PM)","night":"🌙 Night (1PM-10PM)"}
