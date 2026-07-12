@@ -625,7 +625,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
   // Load timer from localStorage
   let lsBT=ld("bs_bt",{});if(Object.keys(lsBT).length)BT=lsBT;
   // Auto-refresh
-  setInterval(async()=>{const ls=sn;await svLoad();if(ls!==sn){};checkReminders();notifyXBStatus()},5000);
+  setInterval(async()=>{const ls=sn;await svLoad();if(ls!==sn){};checkReminders();notifyXBStatus();if(adminOn||isSup)rAdm()},5000);
   setInterval(()=>{const n=new Date();if(n.getHours()===0&&n.getMinutes()===0){REM={};sv("bs_rmd",{})}},15000);
   setTimeout(checkReminders,1000);
   
