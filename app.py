@@ -194,6 +194,11 @@ def api_data():
                     if r["shift"] not in vo: vo[r["shift"]] = []
                     vo[r["shift"]].append(r["time"])
                 report = {"date":date,"saved_at":now.isoformat(),"employees":emps,"assignments":old_ass,"shifts":sh,"view_only":vo,"custom_durations":cdur,"durations":dur}
+                # Include XB (extra breaks) and XB_REQ (requests) in the report
+                xb_row = con.execute("SELECT val FROM store WHERE key='extra_breaks'").fetchone()
+                if xb_row: report["extra_breaks"] = json.loads(xb_row["val"])
+                xb_req_row = con.execute("SELECT val FROM store WHERE key='extra_breaks_req'").fetchone()
+                if xb_req_row: report["extra_breaks_req"] = json.loads(xb_req_row["val"])
                 con.execute("INSERT OR REPLACE INTO reports(date,data) VALUES(?,?)", (date, json.dumps(report)))
 
         emps = d.get("employees",[])
