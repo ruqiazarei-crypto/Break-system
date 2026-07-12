@@ -4,9 +4,10 @@ from flask import Flask, send_from_directory, request, jsonify, send_file
 import json, io, os, smtplib, ssl, sqlite3, csv
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime
+from datetime import datetime, timedelta
 import openpyxl
 from openpyxl.styles import Font, PatternFill
+from fpdf import FPDF
 
 app = Flask(__name__)
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -359,8 +360,329 @@ def api_x_breaks_req():
         return jsonify({"ok":True, "message":"✅ تم حفظ طلبات البريكات"})
 
 
-@app.route("/api/break-timer", methods=["GET","POST"])
-def api_break_timer():
+# ═══════════════📊 EMPLOYEE STATISTICS (الإحصائيات) ═══════════════
+@app.route("/api/stats", methods=["POST"])
+def api_stats():
+    """Compute per-employee stats from saved reports within a date range"""
+    d = request.json or {}
+    fr = d.get("from","")
+    to = d.get("to","")
+    con = get_db()
+
+    # Get all reports in range
+    if fr and to:
+        rows = con.execute("SELECT date, data FROM reports WHERE date >= ? AND date <= ? ORDER BY date", (fr, to)).fetchall()
+    else:
+        # Last 30 days default
+        rows = con.execute("SELECT date, data FROM reports ORDER BY date DESC LIMIT 31").fetchall()
+
+    con.close()
+
+    if not rows:
+        return jsonify({"stats":[],"summary":{"total_breaks":0,"total_minutes":0,"total_xb_req":0,"total_xb_app":0,"days":0,"from":"","to":""}})
+
+    # Employee info — collect from all reports
+    emp_info = {}
+    merged = []
+    days = 0
+    for row in rows:
+        days += 1
+        report = json.loads(row["data"])
+        merged.append(report)
+        for e in report.get("employees",[]):
+            emp_info[e["name"]] = {"email":e.get("email",""),"code":e.get("code","")}
+
+    by_emp = {}
+    for report in merged:
+        date = report.get("date","")
+        assigns = report.get("assignments",{})
+        shifts = report.get("shifts",{})
+        cdur = report.get("custom_durations",{})
+        dur = report.get("durations",[15,15,20,10])
+        xb_req = report.get("extra_breaks_req",{})
+        xb_app = report.get("extra_breaks",{})
+
+        # Per-slot durations map
+        slot_dur = {}
+        for k in assigns:
+            parts = k.split("_")
+            if len(parts) != 2: continue
+            shift, t = parts
+            shift_times = shifts.get(shift,{}).get("ts",[])
+            try:
+                idx = shift_times.index(t)
+            except ValueError:
+                idx = 0
+            slot_dur[k] = cdur.get(k) or dur[idx % 4]
+
+        for emp_name in list(set(list(assigns.values()) + list(xb_req.keys()) + list(xb_app.keys()))):
+            if emp_name not in by_emp:
+                by_emp[emp_name] = {"breaks":0,"minutes":0,"xb_req":0,"xb_app":0,"daily":{},"slots":[]}
+
+            emp = by_emp[emp_name]
+            if date not in emp["daily"]:
+                emp["daily"][date] = {"breaks":0,"minutes":0,"slots":[],"xb_req":0,"xb_app":0}
+
+            # Count breaks
+            for k, v in assigns.items():
+                if v == emp_name:
+                    emp["breaks"] += 1
+                    emp["minutes"] += slot_dur.get(k, 15)
+                    emp["slots"].append(k)
+                    emp["daily"][date]["breaks"] += 1
+                    emp["daily"][date]["minutes"] += slot_dur.get(k, 15)
+                    emp["daily"][date]["slots"].append(k)
+
+            # Extra breaks
+            if emp_name in xb_req:
+                emp["xb_req"] += 1
+                emp["daily"][date]["xb_req"] += 1
+            if emp_name in xb_app:
+                emp["xb_app"] += 1
+                emp["daily"][date]["xb_app"] += 1
+
+    # Build result — sort by most breaks
+    def_tm = lambda k: "15"
+    stats = []
+    for name, data in sorted(by_emp.items(), key=lambda x: -x[1]["breaks"]):
+        # Find most common slot
+        slot_counts = {}
+        for s in data["slots"]:
+            slot_counts[s] = slot_counts.get(s, 0) + 1
+        top_slot = max(slot_counts, key=slot_counts.get) if slot_counts else ""
+        # Clean up slot name
+        if top_slot:
+            parts = top_slot.split("_",1)
+            top_slot = parts[1] if len(parts) > 1 else top_slot
+
+        emp = emp_info.get(name,{})
+        stats.append({
+            "name": name,
+            "email": emp.get("email",""),
+            "breaks": data["breaks"],
+            "minutes": data["minutes"],
+            "xb_req": data["xb_req"],
+            "xb_app": data["xb_app"],
+            "avg_per_day": round(data["breaks"] / days, 1) if days else 0,
+            "top_slot": top_slot,
+            "daily": {d:data["daily"][d] for d in sorted(data["daily"].keys())}
+        })
+
+    total = sum(s["breaks"] for s in stats)
+    total_min = sum(s["minutes"] for s in stats)
+    total_xb_r = sum(s["xb_req"] for s in stats)
+    total_xb_a = sum(s["xb_app"] for s in stats)
+
+    return jsonify({
+        "stats": stats,
+        "summary": {
+            "total_breaks": total,
+            "total_minutes": total_min,
+            "total_xb_req": total_xb_r,
+            "total_xb_app": total_xb_a,
+            "employees": len(stats),
+            "days": days,
+            "from": merged[-1]["date"] if merged else "",
+            "to": merged[0]["date"] if merged else ""
+        }
+    })
+
+
+# ═══════════════📄 PDF REPORT (تقرير PDF شهري) ═══════════════
+@app.route("/api/report/pdf", methods=["POST"])
+def api_report_pdf():
+    """Generate a PDF report with employee statistics"""
+    d = request.json or {}
+    fr = d.get("from","")
+    to = d.get("to","")
+    con = get_db()
+
+    if fr and to:
+        rows = con.execute("SELECT date, data FROM reports WHERE date >= ? AND date <= ? ORDER BY date", (fr, to)).fetchall()
+    else:
+        rows = con.execute("SELECT date, data FROM reports ORDER BY date DESC LIMIT 31").fetchall()
+    con.close()
+
+    if not rows:
+        return jsonify({"error":"لا توجد تقارير في هذا النطاق"}), 404
+
+    # Parse all reports
+    merged = []
+    for row in rows:
+        report = json.loads(row["data"])
+        merged.append(report)
+
+    emp_info = {}
+    for r in merged:
+        for e in r.get("employees",[]):
+            if e["name"] not in emp_info:
+                emp_info[e["name"]] = True
+
+    # Compute stats (same logic as /api/stats)
+    by_emp = {}
+    for report in merged:
+        date = report.get("date","")
+        assigns = report.get("assignments",{})
+        shifts = report.get("shifts",{})
+        cdur = report.get("custom_durations",{})
+        dur = report.get("durations",[15,15,20,10])
+        xb_req = report.get("extra_breaks_req",{})
+        xb_app = report.get("extra_breaks",{})
+
+        slot_dur = {}
+        for k in assigns:
+            parts = k.split("_",1)
+            if len(parts) != 2: continue
+            shift_t = parts[0]
+            t = parts[1]
+            shift_times = shifts.get(shift_t,{}).get("ts",[])
+            try:
+                idx = shift_times.index(t)
+            except ValueError:
+                idx = 0
+            slot_dur[k] = cdur.get(k) or dur[idx % 4]
+
+        all_names = list(set(list(assigns.values())))
+        for emp_name in all_names:
+            if emp_name not in by_emp:
+                by_emp[emp_name] = {"breaks":0,"minutes":0,"xb_req":0,"xb_app":0}
+            if emp_name in xb_req: by_emp[emp_name]["xb_req"] += 1
+            if emp_name in xb_app: by_emp[emp_name]["xb_app"] += 1
+            for k, v in assigns.items():
+                if v == emp_name:
+                    by_emp[emp_name]["breaks"] += 1
+                    by_emp[emp_name]["minutes"] += slot_dur.get(k, 15)
+
+    sorted_emps = sorted(by_emp.items(), key=lambda x: -x[1]["breaks"])
+
+    # ── Build PDF ──
+    pdf = FPDF(orientation="P", unit="mm", format="A4")
+    pdf.add_font("Noto", "", "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", uni=True)
+    pdf.add_page()
+
+    # Title
+    pdf.set_font("Noto", "", 18)
+    pdf.cell(0, 12, "مستشفيات المانع العامة", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.set_font("Noto", "", 12)
+    fr_label = fr or merged[-1]["date"]
+    to_label = to or merged[0]["date"]
+    pdf.cell(0, 8, f"تقرير البريكات الشامل", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.set_font("Noto", "", 10)
+    pdf.cell(0, 7, f"{fr_label}  ~  {to_label}", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.ln(3)
+
+    # Summary box
+    total_b = sum(e[1]["breaks"] for e in sorted_emps)
+    total_m = sum(e[1]["minutes"] for e in sorted_emps)
+    total_x = sum(e[1]["xb_req"] for e in sorted_emps)
+    total_xa = sum(e[1]["xb_app"] for e in sorted_emps)
+    pdf.set_fill_color(240, 240, 240)
+    pdf.set_font("Noto", "", 10)
+    summary_text = (
+        f"إجمالي البريكات: {total_b}   |   إجمالي الدقائق: {total_m}   |   "
+        f"طلبات إضافية: {total_x}   |   موافقات: {total_xa}   |   "
+        f"عدد الموظفين: {len(sorted_emps)}   |   الأيام: {len(rows)}"
+    )
+    pdf.cell(0, 8, summary_text, new_x="LMARGIN", new_y="NEXT", align="C", fill=True)
+    pdf.ln(5)
+
+    # ── Employee Table ──
+    pdf.set_font("Noto", "", 9)
+    col_w = [46, 18, 18, 18, 18, 18, 18, 18]
+    headers = ["الموظف", "بريكات", "دقائق", "م/يوم", "طلب", "موافقة", ""]
+    pdf.set_fill_color(41, 128, 185)
+    pdf.set_text_color(255, 255, 255)
+    for i, h in enumerate(headers):
+        pdf.cell(col_w[i], 7, h, border=1, fill=True, align="C")
+    pdf.ln()
+
+    pdf.set_text_color(0, 0, 0)
+    for idx, (name, data) in enumerate(sorted_emps):
+        if idx % 2 == 0:
+            pdf.set_fill_color(245, 248, 252)
+        else:
+            pdf.set_fill_color(255, 255, 255)
+        avg = round(data["breaks"] / len(rows), 1)
+        vals = [name, str(data["breaks"]), str(data["minutes"]), str(avg), str(data["xb_req"]), str(data["xb_app"]), ""]
+        for i, v in enumerate(vals):
+            pdf.cell(col_w[i], 6, v, border=1, fill=True, align="C")
+        pdf.ln()
+
+        # Page break if needed
+        if pdf.get_y() > 260:
+            pdf.add_page()
+            pdf.set_font("Noto", "", 9)
+            pdf.set_fill_color(41, 128, 185)
+            pdf.set_text_color(255, 255, 255)
+            for i, h in enumerate(headers):
+                pdf.cell(col_w[i], 7, h, border=1, fill=True, align="C")
+            pdf.ln()
+            pdf.set_text_color(0, 0, 0)
+
+    # ── Daily Breakdown ──
+    pdf.ln(8)
+    pdf.set_font("Noto", "", 13)
+    pdf.set_text_color(41, 128, 185)
+    pdf.cell(0, 10, "التفصيل اليومي", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.set_text_color(0, 0, 0)
+
+    for report in merged:
+        date = report.get("date","")
+        assigns = report.get("assignments",{})
+        shifts = report.get("shifts",{})
+        cdur = report.get("custom_durations",{})
+        dur = report.get("durations",[15,15,20,10])
+        xb_req = report.get("extra_breaks_req",{})
+        xb_app = report.get("extra_breaks",{})
+
+        pdf.ln(3)
+        pdf.set_fill_color(230, 240, 250)
+        pdf.set_font("Noto", "", 11)
+        day_breaks = len(assigns)
+        day_xb = len(xb_req) + len(xb_app)
+        pdf.cell(0, 7, f"{date}  —  {day_breaks} بريك", new_x="LMARGIN", new_y="NEXT", align="C", fill=True)
+        pdf.set_font("Noto", "", 8)
+
+        # Group by shift
+        by_shift = {"morning":[],"afternoon":[],"night":[]}
+        for k, v in assigns.items():
+            parts = k.split("_",1)
+            shift_name = parts[0] if len(parts) == 2 else ""
+            t = parts[1] if len(parts) == 2 else k
+            dr = cdur.get(k) or 15
+            if shift_name in by_shift:
+                by_shift[shift_name].append((t, v, dr))
+
+        for sname, sdata in by_shift.items():
+            if not sdata: continue
+            slb = {"morning":"🌅 صباحي","afternoon":"☀️ مسائي","night":"🌙 ليلي"}
+            sdata.sort(key=lambda x: x[0])
+            times = ", ".join(f"{t} ({v}-{dr}د)" for t, v, dr in sdata)
+            pdf.cell(0, 5, f"  {slb.get(sname,sname)}: {times}", new_x="LMARGIN", new_y="NEXT")
+
+        if xb_req or xb_app:
+            xb_line = ""
+            if xb_req: xb_line += f"طلبات: {', '.join(xb_req.keys())}"
+            if xb_app: xb_line += f"  |  موافقات: {', '.join(xb_app.keys())}"
+            pdf.set_font("Noto", "", 8)
+            pdf.cell(0, 5, f"  📩 {xb_line}", new_x="LMARGIN", new_y="NEXT")
+
+        # Page break
+        if pdf.get_y() > 270:
+            pdf.add_page()
+
+    # Footer
+    pdf.ln(10)
+    pdf.set_font("Noto", "", 8)
+    pdf.set_text_color(150, 150, 150)
+    pdf.cell(0, 5, f"Al Mana General Hospitals  |  مستشفيات المانع العامة  |  {datetime.now().strftime('%Y-%m-%d %I:%M %p')}", new_x="LMARGIN", new_y="NEXT", align="C")
+
+    buf = io.BytesIO()
+    pdf.output(buf)
+    buf.seek(0)
+
+    fn = f"Break_Report_{fr or 'all'}_{to or 'all'}.pdf"
+    return send_file(buf, mimetype="application/pdf", as_attachment=True, download_name=fn)
     """Get/set break timer data — tracks active breaks per employee per day"""
     con = get_db()
     if request.method == "GET":

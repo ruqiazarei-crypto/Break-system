@@ -153,6 +153,17 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
       </div>
       <div id="rptList" style="font-size:10px"></div>
       <div id="rptView" style="font-size:9px;max-height:300px;overflow-y:auto;margin-top:3px;background:#fff;border-radius:6px;padding:4px"></div>
+    </div>
+    <div class="pn"><h3>📈 إحصائيات الموظفين</h3>
+      <div style="display:flex;gap:3px;margin-bottom:3px;flex-wrap:wrap">
+        <input type="date" id="statsFrom" style="font-size:10px;padding:2px;width:110px">
+        <span style="font-size:10px">~</span>
+        <input type="date" id="statsTo" style="font-size:10px;padding:2px;width:110px">
+        <button class="btn btn-pri btn-sm" onclick="loadStats()">📊 عرض</button>
+        <button class="btn btn-suc btn-sm" onclick="loadStatsPDF()">📄 PDF</button>
+        <span style="font-size:9px;color:#999;margin-right:2px" id="statsInfo"></span>
+      </div>
+      <div id="statsTable" style="font-size:9px;max-height:350px;overflow-y:auto;background:#fff;border-radius:6px;padding:2px"></div>
     </div></div>
     <div class="pn"><h3>📧 SMTP</h3>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:3px">
@@ -464,6 +475,11 @@ function rAdm(){
   }
   document.getElementById("slotMgr").innerHTML=sm;
   loadReports();
+  // Set default stats dates (last 30 days) and auto-load
+  const td=new Date(),tds=td.toISOString().split("T")[0]
+  const t30=new Date(td);t30.setDate(t30.getDate()-30);const t30s=t30.toISOString().split("T")[0]
+  document.getElementById("statsTo").value=tds;document.getElementById("statsFrom").value=t30s
+  loadStats();
   // Recipients
   let r=`<div class="rw" style="display:flex;font-weight:700;border-bottom:2px solid #ddd;padding:2px 0;font-size:10px"><span style="flex:2">الاسم</span><span>الإيميل</span></div>`;
   RS.forEach((x,i)=>{r+=`<div class="rw" style="display:flex;gap:3px;align-items:center;padding:2px 0;font-size:10px"><span style="flex:2">${x.n}</span><span style="flex:2">${x.m}</span><button class="btn btn-dan btn-sm" onclick="dR(${i})">✕</button></div>`});
@@ -556,6 +572,49 @@ async function viewReport(dt){const v=document.getElementById("rptView");v.inner
     h+='<div style="text-align:left;color:#999;font-size:8px;margin-top:3px">💾 '+(r.saved_at?.substring(0,19)||"")+'</div>';
     v.innerHTML=h
   }catch(e){v.innerHTML="❌ خطأ"}}
+
+// ═══════════════📊 EMPLOYEE STATS ═══════════════
+function loadStats(){
+  const fr=document.getElementById("statsFrom").value
+  const to=document.getElementById("statsTo").value
+  const si=document.getElementById("statsInfo");si.textContent="⏳..."
+  fetch(SV+"/api/stats",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({from:fr,to:to})})
+  .then(r=>r.json()).then(d=>{
+    const tb=document.getElementById("statsTable")
+    if(!d||!d.stats||!d.stats.length){tb.innerHTML='<span style="color:#999">⚠️ لا توجد إحصائيات</span>';si.textContent="";return}
+    const s=d.summary;si.textContent=`📅 ${s.days} أيام · ${d.stats.length} موظف · ${s.total_breaks} بريك`
+    let h='<table style="width:100%;border-collapse:collapse;font-size:9px"><tr style="background:#2980b9;color:#fff;position:sticky;top:0">'
+      +'<th>#</th><th>الموظف</th><th>بريكات</th><th>دقائق</th><th>م/يوم</th><th>📩طلب</th><th>✅موافقة</th><th>الأكثر</th></tr>'
+    d.stats.forEach((e,i)=>{
+      h+=`<tr style="background:${i%2?"#f5f8fc":"#fff"}"><td>${i+1}</td><td>${e.name}</td><td>${e.breaks}</td><td>${e.minutes}د</td><td>${e.avg_per_day}</td><td>${e.xb_req}</td><td>${e.xb_app}</td><td>${e.top_slot||""}</td></tr>`
+    })
+    h+=`</table>`
+    h+=`<div style="background:#e8f0fe;padding:3px;margin-top:2px;font-size:9px;text-align:center">📊 ${s.total_breaks} بريك | ${s.total_minutes} دقيقة | ${s.total_xb_req} طلب | ${s.total_xb_app} موافقة</div>`
+    // Per-employee daily detail
+    h+=`<div style="margin-top:4px;font-size:9px;font-weight:700;color:#2980b9">📋 التفصيل اليومي:</div>`
+    d.stats.forEach(e=>{
+      if(!e.daily)return
+      h+=`<details style="margin:2px 0;font-size:9px"><summary style="cursor:pointer;color:#2980b9">${e.name} (${e.breaks} بريك)</summary>`
+      h+=`<div style="padding:2px 8px;line-height:1.4">`
+      for(const[dt,dd]of Object.entries(e.daily)){
+        if(dd.breaks>0)h+=`${dt}: ${dd.breaks} بريك (${dd.minutes}د)${dd.xb_app?` + ✅${dd.xb_app}`:""}${dd.xb_req?` + 📩${dd.xb_req}`:""}<br>`
+      }
+      h+=`</div></details>`
+    })
+    tb.innerHTML=h
+  }).catch(()=>{document.getElementById("statsInfo").textContent="❌ خطأ"})
+}
+function loadStatsPDF(){
+  const fr=document.getElementById("statsFrom").value
+  const to=document.getElementById("statsTo").value
+  const si=document.getElementById("statsInfo");si.textContent="⏳ PDF..."
+  fetch(SV+"/api/report/pdf",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({from:fr,to:to})})
+  .then(r=>{if(!r.ok)throw new Error("PDF failed");return r.blob()})
+  .then(b=>{const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download="Break_Report.pdf";a.click();URL.revokeObjectURL(u)
+    document.getElementById("statsInfo").textContent="✅ تم التحميل"
+  }).catch(()=>{document.getElementById("statsInfo").textContent="❌ فشل PDF"})
+}
+
 function dR(i){RS.splice(i,1);sv("bs_rs",RS);rAdm()}
 
 function supView(){
