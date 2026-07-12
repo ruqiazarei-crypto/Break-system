@@ -159,9 +159,11 @@ def api_data():
         rs = [{"name":r["name"],"email":r["email"]} for r in con.execute("SELECT * FROM recipients").fetchall()]
         dp = con.execute("SELECT * FROM duration_pattern WHERE id=1").fetchone()
         dur = [dp["d0"],dp["d1"],dp["d2"],dp["d3"]]
+        xb_row = con.execute("SELECT val FROM store WHERE key='extra_breaks'").fetchone()
+        xb = json.loads(xb_row["val"]) if xb_row else {}
 
         con.close()
-        return jsonify({"employees":emps,"assignments":ass,"shifts":sh,"view_only":vo,"custom_durations":cdur,"recipients":rs,"durations":dur})
+        return jsonify({"employees":emps,"assignments":ass,"shifts":sh,"view_only":vo,"custom_durations":cdur,"recipients":rs,"durations":dur,"extra_breaks":xb})
 
     else:
         # Save all data
@@ -226,6 +228,10 @@ def api_data():
             for shift, data in d["shifts"].items():
                 for i, t in enumerate(data.get("ts",[])):
                     con.execute("INSERT INTO shifts(shift,time,idx) VALUES(?,?,?)", (shift,t,i))
+
+        # Save extra breaks
+        if d.get("extra_breaks") is not None:
+            con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("extra_breaks", json.dumps(d["extra_breaks"])))
 
         con.commit()
         con.close()
@@ -307,6 +313,24 @@ def api_sup_list():
         con.commit()
         con.close()
         return jsonify({"ok":True, "message":"✅ تم حفظ المشرفين"})
+
+
+# ═══════════════ EXTRA BREAKS (البريك الإضافي) ═══════════════
+@app.route("/api/x-breaks", methods=["GET","POST"])
+def api_x_breaks():
+    """Get/set extra breaks — supervisor grants additional break slots"""
+    con = get_db()
+    if request.method == "GET":
+        row = con.execute("SELECT val FROM store WHERE key='extra_breaks'").fetchone()
+        con.close()
+        return jsonify(json.loads(row["val"]) if row else {})
+    else:
+        d = request.json
+        if d is None: return jsonify({"error":"no data"}), 400
+        con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("extra_breaks", json.dumps(d)))
+        con.commit()
+        con.close()
+        return jsonify({"ok":True, "message":"✅ تم حفظ البريكات الإضافية"})
 
 
 @app.route("/api/break-timer", methods=["GET","POST"])

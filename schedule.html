@@ -99,7 +99,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 <div class="pn">
   <h3>🟢 الأوقات المتاحة</h3>
   <div id="availSlots"></div>
-  <div style="text-align:center;color:#999;font-size:9px;margin-top:5px">⚠️ 4 بريكات كحد أقصى · 👁️ المشرف: 11-2|2-6|3-7</div>
+  <div style="text-align:center;color:#999;font-size:9px;margin-top:5px">⚠️ 4 بريكات كحد أقصى · 👁️ المشرف: 11-2|2-6|3-7 · ➕ بريك إضافي</div>
 </div>
 
 <!-- UPCOMING -->
@@ -208,7 +208,7 @@ const SUP_HOURS = {
 function tmMin(t){let[h,m]=t.split(":").map(Number);return h*60+m}
 
 let SH=JSON.parse(JSON.stringify(SH_DF)),VO=JSON.parse(JSON.stringify(VO_DF)),DP=[...DP_DF];
-let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={},BT={},BTN={};
+let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={},BT={},BTN={},XB={};
 let ME="",myCode="",adminPw="admin123",adminOn=false,isSup=false,notifOn=false;
 let sn=0; // sync counter
 
@@ -227,6 +227,7 @@ async function svLoad(){  try{
     if(d.assignments)AS=d.assignments;
     if(d.view_only)VO=d.view_only;
     if(d.custom_durations)CDUR=d.custom_durations;
+    if(d.extra_breaks)XB=d.extra_breaks;
     if(d.recipients)RS=d.recipients;
     if(d.durations&&d.durations.length==4)DP=d.durations;
     let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
@@ -238,8 +239,9 @@ async function svSave(){
   sv("bs_emp_bk",empData);sv("bs_sh",SH);sv("bs_vo",VO);
   try{
     await fetch(SV+"/api/data",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({employees:empData,assignments:AS,shifts:SH,view_only:VO,custom_durations:CDUR,recipients:RS,durations:DP})});
+      body:JSON.stringify({employees:empData,assignments:AS,shifts:SH,view_only:VO,custom_durations:CDUR,recipients:RS,durations:DP,extra_breaks:XB})});
     fetch(SV+"/api/sup-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(SUP)});
+    fetch(SV+"/api/x-breaks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB)});
     // Every 10th save → trigger server-side backup
     if(svCount % 10 === 0){
       fetch("/api/export/backup",{method:"POST"}).then(r=>r.json()).then(d=>{
@@ -283,7 +285,7 @@ function logOut(){
 // ═══════════ RENDER EMP ═══════════
 function r(){
   let mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
-  document.getElementById("myCnt").textContent=mc+"/4";
+  document.getElementById("myCnt").textContent=mc+"/"+(4+(XB[ME]||0));
   // My breaks
   let mh="";
   for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+'_'+t;if(AS[k]==ME){const dr=gd(sk,t,i,ME);mh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${fm(t)} (${dr}د)</span><button class="btn btn-dan btn-sm" onclick="empUn('${k}')" style="padding:0 3px;font-size:8px">✕</button></div>`}})}
@@ -294,7 +296,7 @@ function r(){
   // Available
   let ah="",avail=[],myTimes=[];mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
   for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,dr=gd(sk,t,i,ME),em=AS[k],vw=(VO[sk]||[]).includes(t);if(em==ME){myTimes.push({k,sk,t,dr});return}if(em||vw)return;if(isSup){const shh=SUP_HOURS[sk];if(shh){const mt=tmMin(t);if(mt<tmMin(shh.start)||mt>=tmMin(shh.end))return}}else{if(SUP.includes("_sl_"+k))return}avail.push({k,sk,t,dr})})}
-  if(mc>=4){ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">⚠️ اخترت 4 بريكات كحد أقصى</div>`}
+  if(mc>=(4+(XB[ME]||0))){ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">⚠️ اخترت 4 بريكات كحد أقصى</div>`}
   else if(!avail.length){ah=`<span style="color:#999;font-size:10px">لا توجد أوقات متاحة</span>`}
   else{const g={};avail.forEach(x=>{if(!g[x.sk])g[x.sk]=[];g[x.sk].push(x)});for(const[sk,list]of Object.entries(g)){ah+=`<div class="sg"><h4>${SH[sk].lb}</h4><div class="row">`;list.forEach(x=>{ah+=`<span class="mtt" style="cursor:pointer;border-color:#27ae60;background:#e8f8f5" onclick="empAs('${x.sk}','${x.t}','${x.k}')">${fm(x.t)} (${x.dr}د)</span>`});ah+=`</div></div>`}}
   document.getElementById("availSlots").innerHTML=ah;
@@ -311,7 +313,7 @@ function r(){
 function empAs(sk,t,k){
   if(!ME){nf("⚠️ سجل الدخول","r");return}
   let mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
-  if(mc>=4){nf("⚠️ 4 بريكات","r");return}
+  if(mc>=(4+(XB[ME]||0))){nf("⚠️ 4 بريكات","r");return}
   if(AS[k]){nf("⚠️ مأخوذ","r");return}
   const supOnly=SUP.includes("_sl_"+k);
   if(supOnly&&!isSup){nf("⚠️ للمشرف فقط","r");return}
@@ -427,6 +429,7 @@ function rAdm(){
 <input value="${cd}" placeholder="Badge" style="width:50px;font-size:9px;text-align:center;direction:ltr" oninput="CD['${e.name}']=this.value;sv('bs_cd',CD);svSave()">
 <input value="${ds}" placeholder="${DP.join("·")}" style="width:65px;font-size:9px;direction:ltr" onchange="setEDP('${e.name}',this.value)">
 <span onclick="togSup('${e.name}')" style="cursor:pointer;background:${s?"#008080":"#ddd"};color:${s?"#fff":"#666"};padding:1px 4px;border-radius:4px;font-size:8px;white-space:nowrap">${s?"👁️":"خدمة"}</span>
+<span onclick="togXB('${e.name}')" style="cursor:pointer;background:${XB[e.name]?"#8e44ad":"#ddd"};color:${XB[e.name]?"#fff":"#666"};padding:1px 4px;border-radius:4px;font-size:8px;white-space:nowrap" title="بريك إضافي">${XB[e.name]?"➕"+XB[e.name]:"➕0"}</span>
 <button class="btn btn-dan btn-sm" onclick="dEmp(${i})" style="padding:1px 3px;font-size:8px">✕</button>
 </div>`});
   document.getElementById("emps").innerHTML=h;
@@ -467,6 +470,7 @@ function rAll(){
 
 function togSup(nm){const i=SUP.indexOf(nm);if(i>-1)SUP.splice(i,1);else SUP.push(nm);sv("bs_sup",SUP);fetch(SV+"/api/sup-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(SUP)});rAdm();nf(`👁️ ${nm}: ${i>-1?"خدمة عملاء":"مشرف"}`,"b")}
 function togSupSlot(sk,t){const k="_sl_"+sk+"_"+t;const i=SUP.indexOf(k);if(i>-1)SUP.splice(i,1);else SUP.push(k);sv("bs_sup",SUP);fetch(SV+"/api/sup-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(SUP)});rAdm()}
+function togXB(nm){if(!XB[nm])XB[nm]=1;else{XB[nm]++;if(XB[nm]>2)delete XB[nm]};sv("bs_xb",XB);nf(XB[nm]?"➕ "+nm+" +"+XB[nm]+" بريك":"🔁 "+nm+" عادي","b");rAdm();r()}
 function setEDP(nm,v){if(!nm||!v)return;const a=v.split(/[·,،\s]+/).map(Number).filter(x=>x>=5&&x<=60);if(!a.length){nf("⚠️ أدخل أرقام","r");return}EDP[nm]=a;sv("bs_edp",EDP);svSave();nf(`✅ ${a.join("·")}د`,"g");rAdm()}
 function parseEmp(i,v){if(!v)return;const p=v.split("|").map(x=>x.trim());if(!p[0]){nf("⚠️ الاسم مطلوب","r");return}
   const nm=p[0],em=p[1]||"",cd=p[2]||"";
@@ -602,7 +606,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
   adminPw=ld("bs_admin_pw","admin123");
   adminOn=sessionStorage.getItem("bs_admin")=="1";
   if(adminOn){document.getElementById("lkBtn").textContent="🔓";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis")}
-  if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}let lsSUP0=ld("bs_sup",[]);if(lsSUP0.length)SUP=lsSUP0;
+  if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}let lsSUP0=ld("bs_sup",[]);if(lsSUP0.length)SUP=lsSUP0;let lsXB=ld("bs_xb",{});if(Object.keys(lsXB).length)XB=lsXB;
   let lsSH=ld("bs_sh",null);if(lsSH)SH=lsSH;
   let lsVO=ld("bs_vo",null);if(lsVO)VO=lsVO;
   let lsCDUR=ld("bs_dur",{});if(Object.keys(lsCDUR).length)CDUR=lsCDUR;
@@ -631,7 +635,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
         if(d.assignments)AS=d.assignments;
         // Only load shifts from server if localStorage is empty (first visit)
         const lsSH_chk=ld("bs_sh",null);if(!lsSH_chk&&d.shifts){for(const k of Object.keys(SH_DF)){if(d.shifts[k]&&d.shifts[k].ts&&d.shifts[k].ts.length)SH[k].ts=d.shifts[k].ts}}
-        if(d.view_only)VO=d.view_only;if(d.custom_durations)CDUR=d.custom_durations;if(d.recipients)RS=d.recipients;
+        if(d.view_only)VO=d.view_only;if(d.custom_durations)CDUR=d.custom_durations;if(d.recipients)RS=d.recipients;if(d.extra_breaks)XB=d.extra_breaks;
         if(d.durations&&d.durations.length==4)DP=d.durations;
         let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
         const bd={};EM.forEach(e=>{const c=CD[e.name]||e.code;if(c)bd[e.name]=c});
