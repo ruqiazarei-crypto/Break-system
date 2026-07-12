@@ -288,20 +288,18 @@ function logOut(){
 // ═══════════ RENDER EMP ═══════════
 function r(){
   let mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
-  document.getElementById("myCnt").textContent=mc+"/"+(4+(XB[ME]||0));
+  let supMax=-1,supDur=0;if(isSup){supMax=1;supDur=60}
+  const max=isSup&&supMax>0?supMax:4+(XB[ME]||0);
+  document.getElementById("myCnt").textContent=mc+"/"+(isSup&&supMax>0?supMax:4+(XB[ME]||0));
   // My breaks
   let mh="";
-  for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+'_'+t;if(AS[k]==ME){const dr=gd(sk,t,i,ME);mh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${fm(t)} (${dr}د)</span><button class="btn btn-dan btn-sm" onclick="empUn('${k}')" style="padding:0 3px;font-size:8px">✕</button></div>`}})}
+  for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+'_'+t;if(AS[k]==ME){const dr=isSup&&supMax>0?supDur:gd(sk,t,i,ME);mh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${fm(t)} (${dr}د)</span><button class="btn btn-dan btn-sm" onclick="empUn('${k}')" style="padding:0 3px;font-size:8px">✕</button></div>`}})}
   if(!mh)mh=`<span style="color:#999;font-size:11px">${ME?"ما اخترت بريكات":"سجل الدخول ب Badge Num"}</span>`;
   document.getElementById("myList").innerHTML=mh;
   renderTimer();
   if(!ME){document.getElementById("availSlots").innerHTML=`<div style="text-align:center;color:#e74c3c;font-size:11px;padding:5px">👆 أدخل Badge Num من المشرف</div>`;document.getElementById("upcPn").style.display="none";return}
   // Available
   let ah="",avail=[],myTimes=[];mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
-  // Sup slots: count slots within SUP_HOURS, each is 60/n min
-  let supMax=-1,supDur=0;
-  if(isSup){supMax=1;supDur=60}
-  const max=isSup&&supMax>0?supMax:4+(XB[ME]||0);
   for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,dr=gd(sk,t,i,ME),em=AS[k],vw=(VO[sk]||[]).includes(t);if(em==ME){myTimes.push({k,sk,t,dr:isSup&&supMax>0?supDur:dr});return}if(em||vw)return;if(isSup){const shh=SUP_HOURS[sk];if(shh){const mt=tmMin(t);if(mt<tmMin(shh.start)||mt>=tmMin(shh.end))return}}else{if(SUP.includes("_sl_"+k))return}avail.push({k,sk,t,dr:isSup&&supMax>0?supDur:dr})})}
   if(mc>=max){ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">⚠️ ${isSup?"اخترت كل البريكات":(XB[ME]?"تم "+XB[ME]+" بريك إضافي":"اخترت 4 بريكات")}</div>`;if(!isSup&&!XB[ME]&&!XB_REQ[ME])ah+=`<div style="text-align:center;margin-top:4px"><button class="btn btn-war btn-sm" onclick="reqXB()">📩 طلب بريك إضافي</button></div>`;if(XB_REQ[ME])ah+=`<div style="text-align:center;color:#8e44ad;font-size:10px;margin-top:4px">⏳ طلب بريك إضافي قيد المراجعة</div>`}
   else if(!avail.length){ah=`<span style="color:#999;font-size:10px">لا توجد أوقات متاحة</span>`}
