@@ -99,7 +99,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
 <div class="pn">
   <h3>🟢 الأوقات المتاحة</h3>
   <div id="availSlots"></div>
-  <div style="text-align:center;color:#999;font-size:9px;margin-top:5px">⚠️ 4 بريكات كحد أقصى · 👁️ المشرف: 11-2|2-6|3-7 · ➕ بريك إضافي</div>
+  <div style="text-align:center;color:#999;font-size:9px;margin-top:5px">⚠️ 4 بريكات كحد أقصى · 👁️ المشرف: 11-2|2-6|3-7 · 📩 بريك إضافي</div>
 </div>
 
 <!-- UPCOMING -->
@@ -208,7 +208,7 @@ const SUP_HOURS = {
 function tmMin(t){let[h,m]=t.split(":").map(Number);return h*60+m}
 
 let SH=JSON.parse(JSON.stringify(SH_DF)),VO=JSON.parse(JSON.stringify(VO_DF)),DP=[...DP_DF];
-let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={},BT={},BTN={},XB={};let XB_REQ={};
+let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={},BT={},BTN={},XB={};let XB_REQ={};let _lastReqCnt=0;
 let ME="",myCode="",adminPw="admin123",adminOn=false,isSup=false,notifOn=false;
 let sn=0; // sync counter
 
@@ -331,6 +331,8 @@ function addLog(emp,sk,t,act){
   LG.unshift({emp,sk,t,act,ts,dr:gd(sk,t,0,emp),d:`${tm.getDate()}/${tm.getMonth()+1}`});
   if(LG.length>50)LG.pop();sv("bs_lg",LG);playBeep();notifySup(emp,sk,t,act);
 }
+let _lastXB=0;
+function notifyXBStatus(){if(!ME)return;const myXB=XB[ME]||0;if(myXB>_lastXB&&_lastXB>0){const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`✅ <strong>تمت الموافقة</strong> على طلب بريك إضافي (${myXB})`;playBeep();if(notifOn)new Notification("✅",{body:"تمت الموافقة على طلب بريك إضافي"});setTimeout(()=>b.style.display="none",8000)}else if(myXB<_lastXB&&_lastXB>0){const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`❌ <strong>تم رفض</strong> طلب البريك الإضافي`;playBeep();if(notifOn)new Notification("❌",{body:"تم رفض طلب البريك الإضافي"});setTimeout(()=>b.style.display="none",8000)}_lastXB=myXB;const myReq=!!XB_REQ[ME];if(myReq&&!window._xr){window._xr=1}else if(!myReq&&window._xr){window._xr=0}}
 function notifySup(emp,sk,t,act){
   if(!isSup)return;
   const b=document.getElementById("rmdBar");b.style.display="block";
@@ -434,7 +436,7 @@ function rAdm(){
 <button class="btn btn-dan btn-sm" onclick="dEmp(${i})" style="padding:1px 3px;font-size:8px">✕</button>
 </div>`});
   // XB Requests
-  let xh="";const reqs=Object.entries(XB_REQ);if(reqs.length){xh=`<div style="margin:4px 0;padding:4px;background:#f9f0ff;border:1px solid #8e44ad;border-radius:4px"><strong style="font-size:10px;color:#8e44ad">📩 طلبات بريك إضافي</strong>`;reqs.forEach(([nm,ts])=>{xh+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:10px"><span>${nm}</span><span><button class="btn btn-suc btn-sm" onclick="appXB('${nm}')" style="font-size:9px;padding:1px 6px">✅</button><button class="btn btn-dan btn-sm" onclick="rejXB('${nm}')" style="font-size:9px;padding:1px 6px">❌</button></span></div>`});xh+=`</div>`;document.getElementById("xbReqArea").innerHTML=xh}else{document.getElementById("xbReqArea").innerHTML=""}
+  let xh="";const reqs=Object.entries(XB_REQ);if(reqs.length){if(reqs.length>_lastReqCnt&&(isSup||adminOn)){playBeep();if(notifOn)new Notification("📩",{body:"طلب بريك إضافي جديد"})}_lastReqCnt=reqs.length;xh=`<div style="margin:4px 0;padding:4px;background:#f9f0ff;border:1px solid #8e44ad;border-radius:4px"><strong style="font-size:10px;color:#8e44ad">📩 طلبات بريك إضافي</strong>`;reqs.forEach(([nm,ts])=>{xh+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:10px"><span>${nm}</span><span><button class="btn btn-suc btn-sm" onclick="appXB('${nm}')" style="font-size:9px;padding:1px 6px">✅</button><button class="btn btn-dan btn-sm" onclick="rejXB('${nm}')" style="font-size:9px;padding:1px 6px">❌</button></span></div>`});xh+=`</div>`;document.getElementById("xbReqArea").innerHTML=xh}else{document.getElementById("xbReqArea").innerHTML=""}
   document.getElementById("emps").innerHTML=h;
   // Slots
   let sm="";const sN={morning:"🌅 صباحي",afternoon:"☀️ مسائي",night:"🌙 ليلي"};
@@ -473,10 +475,12 @@ function rAll(){
 
 function togSup(nm){const i=SUP.indexOf(nm);if(i>-1)SUP.splice(i,1);else SUP.push(nm);sv("bs_sup",SUP);fetch(SV+"/api/sup-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(SUP)});rAdm();nf(`👁️ ${nm}: ${i>-1?"خدمة عملاء":"مشرف"}`,"b")}
 function togSupSlot(sk,t){const k="_sl_"+sk+"_"+t;const i=SUP.indexOf(k);if(i>-1)SUP.splice(i,1);else SUP.push(k);sv("bs_sup",SUP);fetch(SV+"/api/sup-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(SUP)});rAdm()}
-function reqXB(){if(!ME)return;XB_REQ[ME]=Date.now();sv("bs_xb_req",XB_REQ);fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});nf("📩 طلب بريك إضافي أرسل للمشرف","b");r()}
+function showXBAlert(nm,act){if(!isSup&&!adminOn)return;const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 <strong>${nm}</strong> ${act=="✅ الموافقة"?"✅ تمت الموافقة على طلبه":"❌ تم رفض طلبه"}`;if(notifOn)new Notification("📩",{body:`${nm}: ${act}`});setTimeout(()=>b.style.display="none",8000)}
+
+function reqXB(){if(!ME)return;XB_REQ[ME]=Date.now();sv("bs_xb_req",XB_REQ);fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});nf("📩 طلب بريك إضافي أرسل للمشرف","b");playBeep();r();rAdm()}
 function appXB(nm){delete XB_REQ[nm];if(!XB[nm])XB[nm]=1;else{XB[nm]++;if(XB[nm]>2)delete XB[nm]};sv("bs_xb",XB);sv("bs_xb_req",XB_REQ);fetch(SV+"/api/x-breaks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB)});
     fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});nf("✅ تمت الموافقة: "+nm,"g");rAdm();r()}
-function rejXB(nm){delete XB_REQ[nm];sv("bs_xb_req",XB_REQ);fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});nf("❌ رفض: "+nm,"r");rAdm()}
+function rejXB(nm){delete XB_REQ[nm];sv("bs_xb_req",XB_REQ);fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});nf("❌ رفض: "+nm,"r");playBeep();rAdm();showXBAlert(nm,"❌ الرفض")}
 function setEDP(nm,v){if(!nm||!v)return;const a=v.split(/[·,،\s]+/).map(Number).filter(x=>x>=5&&x<=60);if(!a.length){nf("⚠️ أدخل أرقام","r");return}EDP[nm]=a;sv("bs_edp",EDP);svSave();nf(`✅ ${a.join("·")}د`,"g");rAdm()}
 function parseEmp(i,v){if(!v)return;const p=v.split("|").map(x=>x.trim());if(!p[0]){nf("⚠️ الاسم مطلوب","r");return}
   const nm=p[0],em=p[1]||"",cd=p[2]||"";
@@ -621,7 +625,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
   // Load timer from localStorage
   let lsBT=ld("bs_bt",{});if(Object.keys(lsBT).length)BT=lsBT;
   // Auto-refresh
-  setInterval(async()=>{const ls=sn;await svLoad();if(ls!==sn){};checkReminders()},5000);
+  setInterval(async()=>{const ls=sn;await svLoad();if(ls!==sn){};checkReminders();notifyXBStatus()},5000);
   setInterval(()=>{const n=new Date();if(n.getHours()===0&&n.getMinutes()===0){REM={};sv("bs_rmd",{})}},15000);
   setTimeout(checkReminders,1000);
   
