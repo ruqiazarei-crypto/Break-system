@@ -266,6 +266,7 @@ function logIn(){
   const emp=EM.find(e=>(CD[e.name]==code||e.code==code));
   if(!emp){nf("❌ Badge Num خطأ","r");return}
   ME=emp.name;myCode=code;isSup=SUP.includes(ME);
+  if(isSup){document.getElementById("lkBtn").textContent="👁️";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis")}
   document.getElementById("codeInp").style.display="none";
   document.querySelector(".nb .btn-pri").style.display="none";
   document.getElementById("loggedNm").style.display="inline";
@@ -477,7 +478,7 @@ function togSup(nm){const i=SUP.indexOf(nm);if(i>-1)SUP.splice(i,1);else SUP.pus
 function togSupSlot(sk,t){const k="_sl_"+sk+"_"+t;const i=SUP.indexOf(k);if(i>-1)SUP.splice(i,1);else SUP.push(k);sv("bs_sup",SUP);fetch(SV+"/api/sup-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(SUP)});rAdm()}
 function showXBAlert(nm,act){if(!isSup&&!adminOn)return;const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 <strong>${nm}</strong> ${act=="✅ الموافقة"?"✅ تمت الموافقة على طلبه":"❌ تم رفض طلبه"}`;if(notifOn)new Notification("📩",{body:`${nm}: ${act}`});setTimeout(()=>b.style.display="none",8000)}
 
-function reqXB(){if(!ME)return;XB_REQ[ME]=Date.now();sv("bs_xb_req",XB_REQ);fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});nf("📩 طلب بريك إضافي أرسل للمشرف","b");playBeep();r();rAdm()}
+function reqXB(){if(!ME)return;XB_REQ[ME]=Date.now();sv("bs_xb_req",XB_REQ);fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});fetch(SV+"/api/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({extra_breaks_req:XB_REQ})});nf("📩 طلب بريك إضافي أرسل للمشرف","b");playBeep();r();rAdm()}
 function appXB(nm){delete XB_REQ[nm];if(!XB[nm])XB[nm]=1;else{XB[nm]++;if(XB[nm]>2)delete XB[nm]};sv("bs_xb",XB);sv("bs_xb_req",XB_REQ);fetch(SV+"/api/x-breaks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB)});
     fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});nf("✅ تمت الموافقة: "+nm,"g");rAdm();r()}
 function rejXB(nm){delete XB_REQ[nm];sv("bs_xb_req",XB_REQ);fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});nf("❌ رفض: "+nm,"r");playBeep();rAdm();showXBAlert(nm,"❌ الرفض")}
