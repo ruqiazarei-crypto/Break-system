@@ -271,7 +271,7 @@ function logIn(){
   document.getElementById("loggedNm").style.display="inline";
   document.getElementById("loggedNm").textContent=(isSup?"👁️ ":"👤 ")+ME;
   REM={};sv("bs_rmd",{});
-  nf("✅ أهلاً "+ME,"g");r();
+  nf("✅ أهلاً "+ME,"g");r();rAdm();
 }
 function logOut(){
   if(!confirm("تسجيل خروج؟"))return;
@@ -618,6 +618,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
   if(adminOn){document.getElementById("lkBtn").textContent="🔓";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis")}
   if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}let lsSUP0=ld("bs_sup",[]);if(lsSUP0.length)SUP=lsSUP0;let lsXB=ld("bs_xb",{});if(Object.keys(lsXB).length)XB=lsXB;
   let lsXB_REQ=ld("bs_xb_req",{});if(Object.keys(lsXB_REQ).length)XB_REQ=lsXB_REQ;
+  let lsAS=ld("bs_as",{});if(Object.keys(lsAS).length)AS=lsAS;
   let lsSH=ld("bs_sh",null);if(lsSH)SH=lsSH;
   let lsVO=ld("bs_vo",null);if(lsVO)VO=lsVO;
   let lsCDUR=ld("bs_dur",{});if(Object.keys(lsCDUR).length)CDUR=lsCDUR;
