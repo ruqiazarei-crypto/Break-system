@@ -175,6 +175,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
     <div id="slots"></div>
   </div>
 </div>
+<div id="supXBArea"></div>
 <div class="ft">R.Zareiart</div>
 </div>
 
@@ -224,7 +225,7 @@ async function svLoad(){  try{
     const r=await fetch(SV+"/api/data");if(!r.ok)return;
     const d=await r.json();
     if(d.employees&&d.employees.length){const bk=ld("bs_emp_bk",[]);bk.forEach(e=>{if(!d.employees.find(x=>x.name==e.name))d.employees.push(e)});EM=d.employees;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
-    if(d.assignments)AS=d.assignments;
+    if(d.assignments){for(const[k,v]of Object.entries(d.assignments))AS[k]=v}
     if(d.view_only)VO=d.view_only;
     if(d.custom_durations)CDUR=d.custom_durations;
     if(d.extra_breaks)XB=d.extra_breaks;if(d.extra_breaks_req)XB_REQ=d.extra_breaks_req;
@@ -266,7 +267,7 @@ function logIn(){
   const emp=EM.find(e=>(CD[e.name]==code||e.code==code));
   if(!emp){nf("❌ Badge Num خطأ","r");return}
   ME=emp.name;myCode=code;isSup=SUP.includes(ME);
-  if(isSup){document.getElementById("lkBtn").textContent="👁️";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis")}
+  if(isSup){document.getElementById("lkBtn").textContent="👁️";document.getElementById("lkBtn").classList.add("lk-on")}
   document.getElementById("codeInp").style.display="none";
   document.querySelector(".nb .btn-pri").style.display="none";
   document.getElementById("loggedNm").style.display="inline";
@@ -436,8 +437,10 @@ function rAdm(){
 <span style="background:${XB[e.name]?"#8e44ad":"#ddd"};color:${XB[e.name]?"#fff":"#666"};padding:1px 4px;border-radius:4px;font-size:8px;white-space:nowrap" title="بريك إضافي معتمد">${XB[e.name]?"➕"+XB[e.name]:"➕0"}</span>
 <button class="btn btn-dan btn-sm" onclick="dEmp(${i})" style="padding:1px 3px;font-size:8px">✕</button>
 </div>`});
-  // XB Requests
+  // XB Requests (Admin panel)
   let xh="";const reqs=Object.entries(XB_REQ);if(reqs.length){if(reqs.length>_lastReqCnt&&(isSup||adminOn)){playBeep();if(notifOn)new Notification("📩",{body:"طلب بريك إضافي جديد"})}_lastReqCnt=reqs.length;xh=`<div style="margin:4px 0;padding:4px;background:#f9f0ff;border:1px solid #8e44ad;border-radius:4px"><strong style="font-size:10px;color:#8e44ad">📩 طلبات بريك إضافي</strong>`;reqs.forEach(([nm,ts])=>{xh+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:10px"><span>${nm}</span><span><button class="btn btn-suc btn-sm" onclick="appXB('${nm}')" style="font-size:9px;padding:1px 6px">✅</button><button class="btn btn-dan btn-sm" onclick="rejXB('${nm}')" style="font-size:9px;padding:1px 6px">❌</button></span></div>`});xh+=`</div>`;document.getElementById("xbReqArea").innerHTML=xh}else{document.getElementById("xbReqArea").innerHTML=""}
+  // XB Requests for supervisors (outside admin)
+  if(isSup){const sh=xh?xh.replace("طلبات بريك إضافي","📩 طلبات بريك إضافي"):"";document.getElementById("supXBArea").innerHTML=sh}
   document.getElementById("emps").innerHTML=h;
   // Slots
   let sm="";const sN={morning:"🌅 صباحي",afternoon:"☀️ مسائي",night:"🌙 ليلي"};
@@ -645,7 +648,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
       try{const r=await fetch(SV+"/api/data");if(!r.ok){await new Promise(r=>setTimeout(r,2000));continue}
         const d=await r.json();
         if(d.employees&&d.employees.length){const bk=ld("bs_emp_bk",[]);bk.forEach(e=>{if(!d.employees.find(x=>x.name==e.name))d.employees.push(e)});EM=d.employees;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
-        if(d.assignments)AS=d.assignments;
+        if(d.assignments){for(const[k,v]of Object.entries(d.assignments))AS[k]=v}
         // Only load shifts from server if localStorage is empty (first visit)
         const lsSH_chk=ld("bs_sh",null);if(!lsSH_chk&&d.shifts){for(const k of Object.keys(SH_DF)){if(d.shifts[k]&&d.shifts[k].ts&&d.shifts[k].ts.length)SH[k].ts=d.shifts[k].ts}}
         if(d.view_only)VO=d.view_only;if(d.custom_durations)CDUR=d.custom_durations;if(d.recipients)RS=d.recipients;if(d.extra_breaks)XB=d.extra_breaks;if(d.extra_breaks_req)XB_REQ=d.extra_breaks_req;
