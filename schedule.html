@@ -298,8 +298,12 @@ function r(){
   if(!ME){document.getElementById("availSlots").innerHTML=`<div style="text-align:center;color:#e74c3c;font-size:11px;padding:5px">👆 أدخل Badge Num من المشرف</div>`;document.getElementById("upcPn").style.display="none";return}
   // Available
   let ah="",avail=[],myTimes=[];mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
-  for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,dr=gd(sk,t,i,ME),em=AS[k],vw=(VO[sk]||[]).includes(t);if(em==ME){myTimes.push({k,sk,t,dr});return}if(em||vw)return;if(isSup){const shh=SUP_HOURS[sk];if(shh){const mt=tmMin(t);if(mt<tmMin(shh.start)||mt>=tmMin(shh.end))return}}else{if(SUP.includes("_sl_"+k))return}avail.push({k,sk,t,dr})})}
-  if(mc>=(4+(XB[ME]||0))){ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">⚠️ ${XB[ME]?"تم "+XB[ME]+" بريك إضافي":"اخترت 4 بريكات"}</div>`;if(!XB[ME]&&!XB_REQ[ME])ah+=`<div style="text-align:center;margin-top:4px"><button class="btn btn-war btn-sm" onclick="reqXB()">📩 طلب بريك إضافي</button></div>`;if(XB_REQ[ME])ah+=`<div style="text-align:center;color:#8e44ad;font-size:10px;margin-top:4px">⏳ طلب بريك إضافي قيد المراجعة</div>`}
+  // Sup slots: count slots within SUP_HOURS, each is 60/n min
+  let supMax=-1,supDur=0;
+  if(isSup){let cnt=0;for(const[sk,sh]of Object.entries(SH)){const shh=SUP_HOURS[sk];if(shh){sh.ts.forEach(t=>{const mt=tmMin(t);if(mt>=tmMin(shh.start)&&mt<tmMin(shh.end))cnt++})}}if(cnt){supMax=cnt;supDur=Math.floor(60/cnt)}}
+  const max=isSup&&supMax>0?supMax:4+(XB[ME]||0);
+  for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,dr=gd(sk,t,i,ME),em=AS[k],vw=(VO[sk]||[]).includes(t);if(em==ME){myTimes.push({k,sk,t,dr:isSup&&supMax>0?supDur:dr});return}if(em||vw)return;if(isSup){const shh=SUP_HOURS[sk];if(shh){const mt=tmMin(t);if(mt<tmMin(shh.start)||mt>=tmMin(shh.end))return}}else{if(SUP.includes("_sl_"+k))return}avail.push({k,sk,t,dr:isSup&&supMax>0?supDur:dr})})}
+  if(mc>=max){ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">⚠️ ${isSup?"اخترت كل البريكات":(XB[ME]?"تم "+XB[ME]+" بريك إضافي":"اخترت 4 بريكات")}</div>`;if(!isSup&&!XB[ME]&&!XB_REQ[ME])ah+=`<div style="text-align:center;margin-top:4px"><button class="btn btn-war btn-sm" onclick="reqXB()">📩 طلب بريك إضافي</button></div>`;if(XB_REQ[ME])ah+=`<div style="text-align:center;color:#8e44ad;font-size:10px;margin-top:4px">⏳ طلب بريك إضافي قيد المراجعة</div>`}
   else if(!avail.length){ah=`<span style="color:#999;font-size:10px">لا توجد أوقات متاحة</span>`}
   else{const g={};avail.forEach(x=>{if(!g[x.sk])g[x.sk]=[];g[x.sk].push(x)});for(const[sk,list]of Object.entries(g)){ah+=`<div class="sg"><h4>${SH[sk].lb}</h4><div class="row">`;list.forEach(x=>{ah+=`<span class="mtt" style="cursor:pointer;border-color:#27ae60;background:#e8f8f5" onclick="empAs('${x.sk}','${x.t}','${x.k}')">${fm(x.t)} (${x.dr}د)</span>`});ah+=`</div></div>`}}
   document.getElementById("availSlots").innerHTML=ah;
@@ -316,12 +320,16 @@ function r(){
 function empAs(sk,t,k){
   if(!ME){nf("⚠️ سجل الدخول","r");return}
   let mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
-  if(mc>=(4+(XB[ME]||0))){if(XB[ME]){nf("⚠️ تم "+XB[ME]+" بريك إضافي","r")}else{nf("⚠️ 4 بريكات. اضغط 📩 طلب بريك","r")};return}
+  // Calculate supMax if supervisor
+  let supMax=-1;
+  if(isSup){let cnt=0;for(const[sk,sh]of Object.entries(SH)){const shh=SUP_HOURS[sk];if(shh){sh.ts.forEach(t=>{const mt=tmMin(t);if(mt>=tmMin(shh.start)&&mt<tmMin(shh.end))cnt++})}}if(cnt)supMax=cnt}
+  const max=isSup&&supMax>0?supMax:4+(XB[ME]||0);
+  if(mc>=max){if(isSup){nf("⚠️ اخترت كل البريكات المتاحة","r")}else if(XB[ME]){nf("⚠️ تم "+XB[ME]+" بريك إضافي","r")}else{nf("⚠️ 4 بريكات. اضغط 📩 طلب بريك","r")};return}
   if(AS[k]){nf("⚠️ مأخوذ","r");return}
   const supOnly=SUP.includes("_sl_"+k);
   if(supOnly&&!isSup){nf("⚠️ للمشرف فقط","r");return}
   AS[k]=ME;sv("bs_as",AS);addLog(ME,sk,t,"📌 أخذ");svAs();
-  if(mc>=4&&XB[ME]){XB[ME]--;if(XB[ME]<=0)delete XB[ME];sv("bs_xb",XB);fetch(SV+"/api/x-breaks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB)})}
+  if(!isSup&&mc>=4&&XB[ME]){XB[ME]--;if(XB[ME]<=0)delete XB[ME];sv("bs_xb",XB);fetch(SV+"/api/x-breaks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB)})}
   r();
 }
 function empUn(k){
