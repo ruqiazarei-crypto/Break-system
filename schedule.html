@@ -227,7 +227,6 @@ async function svLoad(){  try{
     if(d.employees&&d.employees.length){const bk=ld("bs_emp_bk",[]);bk.forEach(e=>{if(!d.employees.find(x=>x.name==e.name))d.employees.push(e)});EM=d.employees;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
     if(d.assignments){for(const[k,v]of Object.entries(d.assignments))AS[k]=v}
     if(d.view_only)VO=d.view_only;
-    if(d.custom_durations){for(const[k,v]of Object.entries(d.custom_durations))CDUR[k]=v};
     if(d.extra_breaks){for(const[k,v]of Object.entries(d.extra_breaks))XB[k]=v};if(d.extra_breaks_req){for(const[k,v]of Object.entries(d.extra_breaks_req))XB_REQ[k]=v}
     if(d.recipients)RS=d.recipients;
     if(d.durations&&d.durations.length==4)DP=d.durations;
