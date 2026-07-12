@@ -180,6 +180,9 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
     <div class="pn"><h3>🔑 كلمة سر الإدارة</h3>
       <div style="display:flex;gap:4px"><input id="adminPw" placeholder="كلمة السر الحالية" style="flex:2;font-size:10px"><button class="btn btn-pri btn-sm" onclick="chgPw()">تغيير</button><span id="pwStatus" style="font-size:9px;color:#999"></span></div>
     </div>
+    <div class="pn"><h3>📩 إدارة البريك الإضافي</h3>
+      <div id="xbMgrArea" style="font-size:10px"></div>
+    </div>
   </div>
   <div id="adPanel2" style="display:none">
     <div class="st" id="st"></div>
@@ -485,6 +488,14 @@ function rAdm(){
   RS.forEach((x,i)=>{r+=`<div class="rw" style="display:flex;gap:3px;align-items:center;padding:2px 0;font-size:10px"><span style="flex:2">${x.n}</span><span style="flex:2">${x.m}</span><button class="btn btn-dan btn-sm" onclick="dR(${i})">✕</button></div>`});
   if(!RS.length)r+=`<div style="font-size:9px;color:#999;padding:3px">لا يوجد</div>`;
   document.getElementById("recips").innerHTML=r;
+  // XB Management (Approved extra breaks)
+  let xbm="";const xbEntries=Object.entries(XB);if(xbEntries.length){xbm=`<div style="font-size:10px">`;
+    xbEntries.forEach(([nm,cnt])=>{xbm+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 4px;background:#f3e5f5;border-radius:4px;margin:2px 0">
+      <span>👤 ${nm} <span style="background:#8e44ad;color:#fff;border-radius:8px;padding:0 5px;font-size:8px">+${cnt}</span></span>
+      <button class="btn btn-dan btn-sm" onclick="cancelXB('${nm}')" style="font-size:9px;padding:1px 6px">🔄 إلغاء</button>
+    </div>`});xbm+=`</div>`
+  }else{xbm=`<span style="color:#999;font-size:9px">لا يوجد بريك إضافي معتمد حالياً</span>`}
+  document.getElementById("xbMgrArea").innerHTML=xbm;
 }
 function rAll(){
   let h="",ta=0,tv=0,tt=0;
@@ -507,6 +518,7 @@ function showXBAlert(nm,act){if(!isSup&&!adminOn)return;const b=document.getElem
 function reqXB(){if(!ME)return;XB_REQ[ME]=Date.now();sv("bs_xb_req",XB_REQ);fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});fetch(SV+"/api/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({extra_breaks_req:XB_REQ})});nf("📩 طلب بريك إضافي أرسل للمشرف","b");playBeep();r();rAdm()}
 let _appXB={};function appXB(nm){if(_appXB[nm])return;_appXB[nm]=1;delete XB_REQ[nm];XB[nm]=1;sv("bs_xb",XB);sv("bs_xb_req",XB_REQ);fetch(SV+"/api/x-breaks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB)});fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});nf("✅ تمت الموافقة: "+nm,"g");playBeep();showXBAlert(nm,"✅ الموافقة");rAdm();r();setTimeout(()=>delete _appXB[nm],1000)}
 function rejXB(nm){delete XB_REQ[nm];sv("bs_xb_req",XB_REQ);fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});nf("❌ رفض: "+nm,"r");playBeep();rAdm();showXBAlert(nm,"❌ الرفض")}
+function cancelXB(nm){if(!confirm(`الغاء الموافقة على البريك الإضافي لـ ${nm}؟`))return;delete XB[nm];sv("bs_xb",XB);fetch(SV+"/api/x-breaks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB)});nf(`🔄 تم إلغاء البريك الإضافي لـ ${nm}`,"b");rAdm();r()}
 function setEDP(nm,v){if(!nm||!v)return;const a=v.split(/[·,،\s]+/).map(Number).filter(x=>x>=5&&x<=60);if(!a.length){nf("⚠️ أدخل أرقام","r");return}EDP[nm]=a;sv("bs_edp",EDP);svSave();nf(`✅ ${a.join("·")}د`,"g");rAdm()}
 function parseEmp(i,v){if(!v)return;const p=v.split("|").map(x=>x.trim());if(!p[0]){nf("⚠️ الاسم مطلوب","r");return}
   const nm=p[0],em=p[1]||"",cd=p[2]||"";
