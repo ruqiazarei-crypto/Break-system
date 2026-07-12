@@ -218,7 +218,7 @@ function sv(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function fm(t){let[h,m]=t.split(":").map(Number);return `${h%12||12}:${String(m).padStart(2,"0")} ${h>=12?"PM":"AM"}`}
 function nf(m,t){const e=document.getElementById("nf");e.className=t||"";e.textContent=m;clearTimeout(e._t);e._t=setTimeout(()=>e.className="",3000)}
 
-function gd(sk,t,i,emp){const sh=SUP_HOURS[sk];if(sh){const mt=tmMin(t);if(mt>=tmMin(sh.start)&&mt<tmMin(sh.end))return CDUR[sk+"_"+t]||60}if(emp&&EDP[emp]){const p=EDP[emp];return CDUR[sk+"_"+t]||p[i%p.length]}return CDUR[sk+"_"+t]||DP[i%4]}
+function gd(sk,t,i,emp){if(emp&&EDP[emp]){const p=EDP[emp];return CDUR[sk+"_"+t]||p[i%p.length]}return CDUR[sk+"_"+t]||DP[i%4]}
 
 // ═══════════ SERVER SYNC ═══════════
 async function svLoad(){  try{
@@ -320,7 +320,9 @@ function empAs(sk,t,k){
   if(AS[k]){nf("⚠️ مأخوذ","r");return}
   const supOnly=SUP.includes("_sl_"+k);
   if(supOnly&&!isSup){nf("⚠️ للمشرف فقط","r");return}
-  AS[k]=ME;sv("bs_as",AS);addLog(ME,sk,t,"📌 أخذ");svAs();r();
+  AS[k]=ME;sv("bs_as",AS);addLog(ME,sk,t,"📌 أخذ");svAs();
+  if(mc>=4&&XB[ME]){XB[ME]--;if(XB[ME]<=0)delete XB[ME];sv("bs_xb",XB);fetch(SV+"/api/x-breaks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB)})}
+  r();
 }
 function empUn(k){
   if(AS[k]!=ME){nf("⚠️ مو بريكك","r");return}
@@ -468,7 +470,7 @@ function rAll(){
   for(const[sk,sh]of Object.entries(SH)){h+=`<div class="sh"><h3 style="font-size:11px">${sh.lb}</h3><div class="gr">`;
     sh.ts.forEach((t,i)=>{tt++;const k=sk+"_"+t,em=AS[k],vw=(VO[sk]||[]).includes(t),dr=gd(sk,t,i,em),my=em==ME,sup=SUP.includes("_sl_"+k);
       const sh=SUP_HOURS[sk];const supR=sh&&(tmMin(t)>=tmMin(sh.start)&&tmMin(t)<tmMin(sh.end));const isSupSl=sup||supR;const cls=my?"b":vw?"vw":em?"r":isSupSl?"sl":"g";
-      const txt=my?`✅ ${fm(t)} (${dr}د)`:vw?`📖 ${fm(t)}`:em?`🔴 ${em.substring(0,12)} (${dr}د)`:isSupSl?`🔒 ${fm(t)} (${dr}د)`:fm(t)+` (${dr}د)`;
+      const sd=supR?60:dr;const txt=my?`✅ ${fm(t)} (${sd}د)`:vw?`📖 ${fm(t)}`:em?`🔴 ${em.substring(0,12)} (${dr}د)`:isSupSl?`🔒 ${fm(t)} (${sd}د)`:fm(t)+` (${sd}د)`;
       if(!em)ta++;else if(!my)tv++;
       h+=`<span class="${cls}">${txt}</span>`;
     });h+=`</div></div>`;
