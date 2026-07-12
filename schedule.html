@@ -300,7 +300,7 @@ function r(){
   let ah="",avail=[],myTimes=[];mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
   // Sup slots: count slots within SUP_HOURS, each is 60/n min
   let supMax=-1,supDur=0;
-  if(isSup){let cnt=0;for(const[sk,sh]of Object.entries(SH)){const shh=SUP_HOURS[sk];if(shh){sh.ts.forEach(t=>{const mt=tmMin(t);if(mt>=tmMin(shh.start)&&mt<tmMin(shh.end))cnt++})}}if(cnt){supMax=cnt;supDur=Math.floor(60/cnt)}}
+  if(isSup){let cnt=0;for(const[sk,sh]of Object.entries(SH)){const shh=SUP_HOURS[sk];if(shh){sh.ts.forEach(t=>{const mt=tmMin(t);if(mt>=tmMin(shh.start)&&mt<tmMin(shh.end))cnt++})}}if(cnt){supMax=cnt;supDur=60}}
   const max=isSup&&supMax>0?supMax:4+(XB[ME]||0);
   for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,dr=gd(sk,t,i,ME),em=AS[k],vw=(VO[sk]||[]).includes(t);if(em==ME){myTimes.push({k,sk,t,dr:isSup&&supMax>0?supDur:dr});return}if(em||vw)return;if(isSup){const shh=SUP_HOURS[sk];if(shh){const mt=tmMin(t);if(mt<tmMin(shh.start)||mt>=tmMin(shh.end))return}}else{if(SUP.includes("_sl_"+k))return}avail.push({k,sk,t,dr:isSup&&supMax>0?supDur:dr})})}
   if(mc>=max){ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">⚠️ ${isSup?"اخترت كل البريكات":(XB[ME]?"تم "+XB[ME]+" بريك إضافي":"اخترت 4 بريكات")}</div>`;if(!isSup&&!XB[ME]&&!XB_REQ[ME])ah+=`<div style="text-align:center;margin-top:4px"><button class="btn btn-war btn-sm" onclick="reqXB()">📩 طلب بريك إضافي</button></div>`;if(XB_REQ[ME])ah+=`<div style="text-align:center;color:#8e44ad;font-size:10px;margin-top:4px">⏳ طلب بريك إضافي قيد المراجعة</div>`}
