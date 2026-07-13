@@ -220,9 +220,15 @@ const SUP_HOURS = {
   afternoon:{start:"14:00",end:"18:00"},
   night:{start:"15:00",end:"19:00"}
 };
+const SH_FRI = {
+  friday:{lb:"🎯 الجمعة (4-7:30)",ts:["16:00","16:10","16:20","16:30","16:45","16:55","17:05","17:20","17:30","17:40","17:50","18:05","18:15","18:25","18:35","18:50","19:00","19:10","19:20","19:30"]}
+};
+const VO_FRI = {friday:[]};
+function isFri(){const s=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));return s.getDay()===5}
 function tmMin(t){let[h,m]=t.split(":").map(Number);return h*60+m}
 
 let SH=JSON.parse(JSON.stringify(SH_DF)),VO=JSON.parse(JSON.stringify(VO_DF)),DP=[...DP_DF];
+if(isFri()){SH=JSON.parse(JSON.stringify(SH_FRI));VO=JSON.parse(JSON.stringify(VO_FRI));}
 let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={},BT={},BTN={},XB={};let XB_REQ={};let _lastReqCnt=0;
 let ME="",myCode="",adminPw="admin123",adminOn=false,isSup=false,notifOn=false;
 let sn=0; // sync counter
@@ -533,6 +539,7 @@ function dEmp(i){if(!confirm(`حذف ${EM[i].name}؟`))return;const nm=EM[i].nam
 function addSlot(){
   // Build shift picker UI
   const shNames={morning:"🌅 صباحي",afternoon:"☀️ مسائي",night:"🌙 ليلي"};
+  if(isFri())shNames.friday="🎯 الجمعة";
   let opts="";for(const[k,v]of Object.entries(shNames))opts+=`<option value="${k}">${v}</option>`;
   const html=`<div style="text-align:center">
 <div style="margin-bottom:6px"><label style="font-size:11px;display:block;margin-bottom:2px">الوردية:</label><select id="modSk" style="width:100%;padding:4px;font-size:11px">${opts}</select></div>
@@ -549,7 +556,7 @@ function addSlot(){
 function tv(sk,t){if(!VO[sk])VO[sk]=[];const i=VO[sk].indexOf(t);if(i>-1)VO[sk].splice(i,1);else VO[sk].push(t);svSave();rAdm();r()}
 function edDur(sk,t,i){const cur=gd(sk,t,i);const n=prompt(`⏱ مدة ${fm(t)} (5-60):`,cur);if(!n||isNaN(n)||parseInt(n)<5||parseInt(n)>60)return;CDUR[sk+"_"+t]=parseInt(n);sv("bs_dur",CDUR);svSave();nf(`✅ ${parseInt(n)} د`,"g");rAdm();r()}
 function rs(){if(!confirm("تصفير التوزيعات؟"))return;AS={};sv("bs_as",AS);svAs();r();rAll();nf("🔄","b")}
-function rstSlots(){if(!confirm("استعادة 81 وقت؟"))return;SH=JSON.parse(JSON.stringify(SH_DF));VO=JSON.parse(JSON.stringify(VO_DF));svSave();rAdm();r();nf("✅ 81 وقت","g")}
+function rstSlots(){if(!confirm("استعادة الأوقات؟"))return;SH=JSON.parse(JSON.stringify(isFri()?SH_FRI:SH_DF));VO=JSON.parse(JSON.stringify(isFri()?VO_FRI:VO_DF));svSave();rAdm();r();nf("✅ تم","g")}
 function addR(){const n=document.getElementById("rn").value.trim(),m=document.getElementById("rm").value.trim();if(!n||!m)return;RS.push({name:n,email:m});sv("bs_rs",RS);document.getElementById("rn").value="";document.getElementById("rm").value="";rAdm();nf("✅","g")}
 // Reports
 async function saveReport(){const ld=document.getElementById("rptList");ld.innerHTML="⏳ جاري الحفظ...";try{const r=await(await fetch("/api/report/save",{method:"POST"})).json();if(r.ok){ld.innerHTML="";nf(r.message,"g");loadReports()}else{nf("❌ "+r.error,"r");ld.innerHTML="❌"}}catch(e){nf("❌ "+e.message,"r");ld.innerHTML="❌"}}
@@ -700,7 +707,9 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
   if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}let lsSUP0=ld("bs_sup",[]);if(lsSUP0.length)SUP=lsSUP0;let lsXB=ld("bs_xb",{});if(Object.keys(lsXB).length)XB=lsXB;
   let lsXB_REQ=ld("bs_xb_req",{});if(Object.keys(lsXB_REQ).length)XB_REQ=lsXB_REQ;
   let lsAS=ld("bs_as",{});if(Object.keys(lsAS).length)AS=lsAS;
-  let lsSH=ld("bs_sh",null);if(lsSH)SH=lsSH;
+  let lsSH=ld("bs_sh",null);if(lsSH)SH=lsSH;else if(isFri()){SH=JSON.parse(JSON.stringify(SH_FRI));VO=JSON.parse(JSON.stringify(VO_FRI))}
+  // On Friday, ensure Friday schedule; on other days, ensure regular schedule
+  if(isFri()){if(!SH.friday){SH=JSON.parse(JSON.stringify(SH_FRI));VO=JSON.parse(JSON.stringify(VO_FRI))}}else if(SH.friday){SH=JSON.parse(JSON.stringify(SH_DF));VO=JSON.parse(JSON.stringify(VO_DF))}
   let lsVO=ld("bs_vo",null);if(lsVO)VO=lsVO;
   let lsCDUR=ld("bs_dur",{});if(Object.keys(lsCDUR).length)CDUR=lsCDUR;
   loadBT();r();rAdm();
@@ -727,7 +736,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
         if(d.employees&&d.employees.length){const bk=ld("bs_emp_bk",[]);bk.forEach(e=>{if(!d.employees.find(x=>x.name==e.name))d.employees.push(e)});EM=d.employees;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
         if(d.assignments){const m={...d.assignments};for(const[k,v]of Object.entries(AS)){if(v==ME)m[k]=v}AS=m}
         // Only load shifts from server if localStorage is empty (first visit)
-        const lsSH_chk=ld("bs_sh",null);if(!lsSH_chk&&d.shifts){for(const k of Object.keys(SH_DF)){if(d.shifts[k]&&d.shifts[k].ts&&d.shifts[k].ts.length)SH[k].ts=d.shifts[k].ts}}
+        const lsSH_chk=ld("bs_sh",null);if(!lsSH_chk&&d.shifts){const sk=isFri()?Object.keys(SH_FRI):Object.keys(SH_DF);for(const k of sk){if(d.shifts[k]&&d.shifts[k].ts&&d.shifts[k].ts.length)SH[k].ts=d.shifts[k].ts}}
         if(d.view_only)VO=d.view_only;if(d.custom_durations){for(const[k,v]of Object.entries(d.custom_durations))CDUR[k]=v};if(d.recipients)RS=d.recipients;if(d.extra_breaks){for(const[k,v]of Object.entries(d.extra_breaks))XB[k]=v};if(d.extra_breaks_req){for(const[k,v]of Object.entries(d.extra_breaks_req))XB_REQ[k]=v}
         if(d.durations&&d.durations.length==4)DP=d.durations;
         let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
