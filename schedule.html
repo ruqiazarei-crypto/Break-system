@@ -720,7 +720,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
   let lsBT=ld("bs_bt",{});if(Object.keys(lsBT).length)BT=lsBT;
   // Auto-refresh
   setInterval(async()=>{const ls=sn;await svLoad();if(ls!==sn){};checkReminders();notifyXBStatus();if(adminOn||isSup)rAdm()},5000);
-  setInterval(()=>{const n=new Date();const s=new Date(n.toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));if(s.getHours()===0&&s.getMinutes()===0){REM={};sv("bs_rmd",{});AS={};XB={};XB_REQ={};sv("bs_as",AS);sv("bs_xb",XB);sv("bs_xb_req",XB_REQ);svAs();fetch(SV+"/api/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({assignments:AS})});fetch(SV+"/api/x-breaks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB)});fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});nf("🔄 ريست يومي: تم مسح البريكات","g")}},15000);
+  setInterval(()=>{const n=new Date();const s=new Date(n.toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));if(s.getHours()===0&&s.getMinutes()===0){nf("🔄 ريست يومي: تم مسح التوزيعات","g");REM={};sv("bs_rmd",{});AS={};sv("bs_as",AS);svAs();fetch(SV+"/api/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({assignments:AS})})}},15000);
   setTimeout(checkReminders,1000);
   
   // Auto-save badge codes every 60 seconds (no more re-entering!)
@@ -751,7 +751,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
     if(!EM.length){let bk=ld("bs_emp_bk",[]);if(bk.length)EM=bk;else EM=JSON.parse(JSON.stringify(EMP_DF));r();rAdm()}
   })();
   // Check daily reset — if new day since last visit, clear assignments
-  (function(){const ld=localStorage.getItem("bs_reset_date");const s=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));const td=s.toDateString();if(ld&&ld!==td){AS={};XB={};XB_REQ={};sv("bs_as",AS);sv("bs_xb",XB);sv("bs_xb_req",XB_REQ);svAs();fetch(SV+"/api/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({assignments:AS})});fetch(SV+"/api/x-breaks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB)});fetch(SV+"/api/x-breaks-req",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB_REQ)});nf("🔄 يوم جديد: تم مسح البريكات","g")}localStorage.setItem("bs_reset_date",td)})();
+  // Check daily reset — only at midnight (interval above), not on page load
   // Auto-save break timer every 30s
   setInterval(()=>{if(Object.keys(BT).length)saveBT()},30000);
   renderTimer();
