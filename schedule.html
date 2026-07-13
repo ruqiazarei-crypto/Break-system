@@ -226,9 +226,12 @@ const SH_FRI = {
 const VO_FRI = {friday:[]};
 function isFri(){const s=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));return s.getDay()===5}
 function tmMin(t){let[h,m]=t.split(":").map(Number);return h*60+m}
+// Employee-visible shifts (hide Friday from employees unless it's Friday)
+function empShifts(){const e={};for(const[k,v]of Object.entries(SH)){if(k=="friday"&&!isFri())continue;e[k]=v}return e}
 
 let SH=JSON.parse(JSON.stringify(SH_DF)),VO=JSON.parse(JSON.stringify(VO_DF)),DP=[...DP_DF];
-if(isFri()){SH=JSON.parse(JSON.stringify(SH_FRI));VO=JSON.parse(JSON.stringify(VO_FRI));}
+// Always add Friday shift (admin can edit times/durations; employees see it on Friday)
+SH.friday=JSON.parse(JSON.stringify(SH_FRI.friday));VO.friday=[];
 let EM=[],CD={},AS={},RS=[],CDUR={},EDP={},SUP=[],LG=[],REM={},BT={},BTN={},XB={};let XB_REQ={};let _lastReqCnt=0;
 let ME="",myCode="",adminPw="admin123",adminOn=false,isSup=false,notifOn=false;
 let sn=0; // sync counter
@@ -312,14 +315,14 @@ function r(){
   document.getElementById("myCnt").textContent=mc+"/"+(isSup&&supMax>0?supMax:4+(XB[ME]||0));
   // My breaks
   let mh="";
-  for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+'_'+t;if(AS[k]==ME){const dr=isSup&&supMax>0?supDur:gd(sk,t,i,ME);mh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${fm(t)} (${dr}د)</span><button class="btn btn-dan btn-sm" onclick="empUn('${k}')" style="padding:0 3px;font-size:8px">✕</button></div>`}})}
+  for(const[sk,sh]of Object.entries(empShifts())){sh.ts.forEach((t,i)=>{const k=sk+'_'+t;if(AS[k]==ME){const dr=isSup&&supMax>0?supDur:gd(sk,t,i,ME);mh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${fm(t)} (${dr}د)</span><button class="btn btn-dan btn-sm" onclick="empUn('${k}')" style="padding:0 3px;font-size:8px">✕</button></div>`}})}
   if(!mh)mh=`<span style="color:#999;font-size:11px">${ME?"ما اخترت بريكات":"سجل الدخول ب Badge Num"}</span>`;
   document.getElementById("myList").innerHTML=mh;
   renderTimer();
   if(!ME){document.getElementById("availSlots").innerHTML=`<div style="text-align:center;color:#e74c3c;font-size:11px;padding:5px">👆 أدخل Badge Num من المشرف</div>`;document.getElementById("upcPn").style.display="none";return}
   // Available
   let ah="",avail=[],myTimes=[];mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
-  for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,dr=gd(sk,t,i,ME),em=AS[k],vw=(VO[sk]||[]).includes(t);if(em==ME){myTimes.push({k,sk,t,dr:isSup&&supMax>0?supDur:dr});return}if(em||vw)return;if(isSup){const shh=SUP_HOURS[sk];if(shh){const mt=tmMin(t);if(mt<tmMin(shh.start)||mt>=tmMin(shh.end))return}}else{if(SUP.includes("_sl_"+k))return}avail.push({k,sk,t,dr:isSup&&supMax>0?supDur:dr})})}
+  for(const[sk,sh]of Object.entries(empShifts())){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,dr=gd(sk,t,i,ME),em=AS[k],vw=(VO[sk]||[]).includes(t);if(em==ME){myTimes.push({k,sk,t,dr:isSup&&supMax>0?supDur:dr});return}if(em||vw)return;if(isSup){const shh=SUP_HOURS[sk];if(shh){const mt=tmMin(t);if(mt<tmMin(shh.start)||mt>=tmMin(shh.end))return}}else{if(SUP.includes("_sl_"+k))return}avail.push({k,sk,t,dr:isSup&&supMax>0?supDur:dr})})}
   if(mc>=max){ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">⚠️ ${isSup?"اخترت كل البريكات":(XB[ME]?"تم "+XB[ME]+" بريك إضافي":"اخترت 4 بريكات")}</div>`;if(!isSup&&!XB[ME]&&!XB_REQ[ME])ah+=`<div style="text-align:center;margin-top:4px"><button class="btn btn-war btn-sm" onclick="reqXB()">📩 طلب بريك إضافي</button></div>`;if(XB_REQ[ME])ah+=`<div style="text-align:center;color:#8e44ad;font-size:10px;margin-top:4px">⏳ طلب بريك إضافي قيد المراجعة</div>`}
   else if(!avail.length){ah=`<span style="color:#999;font-size:10px">لا توجد أوقات متاحة</span>`}
   else{const g={};avail.forEach(x=>{if(!g[x.sk])g[x.sk]=[];g[x.sk].push(x)});for(const[sk,list]of Object.entries(g)){ah+=`<div class="sg"><h4>${SH[sk].lb}</h4><div class="row">`;list.forEach(x=>{ah+=`<span class="mtt" style="cursor:pointer;border-color:#27ae60;background:#e8f8f5" onclick="empAs('${x.sk}','${x.t}','${x.k}')">${fm(x.t)} (${x.dr}د)</span>`});ah+=`</div></div>`}}
@@ -470,7 +473,7 @@ function rAdm(){
   if(isSup){const sh=xh?xh.replace("طلبات بريك إضافي","📩 طلبات بريك إضافي"):"";document.getElementById("supXBArea").innerHTML=sh}
   document.getElementById("emps").innerHTML=h;
   // Slots
-  let sm="";const sN={morning:"🌅 صباحي",afternoon:"☀️ مسائي",night:"🌙 ليلي"};
+  let sm="";const sN={morning:"🌅 صباحي",afternoon:"☀️ مسائي",night:"🌙 ليلي",friday:"🎯 الجمعة"};
   for(const[sk,sh]of Object.entries(SH)){
     sm+=`<div style="margin-bottom:3px"><strong style="font-size:10px">${sN[sk]||sk}</strong><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:2px">`;
     sh.ts.forEach((t,i)=>{const vw=(VO[sk]||[]).includes(t),sup=SUP.includes("_sl_"+sk+"_"+t);
@@ -556,7 +559,7 @@ function addSlot(){
 function tv(sk,t){if(!VO[sk])VO[sk]=[];const i=VO[sk].indexOf(t);if(i>-1)VO[sk].splice(i,1);else VO[sk].push(t);svSave();rAdm();r()}
 function edDur(sk,t,i){const cur=gd(sk,t,i);const n=prompt(`⏱ مدة ${fm(t)} (5-60):`,cur);if(!n||isNaN(n)||parseInt(n)<5||parseInt(n)>60)return;CDUR[sk+"_"+t]=parseInt(n);sv("bs_dur",CDUR);svSave();nf(`✅ ${parseInt(n)} د`,"g");rAdm();r()}
 function rs(){if(!confirm("تصفير التوزيعات؟"))return;AS={};sv("bs_as",AS);svAs();r();rAll();nf("🔄","b")}
-function rstSlots(){if(!confirm("استعادة الأوقات؟"))return;SH=JSON.parse(JSON.stringify(isFri()?SH_FRI:SH_DF));VO=JSON.parse(JSON.stringify(isFri()?VO_FRI:VO_DF));svSave();rAdm();r();nf("✅ تم","g")}
+function rstSlots(){if(!confirm("استعادة الأوقات؟"))return;SH=JSON.parse(JSON.stringify(SH_DF));VO=JSON.parse(JSON.stringify(VO_DF));SH.friday=JSON.parse(JSON.stringify(SH_FRI.friday));VO.friday=[];svSave();rAdm();r();nf("✅ تم","g")}
 function addR(){const n=document.getElementById("rn").value.trim(),m=document.getElementById("rm").value.trim();if(!n||!m)return;RS.push({name:n,email:m});sv("bs_rs",RS);document.getElementById("rn").value="";document.getElementById("rm").value="";rAdm();nf("✅","g")}
 // Reports
 async function saveReport(){const ld=document.getElementById("rptList");ld.innerHTML="⏳ جاري الحفظ...";try{const r=await(await fetch("/api/report/save",{method:"POST"})).json();if(r.ok){ld.innerHTML="";nf(r.message,"g");loadReports()}else{nf("❌ "+r.error,"r");ld.innerHTML="❌"}}catch(e){nf("❌ "+e.message,"r");ld.innerHTML="❌"}}
@@ -671,7 +674,7 @@ function report(){
 function reqNotif(){if(!Notification)return;Notification.requestPermission().then(p=>{if(p=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}})}
 function playBeep(){try{const ac=new(window.AudioContext||window.webkitAudioContext)();[523.25,659.25,783.99].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.value=f;g.gain.value=.2;o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+i*.12);o.stop(ac.currentTime+i*.12+.2)})}catch(e){}}
 function checkReminders(){if(!ME)return;const n=new Date();const s=new Date(n.toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));const cm=s.getHours()*60+s.getMinutes();
-  for(const[sk,sh]of Object.entries(SH)){sh.ts.forEach((t,i)=>{const k=sk+"_"+t,empName=AS[k];if(!empName)return;const isMy=empName==ME,isVis=adminOn||isSup;if(!isMy&&!isVis)return;const[h,m]=t.split(":").map(Number),tm=h*60+m,dr=gd(sk,t,i,empName),te=tm+dr,pre=isVis&&!isMy?`👤 ${empName}: `:"";
+  for(const[sk,sh]of Object.entries(SH)){if(sk=="friday"&&!isFri()&&!adminOn&&!isSup)continue;sh.ts.forEach((t,i)=>{const k=sk+"_"+t,empName=AS[k];if(!empName)return;const isMy=empName==ME,isVis=adminOn||isSup;if(!isMy&&!isVis)return;const[h,m]=t.split(":").map(Number),tm=h*60+m,dr=gd(sk,t,i,empName),te=tm+dr,pre=isVis&&!isMy?`👤 ${empName}: `:"";
     if(!REM["b5_"+k]&&cm>=tm-5&&cm<tm){REM["b5_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 ${pre}<strong>${fm(t)}</strong> بعد 5 دقائق (${dr}د)`;playBeep();if(notifOn)new Notification("⏰",{body:`${pre}${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}
     if(!REM["ex_"+k]&&cm>=tm&&cm<tm+1){REM["ex_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 ${pre}<strong>${fm(t)}</strong> وقت البريك!`;playBeep();if(notifOn)new Notification("🔔",{body:`${pre}${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}
     if(!REM["e3_"+k]&&cm>=te-3&&cm<te){REM["e3_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`⚠️ ${pre}<strong>${fm(t)}</strong> باقي 3 دقائق`;playBeep();if(notifOn)new Notification("⚠️",{body:`${pre}${fm(t)} - باقي 3 دقائق`});setTimeout(()=>b.style.display="none",8000)}
@@ -707,9 +710,8 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
   if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}let lsSUP0=ld("bs_sup",[]);if(lsSUP0.length)SUP=lsSUP0;let lsXB=ld("bs_xb",{});if(Object.keys(lsXB).length)XB=lsXB;
   let lsXB_REQ=ld("bs_xb_req",{});if(Object.keys(lsXB_REQ).length)XB_REQ=lsXB_REQ;
   let lsAS=ld("bs_as",{});if(Object.keys(lsAS).length)AS=lsAS;
-  let lsSH=ld("bs_sh",null);if(lsSH)SH=lsSH;else if(isFri()){SH=JSON.parse(JSON.stringify(SH_FRI));VO=JSON.parse(JSON.stringify(VO_FRI))}
-  // On Friday, ensure Friday schedule; on other days, ensure regular schedule
-  if(isFri()){if(!SH.friday){SH=JSON.parse(JSON.stringify(SH_FRI));VO=JSON.parse(JSON.stringify(VO_FRI))}}else if(SH.friday){SH=JSON.parse(JSON.stringify(SH_DF));VO=JSON.parse(JSON.stringify(VO_DF))}
+  let lsSH=ld("bs_sh",null);if(lsSH){SH=lsSH;if(!SH.friday)SH.friday=JSON.parse(JSON.stringify(SH_FRI.friday))}else if(isFri()){SH.friday=JSON.parse(JSON.stringify(SH_FRI.friday))}
+  if(isFri()){if(!SH.friday)SH.friday=JSON.parse(JSON.stringify(SH_FRI.friday))}else if(SH.friday&&!Object.keys(SH).some(k=>k!="friday")){SH=JSON.parse(JSON.stringify(SH_DF));VO=JSON.parse(JSON.stringify(VO_DF))}
   let lsVO=ld("bs_vo",null);if(lsVO)VO=lsVO;
   let lsCDUR=ld("bs_dur",{});if(Object.keys(lsCDUR).length)CDUR=lsCDUR;
   loadBT();r();rAdm();
@@ -736,7 +738,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
         if(d.employees&&d.employees.length){const bk=ld("bs_emp_bk",[]);bk.forEach(e=>{if(!d.employees.find(x=>x.name==e.name))d.employees.push(e)});EM=d.employees;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
         if(d.assignments){const m={...d.assignments};for(const[k,v]of Object.entries(AS)){if(v==ME)m[k]=v}AS=m}
         // Only load shifts from server if localStorage is empty (first visit)
-        const lsSH_chk=ld("bs_sh",null);if(!lsSH_chk&&d.shifts){const sk=isFri()?Object.keys(SH_FRI):Object.keys(SH_DF);for(const k of sk){if(d.shifts[k]&&d.shifts[k].ts&&d.shifts[k].ts.length)SH[k].ts=d.shifts[k].ts}}
+        const lsSH_chk=ld("bs_sh",null);if(!lsSH_chk&&d.shifts){for(const[k,v]of Object.entries(d.shifts)){if(!SH[k])SH[k]={lb:v.lb||k,ts:[]};SH[k].ts=v.ts||[]}}
         if(d.view_only)VO=d.view_only;if(d.custom_durations){for(const[k,v]of Object.entries(d.custom_durations))CDUR[k]=v};if(d.recipients)RS=d.recipients;if(d.extra_breaks){for(const[k,v]of Object.entries(d.extra_breaks))XB[k]=v};if(d.extra_breaks_req){for(const[k,v]of Object.entries(d.extra_breaks_req))XB_REQ[k]=v}
         if(d.durations&&d.durations.length==4)DP=d.durations;
         let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
