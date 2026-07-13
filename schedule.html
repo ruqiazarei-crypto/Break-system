@@ -541,8 +541,7 @@ function addEmp(){const n=prompt("الاسم:");if(!n)return;const m=prompt("ا�
 function dEmp(i){if(!confirm(`حذف ${EM[i].name}؟`))return;const nm=EM[i].name;Object.keys(AS).forEach(k=>{if(AS[k]==nm)delete AS[k]});EM.splice(i,1);sv("bs_emp",EM);sv("bs_as",AS);svSave();rAdm();r();nf("✅","g")}
 function addSlot(){
   // Build shift picker UI
-  const shNames={morning:"🌅 صباحي",afternoon:"☀️ مسائي",night:"🌙 ليلي"};
-  if(isFri())shNames.friday="🎯 الجمعة";
+  const shNames={morning:"🌅 صباحي",afternoon:"☀️ مسائي",night:"🌙 ليلي",friday:"🎯 الجمعة"};
   let opts="";for(const[k,v]of Object.entries(shNames))opts+=`<option value="${k}">${v}</option>`;
   const html=`<div style="text-align:center">
 <div style="margin-bottom:6px"><label style="font-size:11px;display:block;margin-bottom:2px">الوردية:</label><select id="modSk" style="width:100%;padding:4px;font-size:11px">${opts}</select></div>
