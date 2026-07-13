@@ -672,7 +672,7 @@ function report(){
 // ═══════════ REMINDERS ═══════════
 function reqNotif(){if(!Notification)return;Notification.requestPermission().then(p=>{if(p=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}})}
 function playBeep(){try{const ac=new(window.AudioContext||window.webkitAudioContext)();[523.25,659.25,783.99].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.value=f;g.gain.value=.2;o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+i*.12);o.stop(ac.currentTime+i*.12+.2)})}catch(e){}}
-function checkReminders(){if(!ME)return;const n=new Date();const s=new Date(n.toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));const cm=s.getHours()*60+s.getMinutes();
+function checkReminders(){if(!ME&&!adminOn&&!isSup)return;const n=new Date();const s=new Date(n.toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));const cm=s.getHours()*60+s.getMinutes();
   for(const[sk,sh]of Object.entries(SH)){if(sk=="friday"&&!isFri()&&!adminOn&&!isSup)continue;sh.ts.forEach((t,i)=>{const k=sk+"_"+t,empName=AS[k];if(!empName)return;const isMy=empName==ME,isVis=adminOn||isSup;if(!isMy&&!isVis)return;const[h,m]=t.split(":").map(Number),tm=h*60+m,dr=gd(sk,t,i,empName),te=tm+dr,pre=isVis&&!isMy?`👤 ${empName}: `:"";
     if(!REM["b5_"+k]&&cm>=tm-5&&cm<tm){REM["b5_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 ${pre}<strong>${fm(t)}</strong> بعد 5 دقائق (${dr}د)`;playBeep();if(notifOn)new Notification("⏰",{body:`${pre}${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}
     if(!REM["ex_"+k]&&cm>=tm&&cm<tm+1){REM["ex_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 ${pre}<strong>${fm(t)}</strong> وقت البريك!`;playBeep();if(notifOn)new Notification("🔔",{body:`${pre}${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}
@@ -705,7 +705,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
   let lsEM=ld("bs_emp_bk",[]);if(lsEM.length){EM=lsEM;EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
   adminPw=ld("bs_admin_pw","admin123");
   adminOn=sessionStorage.getItem("bs_admin")=="1";
-  if(adminOn){document.getElementById("lkBtn").textContent="🔓";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis")}
+  if(adminOn){document.getElementById("lkBtn").textContent="🔓";document.getElementById("lkBtn").classList.add("lk-on");document.getElementById("admSec").classList.add("vis");if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}else if(Notification&&Notification.permission!="denied"){reqNotif()}}
   if(Notification&&Notification.permission=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}let lsSUP0=ld("bs_sup",[]);if(lsSUP0.length)SUP=lsSUP0;let lsXB=ld("bs_xb",{});if(Object.keys(lsXB).length)XB=lsXB;
   let lsXB_REQ=ld("bs_xb_req",{});if(Object.keys(lsXB_REQ).length)XB_REQ=lsXB_REQ;
   let lsAS=ld("bs_as",{});if(Object.keys(lsAS).length)AS=lsAS;
