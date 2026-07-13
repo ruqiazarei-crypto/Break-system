@@ -79,6 +79,7 @@ body{font-family:Tahoma,sans-serif;background:#e8f4f0;color:#1a2a3a;padding:8px;
   <span class="nm" id="loggedNm" style="display:none"></span>
   <span class="ct" id="myCnt">0/4</span>
   <button class="rmbtn" id="rmBtn" onclick="reqNotif()">🔔 تفعيل</button>
+  <button class="rmbtn" style="font-size:9px;background:#8e44ad" onclick="testNotif()">🧪</button>
   <span style="font-size:9px;color:#008080;width:100%;display:block;padding:2px 0 0">👆 أدخل Badge Num | 👇 المدير: 🔑 بالأزرار السفلية</span>
 </div>
 
@@ -508,7 +509,7 @@ function rAdm(){
 }
 function rAll(){
   let h="",ta=0,tv=0,tt=0;
-  for(const[sk,sh]of Object.entries(SH)){h+=`<div class="sh"><h3 style="font-size:11px">${sh.lb}</h3><div class="gr">`;
+  for(const[sk,sh]of Object.entries(SH)){if(sk=="friday"&&!isFri()&&!adminOn&&!isSup)continue;h+=`<div class="sh"><h3 style="font-size:11px">${sh.lb}</h3><div class="gr">`;
     sh.ts.forEach((t,i)=>{tt++;const k=sk+"_"+t,em=AS[k],vw=(VO[sk]||[]).includes(t),dr=gd(sk,t,i,em),my=em==ME,sup=SUP.includes("_sl_"+k);
       const sh=SUP_HOURS[sk];const supR=sh&&(tmMin(t)>=tmMin(sh.start)&&tmMin(t)<tmMin(sh.end));const isSupSl=sup||supR;const cls=my?"b":vw?"vw":em?"r":isSupSl?"sl":"g";
       const sd=supR?60:dr;const txt=my?`✅ ${fm(t)} (${sd}د)`:vw?`📖 ${fm(t)}`:em?`🔴 ${em.substring(0,12)} (${dr}د)`:isSupSl?`🔒 ${fm(t)} (${sd}د)`:fm(t)+` (${sd}د)`;
@@ -671,6 +672,7 @@ function report(){
 
 // ═══════════ REMINDERS ═══════════
 function reqNotif(){if(!Notification)return;Notification.requestPermission().then(p=>{if(p=="granted"){notifOn=true;document.getElementById("rmBtn").textContent="🔔 مفعل"}})}
+function testNotif(){if(!Notification||Notification.permission!="granted"){nf("⚠️ فعل الإشعارات أولاً","r");return}try{new Notification("🧪 اختبار",{body:"✅ التنبيهات تشتغل"});nf("✅ أرسلت تنبيه تجريبي","g")}catch(e){nf("❌ فشل: "+e.message,"r")}}
 function playBeep(){try{const ac=new(window.AudioContext||window.webkitAudioContext)();[523.25,659.25,783.99].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.value=f;g.gain.value=.2;o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+i*.12);o.stop(ac.currentTime+i*.12+.2)})}catch(e){}}
 function checkReminders(){if(!ME&&!adminOn&&!isSup)return;const n=new Date();const s=new Date(n.toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));const cm=s.getHours()*60+s.getMinutes();
   for(const[sk,sh]of Object.entries(SH)){if(sk=="friday"&&!isFri()&&!adminOn&&!isSup)continue;sh.ts.forEach((t,i)=>{const k=sk+"_"+t,empName=AS[k];if(!empName)return;const isMy=empName==ME,isVis=adminOn||isSup;if(!isMy&&!isVis)return;const[h,m]=t.split(":").map(Number),tm=h*60+m,dr=gd(sk,t,i,empName),te=tm+dr,pre=isVis&&!isMy?`👤 ${empName}: `:"";
