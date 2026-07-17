@@ -222,13 +222,13 @@ const SUP_HOURS = {
   night:{start:"15:00",end:"19:00"}
 };
 const SH_FRI = {
-  friday:{lb:"🎯 الجمعة (4-7:30)",ts:["16:00","16:10","16:20","16:30","16:45","16:55","17:05","17:20","17:30","17:40","17:50","18:05","18:15","18:25","18:35","18:50","19:00","19:10","19:20","19:30"]}
+  friday:{lb:"🎯 الجمعة (4-7:30)",ts:["17:00","17:15","17:30","17:45","18:00","18:15","18:30","18:45","19:00","19:15","19:30"]}
 };
 const VO_FRI = {friday:[]};
 function isFri(){const s=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));return s.getDay()===5}
 function tmMin(t){let[h,m]=t.split(":").map(Number);return h*60+m}
 // Employee-visible shifts (hide Friday from employees unless it's Friday)
-function empShifts(){const e={};for(const[k,v]of Object.entries(SH)){if(k=="friday"&&!isFri())continue;e[k]=v}return e}
+function empShifts(){const e={};for(const[k,v]of Object.entries(SH)){if(isFri()){if(k=="friday")e[k]=v}else{if(k!="friday")e[k]=v}}return e}
 
 let SH=JSON.parse(JSON.stringify(SH_DF)),VO=JSON.parse(JSON.stringify(VO_DF)),DP=[...DP_DF];
 // Always add Friday shift (admin can edit times/durations; employees see it on Friday)
@@ -509,7 +509,7 @@ function rAdm(){
 }
 function rAll(){
   let h="",ta=0,tv=0,tt=0;
-  for(const[sk,sh]of Object.entries(SH)){if(sk=="friday"&&!isFri()&&!adminOn&&!isSup)continue;h+=`<div class="sh"><h3 style="font-size:11px">${sh.lb}</h3><div class="gr">`;
+  for(const[sk,sh]of Object.entries(SH)){if(isFri()){if(sk!="friday"&&!adminOn&&!isSup)continue}else{if(sk=="friday"&&!adminOn&&!isSup)continue}h+=`<div class="sh"><h3 style="font-size:11px">${sh.lb}</h3><div class="gr">`;
     sh.ts.forEach((t,i)=>{tt++;const k=sk+"_"+t,em=AS[k],vw=(VO[sk]||[]).includes(t),dr=gd(sk,t,i,em),my=em==ME,sup=SUP.includes("_sl_"+k);
       const sh=SUP_HOURS[sk];const supR=sh&&(tmMin(t)>=tmMin(sh.start)&&tmMin(t)<tmMin(sh.end));const isSupSl=sup||supR;const cls=my?"b":vw?"vw":em?"r":isSupSl?"sl":"g";
       const sd=supR?60:dr;const txt=my?`✅ ${fm(t)} (${sd}د)`:vw?`📖 ${fm(t)}`:em?`🔴 ${em.substring(0,12)} (${dr}د)`:isSupSl?`🔒 ${fm(t)} (${sd}د)`:fm(t)+` (${sd}د)`;
@@ -675,7 +675,7 @@ function reqNotif(){if(!Notification)return;Notification.requestPermission().the
 function testNotif(){if(!Notification||Notification.permission!="granted"){nf("⚠️ فعل الإشعارات أولاً","r");return}try{new Notification("🧪 اختبار",{body:"✅ التنبيهات تشتغل"});nf("✅ أرسلت تنبيه تجريبي","g")}catch(e){nf("❌ فشل: "+e.message,"r")}}
 function playBeep(){try{const ac=new(window.AudioContext||window.webkitAudioContext)();[523.25,659.25,783.99].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.value=f;g.gain.value=.2;o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+i*.12);o.stop(ac.currentTime+i*.12+.2)})}catch(e){}}
 function checkReminders(){if(!ME&&!adminOn&&!isSup)return;const n=new Date();const s=new Date(n.toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));const cm=s.getHours()*60+s.getMinutes();
-  for(const[sk,sh]of Object.entries(SH)){if(sk=="friday"&&!isFri()&&!adminOn&&!isSup)continue;sh.ts.forEach((t,i)=>{const k=sk+"_"+t,empName=AS[k];if(!empName)return;const isMy=empName==ME,isVis=adminOn||isSup;if(!isMy&&!isVis)return;const[h,m]=t.split(":").map(Number),tm=h*60+m,dr=gd(sk,t,i,empName),te=tm+dr,pre=isVis&&!isMy?`👤 ${empName}: `:"";
+  for(const[sk,sh]of Object.entries(SH)){if(isFri()){if(sk!="friday"&&!adminOn&&!isSup)continue}else{if(sk=="friday"&&!adminOn&&!isSup)continue}sh.ts.forEach((t,i)=>{const k=sk+"_"+t,empName=AS[k];if(!empName)return;const isMy=empName==ME,isVis=adminOn||isSup;if(!isMy&&!isVis)return;const[h,m]=t.split(":").map(Number),tm=h*60+m,dr=gd(sk,t,i,empName),te=tm+dr,pre=isVis&&!isMy?`👤 ${empName}: `:"";
     if(!REM["b5_"+k]&&cm>=tm-5&&cm<tm){REM["b5_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 ${pre}<strong>${fm(t)}</strong> بعد 5 دقائق (${dr}د)`;playBeep();if(notifOn)new Notification("⏰",{body:`${pre}${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}
     if(!REM["ex_"+k]&&cm>=tm&&cm<tm+1){REM["ex_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`🔔 ${pre}<strong>${fm(t)}</strong> وقت البريك!`;playBeep();if(notifOn)new Notification("🔔",{body:`${pre}${fm(t)} - ${dr}د`});setTimeout(()=>b.style.display="none",8000)}
     if(!REM["e3_"+k]&&cm>=te-3&&cm<te){REM["e3_"+k]=true;sv("bs_rmd",REM);const b=document.getElementById("rmdBar");b.style.display="block";b.innerHTML=`⚠️ ${pre}<strong>${fm(t)}</strong> باقي 3 دقائق`;playBeep();if(notifOn)new Notification("⚠️",{body:`${pre}${fm(t)} - باقي 3 دقائق`});setTimeout(()=>b.style.display="none",8000)}
