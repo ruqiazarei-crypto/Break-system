@@ -121,6 +121,18 @@ def init_db():
             ("Shouq Al-Harbi","Shouq.Al-Harbi@almanahospital.com.sa"),
             ("Tahani AlSahluli","Tahani.AlSahluli@almanahospital.com.sa"),
             ("Khadijah Almalki","Khadijah.Almalki@almanahospital.com.sa"),
+            ("Amani AlDuhaim","Amani.Alduhaim@almanahospital.com.sa"),
+            ("Amna Al Somali","Amna.Al-Somali@almanahospital.com.sa"),
+            ("Hind Al Munaidi","Hind.Almunaidi@almanahospital.com.sa"),
+            ("Mariam Al Suraia","Mariam.Alsuraia@almanahospital.com.sa"),
+            ("Ranim Abdulrahman","Ranim.Abdulrhaman@almanahospital.com.sa"),
+            ("Reham AlMassary","Reham.Almassary@almanahospital.com.sa"),
+            ("Shoug Al Fraih","Shoug.Al-Frih@almanahospital.com.sa"),
+            ("Shroug Alghanmi","Shuruq.Alghanmi@almanahospital.com.sa"),
+            ("Wadha Burshaid","Wadha.Burshaid@almanahospital.com.sa"),
+            ("Ayat Alnujaydi","Ayat.Alnujaydi@almanahospital.com.sa"),
+            ("Dana Alawad","Danah.Alawad@almanahospital.com.sa"),
+            ("Fatimah Alawwad","Fatimah.AlAwwad2@almanahospital.com.sa"),
         ]
         for name, email in default_emps:
             con.execute("INSERT OR IGNORE INTO employees(name,email,code) VALUES(?,?,?)", (name,email,""))
@@ -132,7 +144,7 @@ def init_db():
         con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("emp_list", emp_json))
     row2 = con.execute("SELECT val FROM store WHERE key='sup_list'").fetchone()
     if not row2:
-        con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("sup_list", json.dumps(["Shift Supervisor","Head Nurse - Morning","Head Nurse - Afternoon"])))
+        con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("sup_list", json.dumps([])))
     con.commit()
     con.close()
 
@@ -317,10 +329,8 @@ def api_sup_list():
     else:
         d = request.json
         if d is None: return jsonify({"error":"no data"}), 400
-        if isinstance(d, list) and len(d) > 0:
+        if isinstance(d, list):
             con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("sup_list", json.dumps(d)))
-        elif isinstance(d, list) and len(d) == 0:
-            return jsonify({"ok":True, "warning":"empty list ignored — keeping existing"})
         con.commit()
         con.close()
         return jsonify({"ok":True, "message":"✅ تم حفظ المشرفين"})
