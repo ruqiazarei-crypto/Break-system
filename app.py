@@ -221,9 +221,10 @@ def api_data():
             for e in emps:
                 con.execute("INSERT INTO employees(name,email,code) VALUES(?,?,?)", (e["name"],e.get("email",""),e.get("code","")))
 
-        con.execute("DELETE FROM assignments")
-        for k,v in d.get("assignments",{}).items():
-            con.execute("INSERT INTO assignments(slot_key,employee_name) VALUES(?,?)", (k,v))
+        if "assignments" in d:
+            con.execute("DELETE FROM assignments")
+            for k,v in d["assignments"].items():
+                con.execute("INSERT INTO assignments(slot_key,employee_name) VALUES(?,?)", (k,v))
 
         con.execute("DELETE FROM view_only")
         for shift, times in d.get("view_only",{}).items():
