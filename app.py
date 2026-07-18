@@ -318,7 +318,7 @@ def api_emp_list():
 
 
 
-# ═══════════════ BREAK TIMER (عداد البريك المباشر) ═══════════════
+# ═══════════════ SUPERVISOR LIST ═══════════════
 @app.route("/api/sup-list", methods=["GET","POST"])
 def api_sup_list():
     """Get/set supervisor list independently — not cleared by daily reset"""
@@ -695,8 +695,10 @@ def api_report_pdf():
 
     fn = f"Break_Report_{fr or 'all'}_{to or 'all'}.pdf"
     return send_file(buf, mimetype="application/pdf", as_attachment=True, download_name=fn)
-    """Get/set break timer data — tracks active breaks per employee per day"""
-    con = get_db()
+
+# ═══════════════ BREAK TIMER (عداد البريك المباشر) ═══════════════
+@app.route("/api/break-timer", methods=["GET","POST"])
+def api_break_timer():
     if request.method == "GET":
         row = con.execute("SELECT val FROM store WHERE key='break_timer'").fetchone()
         con.close()
