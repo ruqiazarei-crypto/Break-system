@@ -10,6 +10,7 @@ from openpyxl.styles import Font, PatternFill
 from fpdf import FPDF
 
 app = Flask(__name__)
+app.json.sort_keys = False  # Preserve dict insertion order in JSON responses
 BASE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE, "break_schedule.db")
 
@@ -209,6 +210,10 @@ def init_db():
     row2 = con.execute("SELECT val FROM store WHERE key='sup_list'").fetchone()
     if not row2:
         con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("sup_list", json.dumps([])))
+    # Seed mode in store if empty
+    row3 = con.execute("SELECT val FROM store WHERE key='mode'").fetchone()
+    if not row3:
+        con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("mode", json.dumps("basic")))
     con.commit()
     con.close()
 
@@ -842,6 +847,7 @@ def api_report_pdf():
 # ═══════════════ BREAK TIMER (عداد البريك المباشر) ═══════════════
 @app.route("/api/break-timer", methods=["GET","POST"])
 def api_break_timer():
+    con = get_db()
     if request.method == "GET":
         row = con.execute("SELECT val FROM store WHERE key='break_timer'").fetchone()
         con.close()

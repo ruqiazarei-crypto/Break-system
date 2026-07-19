@@ -257,8 +257,10 @@ async function svLoad(){  try{
     if(d.recipients)RS=d.recipients;
     if(d.recipients)RS=d.recipients;
     if(d.durations&&d.durations.length==4)DP=d.durations;
-    if(d.mode)MODE=d.mode;
+    if(d.mode){MODE=d.mode;sv("bs_mode",MODE)}
     if(d.advanced_slots)ADV_SLOTS=d.advanced_slots;
+    // If server returned basic but localStorage says advanced, restore it
+    if(MODE=="basic"&&ld("bs_mode","")=="advanced"){MODE="advanced";fetch("/api/mode",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"advanced"})}).catch(()=>{})}
     let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
   }catch(e){}
 }
@@ -390,9 +392,14 @@ function rAdv(){
     })
   }
   mySlots.forEach(x=>{if(x.is30)has30=true;else mc15++});
-  const full=has30||mc15>=2;
+  // Supervisor: 1 slot (60min). Employee: 15+15 or 30min
+  const isSupHere=isSup;
+  const full=isSupHere?mc15+has30>=1:(has30||mc15>=2);
   
-  if(ME)document.getElementById("myCnt").textContent=(has30?"30د":"15+"+mc15+"/2");
+  if(ME){
+    if(isSupHere)document.getElementById("myCnt").textContent=mc15+has30+"/1 (مشرف)";
+    else document.getElementById("myCnt").textContent=(has30?"30د":"15+"+mc15+"/2");
+  }
   
   // My breaks
   let mh="";
@@ -432,7 +439,13 @@ function rAdv(){
   }
   
   if(full){
-    ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">${has30?"✅ اخترت بريك 30 دقيقة كاملة":"✅ اخترت بريكين ربع"}<br><span style="font-size:10px;color:#666">(${has30?"بريك وحدة 30 د":"بريكين 15 دقيقة"})</span></div>`
+    if(isSup)ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">✅ <strong>${ME}</strong> اخترت بريك المشرف<div style="font-size:10px;color:#666">60 دقيقة</div></div>`
+    else{
+      ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">${has30?"✅ اخترت بريك 30 دقيقة كاملة":"✅ اخترت بريكين ربع"}<br><span style="font-size:10px;color:#666">(${has30?"بريك وحدة 30 د":"بريكين 15 دقيقة"})</span></div>`;
+      if(!XB[ME]&&!XB_REQ[ME])ah+=`<div style="text-align:center;margin-top:4px"><button class="btn btn-war btn-sm" onclick="reqXB()">📩 طلب بريك إضافي</button></div>`;
+      if(XB_REQ[ME])ah+=`<div style="text-align:center;color:#8e44ad;font-size:10px;margin-top:4px">⏳ طلب بريك إضافي قيد المراجعة</div>`;
+      if(XB[ME])ah+=`<div style="text-align:center;color:#27ae60;font-size:10px;margin-top:4px">✅ تمت الموافقة على بريك إضافي (${XB[ME]})</div>`;
+    }
   }
   else if(!avail.length){ah='<span style="color:#999;font-size:10px">لا توجد أوقات متاحة</span>'}
   else{
@@ -479,6 +492,11 @@ function empAsAdv(k,sk,t){
     if(em==ME||(Array.isArray(em)&&em.includes(ME))){if(s.dur==30)has30=true;else mc15++}
     if(em2==ME||(Array.isArray(em2)&&em2.includes(ME))){if(s.dur==30)has30=true;else mc15++}
   })}
+  // Supervisor: 1 slot max
+  if(isSup){
+    if(mc15+has30>=1){nf("⚠️ اخترت بريك المشرف","r");return}
+    AS[k]=ME;sv("bs_as",AS);addLog(ME,sk,t,"📌 أخذ");svAs();r();return
+  }
   // Find slot duration
   let dur=15;
   for(const[sk2,sh]of Object.entries(ADV_SLOTS)){sh.slots.forEach(s=>{
