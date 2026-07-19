@@ -16,6 +16,69 @@ DB_PATH = os.path.join(BASE, "break_schedule.db")
 COL_MAP = {"morning":(2,3),"afternoon":(5,6),"night":(8,9)}
 SLB = {"morning":"🌅 Morning (8-5)","afternoon":"☀️ Afternoon (11-8)","night":"🌙 Night (1-10)"}
 
+# ═══════════════ ADVANCED MODE SHIFTS (من ملف الإكسيل) ═══════════════
+ADV_SLOTS = {
+    "morning": {
+        "lb": "🌅 Morning",
+        "slots": [
+            {"t":"11:00-11:15","dur":15,"cap":1},
+            {"t":"11:15-11:30","dur":15,"cap":1},
+            {"t":"11:30-11:45","dur":15,"cap":1},
+            {"t":"11:45-12:00","dur":15,"cap":1},
+            {"t":"12:00-12:15","dur":15,"cap":1},
+            {"t":"12:15-12:30","dur":15,"cap":1},
+            {"t":"12:30-12:45","dur":15,"cap":1},
+            {"t":"1:00-1:15","dur":15,"cap":1},
+            {"t":"1:15-1:30","dur":15,"cap":1},
+            {"t":"1:30-1:45","dur":15,"cap":1},
+            {"t":"1:45-2:00","dur":15,"cap":1},
+            {"t":"2:00-2:15","dur":15,"cap":2},
+            {"t":"2:15-2:45","dur":30,"cap":1},
+            {"t":"2:45-3:15","dur":30,"cap":1},
+            {"t":"3:15-3:45","dur":30,"cap":1},
+            {"t":"3:00-3:15","dur":15,"cap":2},
+            {"t":"3:15-3:30","dur":15,"cap":2},
+            {"t":"3:30-4:00","dur":30,"cap":1},
+        ]
+    },
+    "afternon": {
+        "lb": "☀️ Afternon",
+        "slots": [
+            {"t":"12:15-12:30","dur":15,"cap":1},
+            {"t":"12:30-12:45","dur":15,"cap":1},
+            {"t":"1:00-1:15","dur":15,"cap":1},
+            {"t":"1:15-1:30","dur":15,"cap":1},
+            {"t":"1:30-1:45","dur":15,"cap":1},
+            {"t":"1:45-2:00","dur":15,"cap":2},
+            {"t":"2:00-2:15","dur":15,"cap":1},
+            {"t":"2:15-2:30","dur":15,"cap":2},
+            {"t":"2:30-2:45","dur":15,"cap":2},
+            {"t":"2:45-3:00","dur":15,"cap":2},
+            {"t":"3:00-3:15","dur":15,"cap":1},
+            {"t":"3:15-3:30","dur":15,"cap":1},
+            {"t":"3:30-4:00","dur":30,"cap":1},
+            {"t":"4:00-4:30","dur":30,"cap":1},
+            {"t":"5:00-5:15","dur":15,"cap":1},
+            {"t":"5:15-5:30","dur":15,"cap":1},
+            {"t":"5:30-5:45","dur":15,"cap":1},
+            {"t":"5:45-6:00","dur":15,"cap":1},
+            {"t":"6:00-6:15","dur":15,"cap":1},
+            {"t":"6:15-6:30","dur":15,"cap":1},
+            {"t":"6:30-6:45","dur":15,"cap":1},
+            {"t":"6:45-7:00","dur":15,"cap":1},
+            {"t":"7:00-7:15","dur":15,"cap":1},
+            {"t":"7:15-7:30","dur":15,"cap":1},
+            {"t":"7:30-7:45","dur":15,"cap":1},
+            {"t":"7:45-8:00","dur":15,"cap":1},
+            {"t":"8:15-8:30","dur":15,"cap":1},
+            {"t":"8:30-8:45","dur":15,"cap":1},
+            {"t":"8:45-9:00","dur":15,"cap":1},
+            {"t":"9:00-9:15","dur":15,"cap":1},
+            {"t":"9:15-9:30","dur":15,"cap":1},
+        ]
+    }
+}
+
 # ═══════════════ DB SETUP ═══════════════
 def get_db():
     con = sqlite3.connect(DB_PATH)
@@ -32,8 +95,9 @@ def init_db():
             code TEXT NOT NULL DEFAULT ''
         );
         CREATE TABLE IF NOT EXISTS assignments(
-            slot_key TEXT PRIMARY KEY,
-            employee_name TEXT NOT NULL
+            slot_key TEXT NOT NULL,
+            employee_name TEXT NOT NULL,
+            UNIQUE(slot_key, employee_name)
         );
         CREATE TABLE IF NOT EXISTS shifts(
             shift TEXT NOT NULL,
@@ -148,6 +212,27 @@ def init_db():
     con.commit()
     con.close()
 
+def load_ass(con):
+    """Load assignments grouped by slot_key -> list of employee names"""
+    rows = con.execute("SELECT * FROM assignments").fetchall()
+    a = {}
+    for r in rows:
+        k = r["slot_key"]
+        if k not in a: a[k] = []
+        a[k].append(r["employee_name"])
+    return a
+
+def flat_ass_rows(ass):
+    """Flatten assignments dict (list-valued or string-valued) into (slot_key, employee) pairs"""
+    rows = []
+    for k, v in ass.items():
+        if isinstance(v, list):
+            for emp in v:
+                rows.append((k, emp))
+        else:
+            rows.append((k, v))
+    return rows
+
 init_db()
 
 # ═══════════════ API: DATA ═══════════════
@@ -161,7 +246,16 @@ def api_data():
     if request.method == "GET":
         # Load all data
         emps = [{"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees").fetchall()]
-        ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
+        # Determine mode and format assignments accordingly
+        mode_row = con.execute("SELECT val FROM store WHERE key='mode'").fetchone()
+        mode = json.loads(mode_row["val"]) if mode_row else "basic"
+
+        ass_raw = load_ass(con)
+        if mode == "advanced":
+            ass = ass_raw  # {slot_key: [emp1, emp2, ...]}
+        else:
+            # Basic mode: {slot_key: single_emp_name} for backward compat
+            ass = {k: v[0] if len(v) == 1 else v for k, v in ass_raw.items()}
         sh = {"morning":{"lb":"🌅 Morning (8-5)","ts":[]},"afternoon":{"lb":"☀️ Afternoon (11-8)","ts":[]},"night":{"lb":"🌙 Night (1-10)","ts":[]},"friday":{"lb":"🎯 الجمعة (4-7:30)","ts":[]}}
         for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx"):
             sh[r["shift"]]["ts"].append(r["time"])
@@ -179,7 +273,7 @@ def api_data():
         xb_req = json.loads(xb_req_row["val"]) if xb_req_row else {}
 
         con.close()
-        return jsonify({"employees":emps,"assignments":ass,"shifts":sh,"view_only":vo,"custom_durations":cdur,"recipients":rs,"durations":dur,"extra_breaks":xb,"extra_breaks_req":xb_req})
+        return jsonify({"employees":emps,"assignments":ass,"shifts":sh,"view_only":vo,"custom_durations":cdur,"recipients":rs,"durations":dur,"extra_breaks":xb,"extra_breaks_req":xb_req,"mode":mode,"advanced_slots":ADV_SLOTS})
 
     else:
         # Save all data
@@ -187,7 +281,7 @@ def api_data():
         if not d: return jsonify({"error":"no data"}), 400
 
         # ⏰ Auto-save report if assignments are being cleared (daily reset)
-        old_ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
+        old_ass = load_ass(con)
         new_ass = d.get("assignments",{})
         if old_ass and not new_ass:
             now = datetime.now()
@@ -224,7 +318,11 @@ def api_data():
         if "assignments" in d:
             con.execute("DELETE FROM assignments")
             for k,v in d["assignments"].items():
-                con.execute("INSERT INTO assignments(slot_key,employee_name) VALUES(?,?)", (k,v))
+                if isinstance(v, list):
+                    for emp in v:
+                        con.execute("INSERT INTO assignments(slot_key,employee_name) VALUES(?,?)", (k, emp))
+                else:
+                    con.execute("INSERT INTO assignments(slot_key,employee_name) VALUES(?,?)", (k,v))
 
         con.execute("DELETE FROM view_only")
         for shift, times in d.get("view_only",{}).items():
@@ -269,7 +367,12 @@ def api_sync():
     if d.get("assignments"):
         con.execute("DELETE FROM assignments")
         for k,v in d["assignments"].items():
-            con.execute("INSERT OR REPLACE INTO assignments(slot_key,employee_name) VALUES(?,?)", (k,v))
+            # v may be a string (basic) or list (advanced)
+            if isinstance(v, list):
+                for emp in v:
+                    con.execute("INSERT INTO assignments(slot_key,employee_name) VALUES(?,?)", (k, emp))
+            else:
+                con.execute("INSERT INTO assignments(slot_key,employee_name) VALUES(?,?)", (k, v))
     con.commit()
     con.close()
     return jsonify({"ok":True})
@@ -317,6 +420,25 @@ def api_emp_list():
         return jsonify({"ok":True, "message":"✅ تم حفظ الموظفين"})
 
 
+
+# ═══════════════ MODE (Basic / Advanced) ═══════════════
+@app.route("/api/mode", methods=["GET","POST"])
+def api_mode():
+    """Get or set the system mode — 'basic' or 'advanced'"""
+    con = get_db()
+    if request.method == "GET":
+        row = con.execute("SELECT val FROM store WHERE key='mode'").fetchone()
+        con.close()
+        return jsonify({"mode": json.loads(row["val"]) if row else "basic"})
+    else:
+        d = request.json
+        if not d or "mode" not in d: return jsonify({"error":"mode required"}), 400
+        mode = d["mode"]
+        if mode not in ("basic","advanced"): return jsonify({"error":"invalid mode"}), 400
+        con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("mode", json.dumps(mode)))
+        con.commit()
+        con.close()
+        return jsonify({"ok":True, "mode":mode, "message": "✅ تم التبديل إلى " + ("وضع الطوارئ 🚨" if mode=="advanced" else "الوضع العادي ✅")})
 
 # ═══════════════ SUPERVISOR LIST ═══════════════
 @app.route("/api/sup-list", methods=["GET","POST"])
@@ -416,7 +538,18 @@ def api_stats():
 
         # Per-slot durations map
         slot_dur = {}
-        for k in assigns:
+        # Flatten for backward compatibility
+        flat_ass = {}
+        for k, v in assigns.items():
+            if isinstance(v, list):
+                flat_ass[k] = v
+            else:
+                flat_ass[k] = [v]
+        all_ass_emps = set()
+        for vl in flat_ass.values():
+            all_ass_emps.update(vl)
+
+        for k in flat_ass:
             parts = k.split("_")
             if len(parts) != 2: continue
             shift, t = parts
@@ -427,7 +560,7 @@ def api_stats():
                 idx = 0
             slot_dur[k] = cdur.get(k) or dur[idx % 4]
 
-        for emp_name in list(set(list(assigns.values()) + list(xb_req.keys()) + list(xb_app.keys()))):
+        for emp_name in list(all_ass_emps | set(xb_req.keys()) | set(xb_app.keys())):
             if emp_name not in by_emp:
                 by_emp[emp_name] = {"breaks":0,"minutes":0,"xb_req":0,"xb_app":0,"daily":{},"slots":[]}
 
@@ -436,8 +569,8 @@ def api_stats():
                 emp["daily"][date] = {"breaks":0,"minutes":0,"slots":[],"xb_req":0,"xb_app":0}
 
             # Count breaks
-            for k, v in assigns.items():
-                if v == emp_name:
+            for k, vv in flat_ass.items():
+                if emp_name in vv:
                     emp["breaks"] += 1
                     emp["minutes"] += slot_dur.get(k, 15)
                     emp["slots"].append(k)
@@ -542,7 +675,14 @@ def api_report_pdf():
         xb_app = report.get("extra_breaks",{})
 
         slot_dur = {}
-        for k in assigns:
+        flat_ass = {}
+        for k, v in assigns.items():
+            if isinstance(v, list):
+                flat_ass[k] = v
+            else:
+                flat_ass[k] = [v]
+        
+        for k in flat_ass:
             parts = k.split("_",1)
             if len(parts) != 2: continue
             shift_t = parts[0]
@@ -554,14 +694,17 @@ def api_report_pdf():
                 idx = 0
             slot_dur[k] = cdur.get(k) or dur[idx % 4]
 
-        all_names = list(set(list(assigns.values())))
+        all_names = []
+        for vl in flat_ass.values():
+            all_names.extend(vl)
+        all_names = list(set(all_names))
         for emp_name in all_names:
             if emp_name not in by_emp:
                 by_emp[emp_name] = {"breaks":0,"minutes":0,"xb_req":0,"xb_app":0}
             if emp_name in xb_req: by_emp[emp_name]["xb_req"] += 1
             if emp_name in xb_app: by_emp[emp_name]["xb_app"] += 1
-            for k, v in assigns.items():
-                if v == emp_name:
+            for k, vv in flat_ass.items():
+                if emp_name in vv:
                     by_emp[emp_name]["breaks"] += 1
                     by_emp[emp_name]["minutes"] += slot_dur.get(k, 15)
 
@@ -719,7 +862,7 @@ def api_save_report():
     date = now.strftime("%Y-%m-%d")
 
     emps = [{"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees").fetchall()]
-    ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
+    ass = load_ass(con)
     cdur = {r["slot_key"]:r["duration"] for r in con.execute("SELECT * FROM custom_durations").fetchall()}
     dp = con.execute("SELECT * FROM duration_pattern WHERE id=1").fetchone()
     dur = [dp["d0"],dp["d1"],dp["d2"],dp["d3"]]
@@ -837,7 +980,7 @@ def api_export_csv():
     con = get_db()
 
     emps = [{"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees").fetchall()]
-    ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
+    ass = load_ass(con)
     sh_rows = [{"shift":r["shift"],"time":r["time"]} for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx").fetchall()]
     vo_rows = [{"shift":r["shift"],"time":r["time"]} for r in con.execute("SELECT * FROM view_only").fetchall()]
     bt_row = con.execute("SELECT val FROM store WHERE key='break_timer'").fetchone()
@@ -858,7 +1001,7 @@ def api_export_csv():
 
     w.writerow([])
     w.writerow(["# Assignments", "slot_key", "employee_name"])
-    for k, v in ass.items():
+    for k, v in flat_ass_rows(ass):
         w.writerow(["", k, v])
 
     w.writerow([])
@@ -901,7 +1044,7 @@ def api_export_xlsx():
     con = get_db()
 
     emps = [{"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees").fetchall()]
-    ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
+    ass = load_ass(con)
     sh_rows = [{"shift":r["shift"],"time":r["time"]} for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx").fetchall()]
     vo_rows = [{"shift":r["shift"],"time":r["time"]} for r in con.execute("SELECT * FROM view_only").fetchall()]
     bt_row = con.execute("SELECT val FROM store WHERE key='break_timer'").fetchone()
@@ -925,7 +1068,7 @@ def api_export_xlsx():
     # 2 — Assignments
     ws2 = wb.create_sheet("Assignments")
     ws2.append(["slot_key", "employee_name"])
-    for k, v in ass.items():
+    for k, v in flat_ass_rows(ass):
         ws2.append([k, v])
 
     # 3 — Shifts
@@ -982,7 +1125,7 @@ def api_export_backup():
 
     con = get_db()
     emps = [{"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees").fetchall()]
-    ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
+    ass = load_ass(con)
     sh_rows = [{"shift":r["shift"],"time":r["time"]} for r in con.execute("SELECT * FROM shifts ORDER BY shift, idx").fetchall()]
     vo_rows = [{"shift":r["shift"],"time":r["time"]} for r in con.execute("SELECT * FROM view_only").fetchall()]
     bt_row = con.execute("SELECT val FROM store WHERE key='break_timer'").fetchone()
@@ -999,7 +1142,7 @@ def api_export_backup():
     for e in emps: ws1.append([e["name"],e["email"],e["code"]])
     ws2 = wb.create_sheet("Assignments")
     ws2.append(["slot_key","employee_name"])
-    for k,v in ass.items(): ws2.append([k,v])
+    for k,v in flat_ass_rows(ass): ws2.append([k,v])
     ws3 = wb.create_sheet("Shifts")
     ws3.append(["shift","time"])
     for r in sh_rows: ws3.append([r["shift"],r["time"]])
@@ -1028,7 +1171,7 @@ def api_backup_download():
     con = get_db()
     
     emps = [{"id":r["id"],"name":r["name"],"email":r["email"],"code":r["code"]} for r in con.execute("SELECT * FROM employees ORDER BY id").fetchall()]
-    ass = {r["slot_key"]:r["employee_name"] for r in con.execute("SELECT * FROM assignments").fetchall()}
+    ass = load_ass(con)
     store = {}
     for r in con.execute("SELECT * FROM store").fetchall():
         try: store[r["key"]] = json.loads(r["val"])
@@ -1081,7 +1224,11 @@ def api_backup_restore():
         # Restore assignments
         con.execute("DELETE FROM assignments")
         for k, v in d.get("assignments",{}).items():
-            con.execute("INSERT INTO assignments(slot_key,employee_name) VALUES(?,?)", (k, v))
+            if isinstance(v, list):
+                for emp in v:
+                    con.execute("INSERT INTO assignments(slot_key,employee_name) VALUES(?,?)", (k, emp))
+            else:
+                con.execute("INSERT INTO assignments(slot_key,employee_name) VALUES(?,?)", (k, v))
         
         # Restore store (emp_list, sup_list, break_timer)
         for k, v in d.get("store",{}).items():
