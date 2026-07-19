@@ -373,32 +373,43 @@ function advOcc(shift, t){
   let c=0;if(AS[k])c++;if(AS[k2])c++;return c
 }
 function rAdv(){
-  const max=isSup?1:4+(XB[ME]||0);
-  let mc=0;
-  for(const v of Object.values(AS))if(v==ME||(Array.isArray(v)&&v.includes(ME)))mc++;
-  document.getElementById("myCnt").textContent=mc+"/"+max;
-  // My breaks
-  let mh="";
-  for(const[sk,sh]of Object.entries(ADV_SLOTS)){
-    sh.slots.forEach(s=>{
-      const k=advSk(sk,s.t),k2=k+"#2",em=AS[k],em2=AS[k2],
-            my1=em==ME||(Array.isArray(em)&&em.includes(ME)),
-            my2=em2==ME||(Array.isArray(em2)&&em2.includes(ME));
-      if(my1||my2){
-        const ml=my1?k:k2;
-        mh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px">
-          <span>${s.t} (${s.dur}د)${s.dur==30?" 🟣":"🟢"}</span>
-          <button class="btn btn-dan btn-sm" onclick="empUnAdv('${ml}')" style="padding:0 3px;font-size:8px">✕</button>
-        </div>`
-      }
+  // Count my breaks: 15min slots count and whether I have a 30min slot
+  let mc15=0,has30=false,mySlots=[];
+  // Regular advanced slots
+  for(const[sk,sh]of Object.entries(ADV_SLOTS)){sh.slots.forEach(s=>{
+    const k=advSk(sk,s.t),k2=k+"#2",em=AS[k],em2=AS[k2];
+    const my1=em==ME||(Array.isArray(em)&&em.includes(ME));
+    const my2=em2==ME||(Array.isArray(em2)&&em2.includes(ME));
+    if(my1)mySlots.push({k,sk,t:s.t,dur:s.dur,is30:s.dur==30});if(my2)mySlots.push({k:k2,sk,t:s.t,dur:s.dur,is30:s.dur==30})
+  })}
+  // Friday slots (جمعة) — show on top of advanced mode
+  if(isFri()&&SH.friday){
+    SH.friday.ts.forEach((t,i)=>{
+      const k="friday_"+t,em=AS[k];
+      if(em==ME||(Array.isArray(em)&&em.includes(ME)))mySlots.push({k,sk:"friday",t:t,dur:gd("friday",t,i,ME),is30:false})
     })
   }
+  mySlots.forEach(x=>{if(x.is30)has30=true;else mc15++});
+  const full=has30||mc15>=2;
+  
+  if(ME)document.getElementById("myCnt").textContent=(has30?"30د":"15+"+mc15+"/2");
+  
+  // My breaks
+  let mh="";
+  mySlots.forEach(x=>{
+    mh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px">
+      <span>${x.t}${x.is30?" 🟣(30د)":" 🟢(15د)"}</span>
+      <button class="btn btn-dan btn-sm" onclick="empUnAdv('${x.k}')" style="padding:0 3px;font-size:8px">✕</button>
+    </div>`
+  });
   if(!mh)mh=`<span style="color:#999;font-size:11px">${ME?"ما اخترت بريكات":"سجل الدخول ب Badge Num"}</span>`;
   document.getElementById("myList").innerHTML=mh;
   renderTimer();
   if(!ME){document.getElementById("availSlots").innerHTML='<div style="text-align:center;color:#e74c3c;font-size:11px;padding:5px">👆 أدخل Badge Num من المشرف</div>';document.getElementById("upcPn").style.display="none";return}
+  
   // Available slots
   let ah="",avail=[];
+  // Advanced slots (morning/afternon)
   for(const[sk,sh]of Object.entries(ADV_SLOTS)){
     sh.slots.forEach(s=>{
       const oc=advOcc(sk,s.t);
@@ -410,23 +421,49 @@ function rAdv(){
       }
     })
   }
-  if(mc>=max){ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">⚠️ ${isSup?"اخترت كل البريكات":(XB[ME]?"تم "+XB[ME]+" بريك إضافي":"اخترت 4 بريكات")}</div>`;if(!isSup&&!XB[ME]&&!XB_REQ[ME])ah+=`<div style="text-align:center;margin-top:4px"><button class="btn btn-war btn-sm" onclick="reqXB()">📩 طلب بريك إضافي</button></div>`;if(XB_REQ[ME])ah+=`<div style="text-align:center;color:#8e44ad;font-size:10px;margin-top:4px">⏳ طلب بريك إضافي قيد المراجعة</div>`}
+  // Friday slots (جمعة) on Friday
+  if(isFri()&&SH.friday){
+    SH.friday.ts.forEach((t,i)=>{
+      const k="friday_"+t,em=AS[k];
+      if(!em||(Array.isArray(em)&&em.length==0)){
+        avail.push({sk:"friday",t:t,k:k,dur:gd("friday",t,i,ME),cap:1,occ:0,is30:false,isFri:true})
+      }
+    })
+  }
+  
+  if(full){
+    ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">${has30?"✅ اخترت بريك 30 دقيقة كاملة":"✅ اخترت بريكين ربع"}<br><span style="font-size:10px;color:#666">(${has30?"بريك وحدة 30 د":"بريكين 15 دقيقة"})</span></div>`
+  }
   else if(!avail.length){ah='<span style="color:#999;font-size:10px">لا توجد أوقات متاحة</span>'}
-  else{const g={};avail.forEach(x=>{if(!g[x.sk])g[x.sk]=[];g[x.sk].push(x)});for(const[sk,list]of Object.entries(g)){ah+=`<div class="sg"><h4>${ADV_SLOTS[sk].lb}</h4><div class="row">`;list.forEach(x=>{const occInfo=x.cap>1?` ${x.occ+1}/${x.cap}`:"";ah+=`<span class="mtt" style="cursor:pointer;border-color:#27ae60;background:#e8f8f5" onclick="empAsAdv('${x.k}','${x.sk}','${x.t}')">${x.t} (${x.dur}د${occInfo})${x.is30?" 🟣":""}</span>`});ah+=`</div></div>`}}
+  else{
+    // If employee already has a 15-min slot, exclude 30-min slots (already committed to 15min path)
+    const filtered=mc15>0?avail.filter(x=>!x.is30):avail;
+    if(!filtered.length){ah='<span style="color:#999;font-size:10px">اخترت بريك 15 دقيقة، باقي تختار بريك 15 دقيقة ثاني</span>'}
+    else{
+      const g={};filtered.forEach(x=>{if(!g[x.sk])g[x.sk]=[];g[x.sk].push(x)});
+      for(const[sk,list]of Object.entries(g)){
+        const lb=x=>x.isFri?"🎯 الجمعة":(ADV_SLOTS[x.sk]?ADV_SLOTS[x.sk].lb:SH[x.sk]?.lb||x.sk);
+        ah+=`<div class="sg"><h4>${lb(list[0])}</h4><div class="row">`;
+        list.forEach(x=>{
+          const occInfo=x.cap>1?` ${x.occ+1}/${x.cap}`:"";
+          const label=x.isFri?fm(x.t):(x.is30?"30 دقيقة 🟣":(mc15>0?"15د (الثاني)":"15 دقيقة 🟢"));
+          const onclick=x.isFri?`empAs('${x.sk}','${x.t}','${x.k}')`:`empAsAdv('${x.k}','${x.sk}','${x.t}')`;
+          ah+=`<span class="mtt" style="cursor:pointer;border-color:#27ae60;background:#e8f8f5" onclick="${onclick}">${x.isFri?fm(x.t)+(x.isFri?'🎯':''):x.t} ${label}${occInfo}</span>`
+        });
+        ah+=`</div></div>`
+      }
+    }
+  }
   document.getElementById("availSlots").innerHTML=ah;
+  
   // Upcoming
   const now=new Date(),cm=now.getHours()*60+now.getMinutes();
-  const sorted=[];
-  for(const[sk,sh]of Object.entries(ADV_SLOTS)){sh.slots.forEach(s=>{
-    const k=advSk(sk,s.t),k2=k+"#2",em=AS[k],em2=AS[k2];
-    const my1=em==ME||(Array.isArray(em)&&em.includes(ME)),my2=em2==ME||(Array.isArray(em2)&&em2.includes(ME));
-    if(my1||my2){
-      const tPart=s.t.split("-")[0];
-      const[h,m]=tPart.split(":").map(Number);const tm=h*60+m;
-      if(tm>cm)sorted.push({t:s.t,tm,dur:s.dur})
-    }
-  })}
-  sorted.sort((a,b)=>a.tm-b.tm);
+  const sorted=mySlots.map(x=>{
+    let tPart=x.t;
+    if(!x.isFri)tPart=x.t.split("-")[0];
+    const[h,m]=tPart.split(":").map(Number);
+    return{...x,tm:h*60+m}
+  }).filter(x=>x.tm>cm).sort((a,b)=>a.tm-b.tm);
   if(!sorted.length){document.getElementById("upcPn").style.display="none";return}
   document.getElementById("upcPn").style.display="block";let uh="";
   sorted.forEach(x=>{const d=x.tm-cm,hh=Math.floor(d/60),mm=d%60;uh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${x.t} (${x.dur}د)</span><span style="color:#008080;font-weight:600">بعد ${hh?hh+"س ":""}${mm}د</span></div>`});
@@ -435,18 +472,34 @@ function rAdv(){
 }
 function empAsAdv(k,sk,t){
   if(!ME){nf("⚠️ سجل الدخول","r");return}
-  let mc=0;for(const v of Object.values(AS))if(v==ME||(Array.isArray(v)&&v.includes(ME)))mc++;
-  const max=isSup?1:4+(XB[ME]||0);
-  if(mc>=max){if(isSup){nf("⚠️ اخترت كل البريكات","r")}else if(XB[ME]){nf("⚠️ تم "+XB[ME]+" بريك إضافي","r")}else{nf("⚠️ 4 بريكات","r")};return}
-  AS[k]=ME;sv("bs_as",AS);addLog(ME,sk,t,"📌 أخذ");svAs();
-  if(!isSup&&mc>=4&&XB[ME]){XB[ME]--;if(XB[ME]<=0)delete XB[ME];sv("bs_xb",XB);fetch(SV+"/api/x-breaks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB)})}
-  r();
+  // Check current picks
+  let mc15=0,has30=false;
+  for(const[sk2,sh]of Object.entries(ADV_SLOTS)){sh.slots.forEach(s=>{
+    const kk=advSk(sk2,s.t),kk2=kk+"#2",em=AS[kk],em2=AS[kk2];
+    if(em==ME||(Array.isArray(em)&&em.includes(ME))){if(s.dur==30)has30=true;else mc15++}
+    if(em2==ME||(Array.isArray(em2)&&em2.includes(ME))){if(s.dur==30)has30=true;else mc15++}
+  })}
+  // Find slot duration
+  let dur=15;
+  for(const[sk2,sh]of Object.entries(ADV_SLOTS)){sh.slots.forEach(s=>{
+    if(sk2==sk&&s.t==t)dur=s.dur
+  })}
+  // Check if 30-min block → allowed only if no 15-min picked yet
+  if(dur==30){
+    if(mc15>0){nf("⚠️ اخترت بريك ربع، ما تقدر تاخذ 30 دقيقة","r");return}
+    if(has30){nf("⚠️ اخترت بريك 30 دقيقة بالفعل","r");return}
+  }
+  // Check if 15-min block → allowed only if <2 already and no 30-min picked
+  if(dur==15){
+    if(has30){nf("⚠️ اخترت بريك 30 دقيقة، ما تقدر تاخذ ربع","r");return}
+    if(mc15>=2){nf("⚠️ اخترت بريكين ربع","r");return}
+  }
+  AS[k]=ME;sv("bs_as",AS);addLog(ME,sk,t,"📌 أخذ");svAs();r();
 }
 function empUnAdv(k){
   if(AS[k]!=ME){nf("⚠️ مو بريكك","r");return}
   delete AS[k];sv("bs_as",AS);addLog(ME,"","","🗑️ ألغى");svAs();r();
 }
-
 // ═══════════ LOG ═══════════
 function addLog(emp,sk,t,act){
   const tm=new Date(),ts=`${String(tm.getHours()).padStart(2,"0")}:${String(tm.getMinutes()).padStart(2,"0")}`;
@@ -614,7 +667,9 @@ function rAll(){
 }
 function rAllAdv(){
   let h="",ta=0,tv=0,tt=0;
-  for(const[sk,sh]of Object.entries(ADV_SLOTS)){
+  const shifts=Object.assign({},ADV_SLOTS);
+  if(isFri()&&SH.friday)shifts.friday={lb:"🎯 الجمعة (4-7:30)",slots:SH.friday.ts.map(t=>({t:t,isFri:true}))};
+  for(const[sk,sh]of Object.entries(shifts)){
     h+=`<div class="sh"><h3 style="font-size:11px">${sh.lb}</h3><div class="gr">`;
     sh.slots.forEach(s=>{
       tt++;const k=advSk(sk,s.t),k2=k+"#2",em=AS[k]||"",em2=AS[k2]||"";
