@@ -258,7 +258,7 @@ async function svLoad(){  try{
     if(d.recipients)RS=d.recipients;
     if(d.durations&&d.durations.length==4)DP=d.durations;
     if(d.mode){MODE=d.mode;sv("bs_mode",MODE)}
-    if(d.advanced_slots)ADV_SLOTS=d.advanced_slots;
+    if(d.advanced_slots){ADV_SLOTS=d.advanced_slots;sv("bs_adv_slots",ADV_SLOTS)}
     // If server returned basic but localStorage says advanced, restore it
     if(MODE=="basic"&&ld("bs_mode","")=="advanced"){MODE="advanced";fetch("/api/mode",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"advanced"})}).catch(()=>{})}
     let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
@@ -900,11 +900,13 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
   if(isFri()){if(!SH.friday)SH.friday=JSON.parse(JSON.stringify(SH_FRI.friday))}else if(SH.friday&&!Object.keys(SH).some(k=>k!="friday")){SH=JSON.parse(JSON.stringify(SH_DF));VO=JSON.parse(JSON.stringify(VO_DF))}
   let lsVO=ld("bs_vo",null);if(lsVO)VO=lsVO;
   let lsCDUR=ld("bs_dur",{});if(Object.keys(lsCDUR).length)CDUR=lsCDUR;
+  let lsMODE=ld("bs_mode","");if(lsMODE&&lsMODE!="basic")MODE=lsMODE;
+  let lsADV=ld("bs_adv_slots",null);if(lsADV)ADV_SLOTS=lsADV;
   loadBT();r();rAdm();
   // Load timer from localStorage
   let lsBT=ld("bs_bt",{});if(Object.keys(lsBT).length)BT=lsBT;
   // Auto-refresh
-  setInterval(async()=>{const ls=sn;await svLoad();if(ls!==sn){r()};checkReminders();notifyXBStatus();if(adminOn||isSup)rAdm()},5000);
+  setInterval(async()=>{const ls=sn;await svLoad();if(ls!==sn||MODE!=="basic"){r()};checkReminders();notifyXBStatus();if(adminOn||isSup)rAdm()},5000);
   setInterval(()=>{const n=new Date();const s=new Date(n.toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));if(s.getHours()===0&&s.getMinutes()===0){nf("🔄 ريست يومي: تم مسح التوزيعات","g");REM={};sv("bs_rmd",{});AS={};sv("bs_as",AS);svAs();fetch(SV+"/api/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({assignments:AS})})}},15000);
   setTimeout(checkReminders,1000);
   
@@ -928,7 +930,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
         if(d.view_only)VO=d.view_only;if(d.custom_durations){for(const[k,v]of Object.entries(d.custom_durations))CDUR[k]=v};if(d.recipients)RS=d.recipients;if(d.extra_breaks){for(const[k,v]of Object.entries(d.extra_breaks))XB[k]=v};if(d.extra_breaks_req){for(const[k,v]of Object.entries(d.extra_breaks_req))XB_REQ[k]=v}
         if(d.durations&&d.durations.length==4)DP=d.durations;
         if(d.mode){MODE=d.mode;sv("bs_mode",MODE)}
-        if(d.advanced_slots)ADV_SLOTS=d.advanced_slots;
+        if(d.advanced_slots){ADV_SLOTS=d.advanced_slots;sv("bs_adv_slots",ADV_SLOTS)}
         let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
         const bd={};EM.forEach(e=>{const c=CD[e.name]||e.code;if(c)bd[e.name]=c});
         if(Object.keys(bd).length)fetch(SV+"/api/badges",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(bd)});
