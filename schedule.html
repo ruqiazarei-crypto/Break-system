@@ -220,6 +220,7 @@ const VO_DF = {morning:["12:00","13:10","15:10"],afternoon:["15:00","18:00","17:
 const DP_DF = [15,15,20,10];
 const SUP_HOURS = {
   morning:{start:"11:00",end:"14:00"},
+  afternon:{start:"14:00",end:"18:00"},
   afternoon:{start:"14:00",end:"18:00"},
   night:{start:"15:00",end:"19:00"}
 };
@@ -378,19 +379,23 @@ function rAdv(){
   // Count my breaks: 15min slots count and whether I have a 30min slot
   let mc15=0,has30=false,mySlots=[];
   const supDurAdv=isSup?60:0;
-  // Regular advanced slots
-  for(const[sk,sh]of Object.entries(ADV_SLOTS)){sh.slots.forEach(s=>{
-    const k=advSk(sk,s.t),k2=k+"#2",em=AS[k],em2=AS[k2];
-    const my1=em==ME||(Array.isArray(em)&&em.includes(ME));
-    const my2=em2==ME||(Array.isArray(em2)&&em2.includes(ME));
-    if(my1)mySlots.push({k,sk,t:s.t,dur:supDurAdv||s.dur,is30:!isSup&&s.dur==30});if(my2)mySlots.push({k:k2,sk,t:s.t,dur:supDurAdv||s.dur,is30:!isSup&&s.dur==30})
-  })}
-  // Friday slots (جمعة) — show on top of advanced mode
-  if(isFri()&&SH.friday){
-    SH.friday.ts.forEach((t,i)=>{
-      const k="friday_"+t,em=AS[k];
-      if(em==ME||(Array.isArray(em)&&em.includes(ME)))mySlots.push({k,sk:"friday",t:t,dur:supDurAdv||gd("friday",t,i,ME),is30:false})
-    })
+  
+  if(isSup){
+    // Supervisor: use regular shifts (same as basic mode)
+    for(const[sk,sh]of Object.entries(empShifts())){
+      sh.ts.forEach((t,i)=>{
+        const k=sk+"_"+t,em=AS[k];
+        if(em==ME)mySlots.push({k,sk,t:t,dur:supDurAdv||gd(sk,t,i,ME),is30:false})
+      })
+    }
+  }else{
+    // Employee: advanced slots
+    for(const[sk,sh]of Object.entries(ADV_SLOTS)){sh.slots.forEach(s=>{
+      const k=advSk(sk,s.t),k2=k+"#2",em=AS[k],em2=AS[k2];
+      const my1=em==ME||(Array.isArray(em)&&em.includes(ME));
+      const my2=em2==ME||(Array.isArray(em2)&&em2.includes(ME));
+      if(my1)mySlots.push({k,sk,t:s.t,dur:supDurAdv||s.dur,is30:!isSup&&s.dur==30});if(my2)mySlots.push({k:k2,sk,t:s.t,dur:supDurAdv||s.dur,is30:!isSup&&s.dur==30})
+    })}
   }
   mySlots.forEach(x=>{if(x.is30)has30=true;else mc15++});
   // Supervisor: 1 slot (60min). Employee: 15+15 or 30min
@@ -418,17 +423,32 @@ function rAdv(){
   
   // Available slots
   let ah="",avail=[];
-  // Advanced slots (morning/afternon)
-  for(const[sk,sh]of Object.entries(ADV_SLOTS)){
-    sh.slots.forEach(s=>{
-      const oc=advOcc(sk,s.t);
-      if(oc>=s.cap)return;
-      const k=advSk(sk,s.t),k2=k+"#2";
-      if(!AS[k]||(s.cap>1&&!AS[k2])){
-        const useK=!AS[k]?k:k2;
-        avail.push({sk:sk,t:s.t,k:useK,dur:s.dur,cap:s.cap,occ:oc,is30:s.dur==30})
-      }
-    })
+  
+  if(isSup){
+    // Supervisor: use regular shifts with SUP_HOURS (same as basic mode)
+    let supMax=-1,supDur=60;
+    for(const[sk,sh]of Object.entries(empShifts())){
+      sh.ts.forEach((t,i)=>{
+        const k=sk+"_"+t,em=AS[k],vw=(VO[sk]||[]).includes(t);
+        if(em||vw)return;
+        const shh=SUP_HOURS[sk];
+        if(shh){const mt=tmMin(t);if(mt<tmMin(shh.start)||mt>=tmMin(shh.end))return}
+        avail.push({sk:sk,t:t,k:k,dur:supDur,is30:false})
+      })
+    }
+  }else{
+    // Employee: advanced slots (morning/afternon)
+    for(const[sk,sh]of Object.entries(ADV_SLOTS)){
+      sh.slots.forEach(s=>{
+        const oc=advOcc(sk,s.t);
+        if(oc>=s.cap)return;
+        const k=advSk(sk,s.t),k2=k+"#2";
+        if(!AS[k]||(s.cap>1&&!AS[k2])){
+          const useK=!AS[k]?k:k2;
+          avail.push({sk:sk,t:s.t,k:useK,dur:s.dur,cap:s.cap,occ:oc,is30:s.dur==30})
+        }
+      })
+    }
   }
   // Friday slots (جمعة) on Friday
   if(isFri()&&SH.friday){
@@ -462,8 +482,9 @@ function rAdv(){
         list.forEach(x=>{
           const occInfo=x.cap>1?` ${x.occ+1}/${x.cap}`:"";
           const label=x.isFri?fm(x.t):(isSup?"60 دقيقة 🟡 (مشرف)":(x.is30?"30 دقيقة 🟣":(mc15>0?"15د (الثاني)":"15 دقيقة 🟢")));
-          const onclick=x.isFri?`empAs('${x.sk}','${x.t}','${x.k}')`:`empAsAdv('${x.k}','${x.sk}','${x.t}')`;
-          ah+=`<span class="mtt" style="cursor:pointer;border-color:#27ae60;background:#e8f8f5" onclick="${onclick}">${x.isFri?fm(x.t)+(x.isFri?'🎯':''):x.t} ${label}${occInfo}</span>`
+          const onclick=isSup?`empAs('${x.sk}','${x.t}','${x.k}')`:(x.isFri?`empAs('${x.sk}','${x.t}','${x.k}')`:`empAsAdv('${x.k}','${x.sk}','${x.t}')`);
+          const timeDisplay=isSup?fm(x.t):x.t;
+          ah+=`<span class="mtt" style="cursor:pointer;border-color:#27ae60;background:#e8f8f5" onclick="${onclick}">${timeDisplay} ${label}${occInfo}</span>`
         });
         ah+=`</div></div>`
       }
