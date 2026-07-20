@@ -377,18 +377,19 @@ function advOcc(shift, t){
 function rAdv(){
   // Count my breaks: 15min slots count and whether I have a 30min slot
   let mc15=0,has30=false,mySlots=[];
+  const supDurAdv=isSup?60:0;
   // Regular advanced slots
   for(const[sk,sh]of Object.entries(ADV_SLOTS)){sh.slots.forEach(s=>{
     const k=advSk(sk,s.t),k2=k+"#2",em=AS[k],em2=AS[k2];
     const my1=em==ME||(Array.isArray(em)&&em.includes(ME));
     const my2=em2==ME||(Array.isArray(em2)&&em2.includes(ME));
-    if(my1)mySlots.push({k,sk,t:s.t,dur:s.dur,is30:s.dur==30});if(my2)mySlots.push({k:k2,sk,t:s.t,dur:s.dur,is30:s.dur==30})
+    if(my1)mySlots.push({k,sk,t:s.t,dur:supDurAdv||s.dur,is30:!isSup&&s.dur==30});if(my2)mySlots.push({k:k2,sk,t:s.t,dur:supDurAdv||s.dur,is30:!isSup&&s.dur==30})
   })}
   // Friday slots (جمعة) — show on top of advanced mode
   if(isFri()&&SH.friday){
     SH.friday.ts.forEach((t,i)=>{
       const k="friday_"+t,em=AS[k];
-      if(em==ME||(Array.isArray(em)&&em.includes(ME)))mySlots.push({k,sk:"friday",t:t,dur:gd("friday",t,i,ME),is30:false})
+      if(em==ME||(Array.isArray(em)&&em.includes(ME)))mySlots.push({k,sk:"friday",t:t,dur:supDurAdv||gd("friday",t,i,ME),is30:false})
     })
   }
   mySlots.forEach(x=>{if(x.is30)has30=true;else mc15++});
@@ -404,8 +405,9 @@ function rAdv(){
   // My breaks
   let mh="";
   mySlots.forEach(x=>{
+    const dr=isSup?60:(x.is30?30:15);
     mh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px">
-      <span>${x.t}${x.is30?" 🟣(30د)":" 🟢(15د)"}</span>
+      <span>${x.t}${isSup?" 🟡(60د) <small>مشرف</small>":(x.is30?" 🟣(30د)":" 🟢(15د)")}</span>
       <button class="btn btn-dan btn-sm" onclick="empUnAdv('${x.k}')" style="padding:0 3px;font-size:8px">✕</button>
     </div>`
   });
@@ -459,7 +461,7 @@ function rAdv(){
         ah+=`<div class="sg"><h4>${lb(list[0])}</h4><div class="row">`;
         list.forEach(x=>{
           const occInfo=x.cap>1?` ${x.occ+1}/${x.cap}`:"";
-          const label=x.isFri?fm(x.t):(x.is30?"30 دقيقة 🟣":(mc15>0?"15د (الثاني)":"15 دقيقة 🟢"));
+          const label=x.isFri?fm(x.t):(isSup?"60 دقيقة 🟡 (مشرف)":(x.is30?"30 دقيقة 🟣":(mc15>0?"15د (الثاني)":"15 دقيقة 🟢")));
           const onclick=x.isFri?`empAs('${x.sk}','${x.t}','${x.k}')`:`empAsAdv('${x.k}','${x.sk}','${x.t}')`;
           ah+=`<span class="mtt" style="cursor:pointer;border-color:#27ae60;background:#e8f8f5" onclick="${onclick}">${x.isFri?fm(x.t)+(x.isFri?'🎯':''):x.t} ${label}${occInfo}</span>`
         });
