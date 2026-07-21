@@ -13,6 +13,27 @@ app = Flask(__name__)
 app.json.sort_keys = False  # Preserve dict insertion order in JSON responses
 BASE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE, "break_schedule.db")
+MODE_FILE_PATH = os.path.join(BASE, "_mode.json")
+
+# ═══════════════ MODE FILE PERSISTENCE ═══════════════
+def read_mode_from_file():
+    """Read saved mode from file (survives Render restarts)"""
+    try:
+        if os.path.exists(MODE_FILE_PATH):
+            with open(MODE_FILE_PATH) as f:
+                data = json.load(f)
+                return data.get("mode", "basic")
+    except Exception:
+        pass
+    return None
+
+def write_mode_to_file(mode):
+    """Save mode to file so it survives Render restarts"""
+    try:
+        with open(MODE_FILE_PATH, "w") as f:
+            json.dump({"mode": mode}, f)
+    except Exception:
+        pass
 
 COL_MAP = {"morning":(2,3),"afternoon":(5,6),"night":(8,9)}
 SLB = {"morning":"🌅 Morning (8-5)","afternoon":"☀️ Afternoon (11-8)","night":"🌙 Night (1-10)"}
@@ -210,10 +231,14 @@ def init_db():
     row2 = con.execute("SELECT val FROM store WHERE key='sup_list'").fetchone()
     if not row2:
         con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("sup_list", json.dumps([])))
-    # Seed mode in store if empty
-    row3 = con.execute("SELECT val FROM store WHERE key='mode'").fetchone()
-    if not row3:
-        con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("mode", json.dumps("basic")))
+    # Seed mode: try file first (survives Render restarts), fallback to "basic"
+    file_mode = read_mode_from_file()
+    if file_mode:
+        con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("mode", json.dumps(file_mode)))
+    else:
+        row3 = con.execute("SELECT val FROM store WHERE key='mode'").fetchone()
+        if not row3:
+            con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("mode", json.dumps("basic")))
     con.commit()
     con.close()
 
@@ -443,6 +468,7 @@ def api_mode():
         con.execute("INSERT OR REPLACE INTO store(key,val) VALUES(?,?)", ("mode", json.dumps(mode)))
         con.commit()
         con.close()
+        write_mode_to_file(mode)  # persist across Render restarts
         return jsonify({"ok":True, "mode":mode, "message": "✅ تم التبديل إلى " + ("وضع الطوارئ 🚨" if mode=="advanced" else "الوضع العادي ✅")})
 
 # ═══════════════ SUPERVISOR LIST ═══════════════
