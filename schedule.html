@@ -258,10 +258,12 @@ async function svLoad(){  try{
     if(d.recipients)RS=d.recipients;
     if(d.recipients)RS=d.recipients;
     if(d.durations&&d.durations.length==4)DP=d.durations;
-    if(d.mode){MODE=d.mode;sv("bs_mode",MODE)}
+    if(d.mode){MODE=d.mode}
     if(d.advanced_slots){ADV_SLOTS=d.advanced_slots;sv("bs_adv_slots",ADV_SLOTS)}
     // If server returned basic but localStorage says advanced, restore it
     if(MODE=="basic"&&ld("bs_mode","")=="advanced"){MODE="advanced";fetch("/api/mode",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"advanced"})}).catch(()=>{})}
+    // Save mode to localStorage AFTER the restore check (so old value is available)
+    sv("bs_mode",MODE)
     let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
   }catch(e){}
 }
@@ -767,7 +769,7 @@ function tv(sk,t){if(!VO[sk])VO[sk]=[];const i=VO[sk].indexOf(t);if(i>-1)VO[sk].
 function edDur(sk,t,i){const cur=gd(sk,t,i);const n=prompt(`⏱ مدة ${fm(t)} (5-60):`,cur);if(!n||isNaN(n)||parseInt(n)<5||parseInt(n)>60)return;CDUR[sk+"_"+t]=parseInt(n);sv("bs_dur",CDUR);svSave();nf(`✅ ${parseInt(n)} د`,"g");rAdm();r()}
 function rs(){if(!confirm("تصفير التوزيعات؟"))return;AS={};sv("bs_as",AS);svAs();r();rAll();nf("🔄","b")}
 function rstSlots(){if(!confirm("استعادة الأوقات؟"))return;SH=JSON.parse(JSON.stringify(SH_DF));VO=JSON.parse(JSON.stringify(VO_DF));SH.friday=JSON.parse(JSON.stringify(SH_FRI.friday));VO.friday=[];svSave();rAdm();r();nf("✅ تم","g")}
-function toggleMode(){const nm=MODE=="basic"?"advanced":"basic";fetch("/api/mode",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:nm})}).then(r=>r.json()).then(d=>{if(d.ok){MODE=nm;nf(d.message,"g");location.reload()}else{nf("❌","r")}}).catch(()=>nf("❌","r"))}
+function toggleMode(){if(!adminOn){nf("⚠️ تسجيل الدخول كمدير أولاً","r");return}const nm=MODE=="basic"?"advanced":"basic";fetch("/api/mode",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:nm})}).then(r=>r.json()).then(d=>{if(d.ok){MODE=nm;nf(d.message,"g");location.reload()}else{nf("❌","r")}}).catch(()=>nf("❌","r"))}
 function addR(){const n=document.getElementById("rn").value.trim(),m=document.getElementById("rm").value.trim();if(!n||!m)return;RS.push({name:n,email:m});sv("bs_rs",RS);document.getElementById("rn").value="";document.getElementById("rm").value="";rAdm();nf("✅","g")}
 // Reports
 async function saveReport(){const ld=document.getElementById("rptList");ld.innerHTML="⏳ جاري الحفظ...";try{const r=await(await fetch("/api/report/save",{method:"POST"})).json();if(r.ok){ld.innerHTML="";nf(r.message,"g");loadReports()}else{nf("❌ "+r.error,"r");ld.innerHTML="❌"}}catch(e){nf("❌ "+e.message,"r");ld.innerHTML="❌"}}
@@ -952,8 +954,11 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
         const lsSH_chk=ld("bs_sh",null);if(!lsSH_chk&&d.shifts){for(const[k,v]of Object.entries(d.shifts)){if(!SH[k])SH[k]={lb:v.lb||k,ts:[]};SH[k].ts=v.ts||[]}}
         if(d.view_only)VO=d.view_only;if(d.custom_durations){for(const[k,v]of Object.entries(d.custom_durations))CDUR[k]=v};if(d.recipients)RS=d.recipients;if(d.extra_breaks){for(const[k,v]of Object.entries(d.extra_breaks))XB[k]=v};if(d.extra_breaks_req){for(const[k,v]of Object.entries(d.extra_breaks_req))XB_REQ[k]=v}
         if(d.durations&&d.durations.length==4)DP=d.durations;
-        if(d.mode){MODE=d.mode;sv("bs_mode",MODE)}
+        if(d.mode){MODE=d.mode}
         if(d.advanced_slots){ADV_SLOTS=d.advanced_slots;sv("bs_adv_slots",ADV_SLOTS)}
+        // Restore mode from localStorage if server reset
+        if(MODE=="basic"&&ld("bs_mode","")=="advanced"){MODE="advanced";fetch("/api/mode",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"advanced"})}).catch(()=>{})}
+        sv("bs_mode",MODE)
         let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
         const bd={};EM.forEach(e=>{const c=CD[e.name]||e.code;if(c)bd[e.name]=c});
         if(Object.keys(bd).length)fetch(SV+"/api/badges",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(bd)});
