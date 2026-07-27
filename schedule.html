@@ -494,17 +494,17 @@ function empAsAdv(k,sk,t){
   // Supervisor: 1 slot max
   if(isSup){
     if(mc>=1){nf("⚠️ اخترت بريك المشرف","r");return}
-    AS[k]=ME;sv("bs_as",AS);addLog(ME,sk,t,"📌 أخذ");svAs();r();return
+    AS[k]=ME;sv("bs_as",AS);addLog(ME,sk,t,"📌 أخذ");svAs();rAdv();return
   }
   // Employee: max 3 breaks (15,15,10)
   const nMax=3;
   if(mc>=nMax){nf("⚠️ اخترت 3 بريكات","r");return}
   if(AS[k]){nf("⚠️ مأخوذ","r");return}
-  AS[k]=ME;sv("bs_as",AS);addLog(ME,sk,t,"📌 أخذ");svAs();r();
+  AS[k]=ME;sv("bs_as",AS);addLog(ME,sk,t,"📌 أخذ");svAs();rAdv();
 }
 function empUnAdv(k){
   if(AS[k]!=ME){nf("⚠️ مو بريكك","r");return}
-  delete AS[k];sv("bs_as",AS);addLog(ME,"","","🗑️ ألغى");svAs();r();
+  delete AS[k];sv("bs_as",AS);addLog(ME,"","","🗑️ ألغى");svAs();rAdv();
 }
 // ═══════════ LOG ═══════════
 function addLog(emp,sk,t,act){
@@ -904,11 +904,11 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
   if(MODE=="basic"&&ld("bs_mode","")=="advanced"){MODE="advanced";fetch("/api/mode",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"advanced"})}).catch(()=>{})}
   sv("bs_mode",MODE)
   let lsADV=null;try{const fr=await fetch(SV+"/api/data",{signal:AbortSignal.timeout(5000)});if(fr.ok){const fd=await fr.json();if(fd.advanced_slots){ADV_SLOTS=fd.advanced_slots;sv("bs_adv_slots",ADV_SLOTS)}}}catch(e){}if(!(Object.keys(ADV_SLOTS).length)){let la=ld("bs_adv_slots",null);if(la)ADV_SLOTS=la}
-  loadBT();r();rAdm();
+  loadBT();if(MODE=="advanced")rAdv();else r();rAdm();
   // Load timer from localStorage
   let lsBT=ld("bs_bt",{});if(Object.keys(lsBT).length)BT=lsBT;
   // Auto-refresh
-  setInterval(async()=>{const ls=sn;await svLoad();if(ls!==sn||MODE!=="basic"){r()};checkReminders();notifyXBStatus();if(adminOn||isSup)rAdm()},5000);
+  setInterval(async()=>{const ls=sn;await svLoad();if(ls!==sn||MODE!=="basic"){if(MODE=="advanced")rAdv();else r()};checkReminders();notifyXBStatus();if(adminOn||isSup)rAdm()},5000);
   setInterval(()=>{const n=new Date();const s=new Date(n.toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));if(s.getHours()===0&&s.getMinutes()===0){nf("🔄 ريست يومي: تم مسح التوزيعات","g");REM={};sv("bs_rmd",{});AS={};sv("bs_as",AS);svAs();fetch(SV+"/api/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({assignments:AS})})}},15000);
   setTimeout(checkReminders,1000);
   
@@ -919,8 +919,8 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
   },60000);
   // Load from server in background (with retry for cold start)
   (async function bgLoad(){
-    try{const tr=await fetch(SV+"/api/break-timer");if(tr.ok){BT=await tr.json();sv("bs_bt",BT);r()}}catch(e){}
-    try{const er=await fetch(SV+"/api/emp-list");if(er.ok){const el=await er.json();if(el.length){const pre=EM;EM=el;pre.forEach(e=>{if(!EM.find(x=>x.name==e.name))EM.push(e)});sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code});r();rAdm()}}}catch(e){}try{const sr=await fetch(SV+"/api/sup-list");if(sr.ok){const sl=await sr.json();if(sl.length){const pre=SUP;SUP=sl;pre.forEach(s=>{if(!SUP.includes(s))SUP.push(s)});sv("bs_sup",SUP)}}}catch(e){}
+    try{const tr=await fetch(SV+"/api/break-timer");if(tr.ok){BT=await tr.json();sv("bs_bt",BT);if(MODE=="advanced")rAdv();else r()}}catch(e){}
+    try{const er=await fetch(SV+"/api/emp-list");if(er.ok){const el=await er.json();if(el.length){const pre=EM;EM=el;pre.forEach(e=>{if(!EM.find(x=>x.name==e.name))EM.push(e)});sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code});if(MODE=="advanced")rAdv();else r();rAdm()}}}catch(e){}try{const sr=await fetch(SV+"/api/sup-list");if(sr.ok){const sl=await sr.json();if(sl.length){const pre=SUP;SUP=sl;pre.forEach(s=>{if(!SUP.includes(s))SUP.push(s)});sv("bs_sup",SUP)}}}catch(e){}
     try{const br=await fetch(SV+"/api/badges");if(br.ok){const bc=await br.json();for(const[nm,cd]of Object.entries(bc)){CD[nm]=cd;const e=EM.find(x=>x.name==nm);if(e)e.code=cd}};sv("bs_cd",CD)}catch(e){}
     for(let i=0;i<25;i++){
       try{const r=await fetch(SV+"/api/data");if(!r.ok){await new Promise(r=>setTimeout(r,2000));continue}
@@ -939,10 +939,10 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
         let lsEDP=ld("bs_edp",{});if(Object.keys(lsEDP).length)EDP=lsEDP;/*lsSUP already loaded from /api/sup-list above*/
         const bd={};EM.forEach(e=>{const c=CD[e.name]||e.code;if(c)bd[e.name]=c});
         if(Object.keys(bd).length)fetch(SV+"/api/badges",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(bd)});
-        sv("bs_cd",CD);r();rAdm();return
+        sv("bs_cd",CD);if(MODE=="advanced")rAdv();else r();rAdm();return
       }catch(e){await new Promise(r=>setTimeout(r,2000))}
     }
-    if(!EM.length){let bk=ld("bs_emp_bk",[]);if(bk.length)EM=bk;else EM=JSON.parse(JSON.stringify(EMP_DF));r();rAdm()}
+    if(!EM.length){let bk=ld("bs_emp_bk",[]);if(bk.length)EM=bk;else EM=JSON.parse(JSON.stringify(EMP_DF));if(MODE=="advanced")rAdv();else r();rAdm()}
   })();
   // Check daily reset — if new day since last visit, clear assignments
   // Check daily reset — only at midnight (interval above), not on page load
