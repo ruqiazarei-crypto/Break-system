@@ -960,7 +960,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
   // Restore from localStorage if server says basic but we had advanced
   if(MODE=="basic"&&ld("bs_mode","")=="advanced"){MODE="advanced";fetch("/api/mode",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"advanced"})}).catch(()=>{})}
   sv("bs_mode",MODE)
-  let lsADV=ld("bs_adv_slots",null);if(lsADV)ADV_SLOTS=lsADV;
+  let lsADV=null;try{const fr=await fetch(SV+"/api/data",{signal:AbortSignal.timeout(5000)});if(fr.ok){const fd=await fr.json();if(fd.advanced_slots){ADV_SLOTS=fd.advanced_slots;sv("bs_adv_slots",ADV_SLOTS)}}}catch(e){}if(!(Object.keys(ADV_SLOTS).length)){let la=ld("bs_adv_slots",null);if(la)ADV_SLOTS=la}
   loadBT();r();rAdm();
   // Load timer from localStorage
   let lsBT=ld("bs_bt",{});if(Object.keys(lsBT).length)BT=lsBT;
