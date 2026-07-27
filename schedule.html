@@ -384,11 +384,11 @@ function empAs(sk,t,k){
   if(supOnly&&!isSup){nf("⚠️ للمشرف فقط","r");return}
   AS[k]=ME;sv("bs_as",AS);addLog(ME,sk,t,"📌 أخذ");svAs();
   if(!isSup&&mc>=4&&XB[ME]){XB[ME]--;if(XB[ME]<=0)delete XB[ME];sv("bs_xb",XB);fetch(SV+"/api/x-breaks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(XB)})}
-  r();
+  if(MODE=="advanced")rAdv();else r();
 }
 function empUn(k){
   if(AS[k]!=ME){nf("⚠️ مو بريكك","r");return}
-  delete AS[k];sv("bs_as",AS);addLog(ME,"","","🗑️ ألغى");svAs();r();
+  delete AS[k];sv("bs_as",AS);addLog(ME,"","","🗑️ ألغى");svAs();if(MODE=="advanced")rAdv();else r();
 }
 
 // ═══════════ ADVANCED MODE ═══════════
@@ -409,8 +409,12 @@ function rAdv(){
   
   // My breaks
   let mh="";const mySorted=[];
-  for(const[sk,sh]of Object.entries(ADV_SLOTS)){sh.slots.forEach((s,i)=>{const k=advSk(sk,s.t),em=AS[k];if(em==ME)mySorted.push({k,sk,t:s.t,i})})}
-  mySorted.sort((a,b)=>a.t.localeCompare(b.t));mySorted.forEach((x,i)=>{const dr=isSup?60:slotDur(i);mh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${fm(x.t)} (${dr}د)</span><button class="btn btn-dan btn-sm" onclick="empUnAdv('${x.k}')" style="padding:0 3px;font-size:8px">✕</button></div>`});
+  if(isSup){
+    for(const[sk,sh]of Object.entries(empShifts())){sh.ts.forEach((t,i)=>{const k=sk+'_'+t;if(AS[k]==ME)mySorted.push({k,sk,t})})}
+  }else{
+    for(const[sk,sh]of Object.entries(ADV_SLOTS)){sh.slots.forEach((s,i)=>{const k=advSk(sk,s.t),em=AS[k];if(em==ME)mySorted.push({k,sk,t:s.t,i})})}
+  }
+  mySorted.sort((a,b)=>a.t.localeCompare(b.t));mySorted.forEach((x,i)=>{const dr=isSup?60:slotDur(i);mh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${fm(x.t)} (${dr}د)</span><button class="btn btn-dan btn-sm" onclick="${isSup?'empUn':'empUnAdv'}('${x.k}')" style="padding:0 3px;font-size:8px">✕</button></div>`});
   if(!mh)mh=`<span style="color:#999;font-size:11px">${ME?"ما اخترت بريكات":"سجل الدخول ب Badge Num"}</span>`;
   document.getElementById("myList").innerHTML=mh;
   renderTimer();
