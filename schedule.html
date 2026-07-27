@@ -259,7 +259,7 @@ async function svLoad(){  try{
     const r=await fetch(SV+"/api/data");if(!r.ok)return;
     const d=await r.json();
     if(d.employees&&d.employees.length){const bk=ld("bs_emp_bk",[]);bk.forEach(e=>{if(!d.employees.find(x=>x.name==e.name))d.employees.push(e)});EM=d.employees;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
-    if(d.assignments){const ue=Object.entries(AS).filter(([k,v])=>v==ME).length;if(ue>0){const m={...d.assignments};for(const[k,v]of Object.entries(m)){if(v==ME)delete m[k]}for(const[k,v]of Object.entries(AS)){if(v==ME)m[k]=v}AS=m}else{AS={...d.assignments}}}
+    if(d.assignments){const ue=Object.entries(AS).filter(([k,v])=>v==ME).length;if(ue>0){const m={...d.assignments};for(const[k,v]of Object.entries(m)){if(Array.isArray(v)&&v.includes(ME))delete m[k];else if(v==ME)delete m[k]}for(const[k,v]of Object.entries(AS)){if(v==ME)m[k]=v}AS=m}else{AS={...d.assignments}}}
     // Sync shifts — merge server times (add new, keep existing local)
     if(d.shifts){for(const[k,v]of Object.entries(d.shifts)){if(!SH[k])SH[k]={lb:v.lb||k,ts:[]};SH[k].lb=v.lb||SH[k].lb;v.ts.forEach(t=>{if(!SH[k].ts.includes(t))SH[k].ts.push(t)});SH[k].ts.sort()};sv("bs_sh",SH)}
     if(d.view_only)VO=d.view_only;
@@ -926,7 +926,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
       try{const r=await fetch(SV+"/api/data");if(!r.ok){await new Promise(r=>setTimeout(r,2000));continue}
         const d=await r.json();
         if(d.employees&&d.employees.length){const bk=ld("bs_emp_bk",[]);bk.forEach(e=>{if(!d.employees.find(x=>x.name==e.name))d.employees.push(e)});EM=d.employees;sv("bs_emp_bk",EM);EM.forEach(e=>{if(e.code&&!CD[e.name])CD[e.name]=e.code})}
-        if(d.assignments){const ue=Object.entries(AS).filter(([k,v])=>v==ME).length;if(ue>0){const m={...d.assignments};for(const[k,v]of Object.entries(m)){if(v==ME)delete m[k]}for(const[k,v]of Object.entries(AS)){if(v==ME)m[k]=v}AS=m}else{AS={...d.assignments}}}
+        if(d.assignments){const ue=Object.entries(AS).filter(([k,v])=>v==ME).length;if(ue>0){const m={...d.assignments};for(const[k,v]of Object.entries(m)){if(Array.isArray(v)&&v.includes(ME))delete m[k];else if(v==ME)delete m[k]}for(const[k,v]of Object.entries(AS)){if(v==ME)m[k]=v}AS=m}else{AS={...d.assignments}}}
         // Only load shifts from server if localStorage is empty (first visit)
         const lsSH_chk=ld("bs_sh",null);if(!lsSH_chk&&d.shifts){for(const[k,v]of Object.entries(d.shifts)){if(!SH[k])SH[k]={lb:v.lb||k,ts:[]};SH[k].lb=v.lb||SH[k].lb;v.ts.forEach(t=>{if(!SH[k].ts.includes(t))SH[k].ts.push(t)});SH[k].ts.sort()}}
         if(d.view_only)VO=d.view_only;if(d.custom_durations){for(const[k,v]of Object.entries(d.custom_durations))CDUR[k]=v};if(d.cdur_basic){for(const[k,v]of Object.entries(d.cdur_basic))CDUR_BASIC[k]=v};if(d.cdur_adv){for(const[k,v]of Object.entries(d.cdur_adv))CDUR_ADV[k]=v};if(d.recipients)RS=d.recipients;if(d.extra_breaks){for(const[k,v]of Object.entries(d.extra_breaks))XB[k]=v};if(d.extra_breaks_req){for(const[k,v]of Object.entries(d.extra_breaks_req))XB_REQ[k]=v}
