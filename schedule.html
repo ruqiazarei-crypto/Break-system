@@ -461,7 +461,11 @@ function rAdv(){
   const full=mc>=3||(isSup&&mc>=1);
   if(full){
     if(isSup)ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">✅ <strong>${ME}</strong> اخترت بريك المشرف<div style="font-size:10px;color:#666">60 دقيقة</div></div>`
-    else ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">✅ اخترت ${mc} بريكات</div>`
+    else{
+      ah=`<div style="text-align:center;color:#e74c3c;font-weight:600;font-size:13px;padding:8px">✅ اخترت ${mc} بريكات</div>`;
+      if(!XB[ME]&&!XB_REQ[ME])ah+=`<div style="text-align:center;margin-top:4px"><button class="btn btn-war btn-sm" onclick="reqXB()">📩 طلب بريك إضافي</button></div>`;
+      if(XB_REQ[ME])ah+=`<div style="text-align:center;color:#8e44ad;font-size:10px;margin-top:4px">⏳ طلب بريك إضافي قيد المراجعة</div>`;
+    }
   }
   else if(!avail.length){ah='<span style="color:#999;font-size:10px">لا توجد أوقات متاحة</span>'}
   else{
@@ -486,7 +490,7 @@ function rAdv(){
   const sorted=mySorted.map((x,i)=>{const[h,m]=x.t.split(":").map(Number);return{...x,tm:h*60+m,dr:slotDur(i)}}).filter(x=>x.tm>cm).sort((a,b)=>a.tm-b.tm);
   if(!sorted.length){document.getElementById("upcPn").style.display="none";return}
   document.getElementById("upcPn").style.display="block";let uh="";
-  sorted.forEach(x=>{const d=x.tm-cm,hh=Math.floor(d/60),mm=d%60;uh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${x.t} (${x.dur}د)</span><span style="color:#008080;font-weight:600">بعد ${hh?hh+"س ":""}${mm}د</span></div>`});
+  sorted.forEach(x=>{const d=x.tm-cm,hh=Math.floor(d/60),mm=d%60;uh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${fm(x.t)} (${x.dr}د)</span><span style="color:#008080;font-weight:600">بعد ${hh?hh+"س ":""}${mm}د</span></div>`});
   document.getElementById("upcList").innerHTML=uh;
   renderTimer();
 }
