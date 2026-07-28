@@ -412,7 +412,7 @@ function rAdv(){
   if(isSup){
     for(const[sk,sh]of Object.entries(empShifts())){sh.ts.forEach((t,i)=>{const k=sk+'_'+t;if(AS[k]==ME)mySorted.push({k,sk,t})})}
   }else{
-    for(const[sk,sh]of Object.entries(ADV_SLOTS)){sh.slots.forEach((s,i)=>{const k=advSk(sk,s.t),em=AS[k];if(em==ME)mySorted.push({k,sk,t:s.t,i})})}
+    for(const[sk,sh]of Object.entries(ADV_SLOTS)){sh.slots.forEach((s,i)=>{const k=advSk(sk,s.t),st=s.t.split("-")[0],em=AS[k];if(em==ME)mySorted.push({k,sk,t:st,i})})}
   }
   mySorted.sort((a,b)=>a.t.localeCompare(b.t));mySorted.forEach((x,i)=>{const dr=isSup?60:slotDur(i);mh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${fm(x.t)} (${dr}د)</span><button class="btn btn-dan btn-sm" onclick="${isSup?'empUn':'empUnAdv'}('${x.k}')" style="padding:0 3px;font-size:8px">✕</button></div>`});
   if(!mh)mh=`<span style="color:#999;font-size:11px">${ME?"ما اخترت بريكات":"سجل الدخول ب Badge Num"}</span>`;
@@ -483,7 +483,7 @@ function rAdv(){
   
   // Upcoming
   const now=new Date(),cm=now.getHours()*60+now.getMinutes();
-  const sorted=mySorted.map(x=>{const[h,m]=x.t.split(":").map(Number);return{...x,tm:h*60+m,dr:slotDur(i)}}).filter(x=>x.tm>cm).sort((a,b)=>a.tm-b.tm);
+  const sorted=mySorted.map((x,i)=>{const[h,m]=x.t.split(":").map(Number);return{...x,tm:h*60+m,dr:slotDur(i)}}).filter(x=>x.tm>cm).sort((a,b)=>a.tm-b.tm);
   if(!sorted.length){document.getElementById("upcPn").style.display="none";return}
   document.getElementById("upcPn").style.display="block";let uh="";
   sorted.forEach(x=>{const d=x.tm-cm,hh=Math.floor(d/60),mm=d%60;uh+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:10px"><span>${x.t} (${x.dur}د)</span><span style="color:#008080;font-weight:600">بعد ${hh?hh+"س ":""}${mm}د</span></div>`});
