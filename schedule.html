@@ -947,7 +947,13 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
   // Restore from localStorage if server says basic but we had advanced
   if(MODE=="basic"&&ld("bs_mode","")=="advanced"){MODE="advanced";fetch("/api/mode",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"advanced"})}).catch(()=>{})}
   sv("bs_mode",MODE)
-  let lsADV=null;try{const fr=await fetch(SV+"/api/data",{signal:AbortSignal.timeout(5000)});if(fr.ok){const fd=await fr.json();if(fd.advanced_slots){ADV_SLOTS=fd.advanced_slots;sv("bs_adv_slots",ADV_SLOTS)}}}catch(e){}if(!(Object.keys(ADV_SLOTS).length)){let la=ld("bs_adv_slots",null);if(la)ADV_SLOTS=la}
+  // Load assignments & ADV_SLOTS from server BEFORE first render
+  try{const fr=await fetch(SV+"/api/data",{signal:AbortSignal.timeout(5000)});if(!fr.ok)throw"e";const fd=await fr.json();
+    if(fd.advanced_slots){ADV_SLOTS=fd.advanced_slots;sv("bs_adv_slots",ADV_SLOTS)}
+    if(fd.assignments){const ue=Object.entries(AS).filter(([k,v])=>v==ME).length;
+      if(ue>0){const m={...fd.assignments};for(const[k,v]of Object.entries(m)){if(Array.isArray(v)&&v.includes(ME))delete m[k];else if(v==ME)delete m[k]}for(const[k,v]of Object.entries(AS)){if(v==ME)m[k]=v}AS=m}else{AS={...fd.assignments}}}
+  }catch(e){}
+  if(!(Object.keys(ADV_SLOTS).length)){let la=ld("bs_adv_slots",null);if(la)ADV_SLOTS=la}
   loadBT();if(MODE=="advanced")rAdv();else r();rAdm();
   // Load timer from localStorage
   let lsBT=ld("bs_bt",{});if(Object.keys(lsBT).length)BT=lsBT;
