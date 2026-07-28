@@ -827,25 +827,27 @@ function supView(){
   el.style.display="block";
   let h="",ta=0,tv=0,tt=0;
   if(MODE=="advanced"){
-    // Show ONLY advanced mode slots with actual durations
+    // Collect ALL employee breaks across all shifts for global duration calculation
+    const allEmps={};
     for(const[sk,sh]of Object.entries(ADV_SLOTS)){
-      h+=`<div class="sh"><h3 style="font-size:11px;color:#008080">🚨 ${sh.lb}</h3><div class="gr">`;
-      // Collect assignments for this shift to calculate per-employee durations
-      const slotEmps={};
       sh.slots.forEach(s=>{
         const k=advSk(sk,s.t),k2=k+"#2",em=AS[k],em2=AS[k2];
         const emp=em||em2;
         if(emp){
-          if(!slotEmps[emp])slotEmps[emp]=[];
-          slotEmps[emp].push({t:s.t,k});
+          if(!allEmps[emp])allEmps[emp]=[];
+          allEmps[emp].push({t:s.t,k,sk});
         }
       });
-      // Sort each employee's breaks by time and assign durations [15,15,10]
-      const empDur={};
-      for(const[emp,breaks]of Object.entries(slotEmps)){
-        breaks.sort((a,b)=>a.t.localeCompare(b.t));
-        breaks.forEach((b,i)=>{empDur[b.k]=slotDur(i)});
-      }
+    }
+    // Sort each employee's breaks globally and assign durations
+    const empDur={};
+    for(const[emp,breaks]of Object.entries(allEmps)){
+      breaks.sort((a,b)=>a.t.localeCompare(b.t));
+      breaks.forEach((b,i)=>{empDur[b.k]=slotDur(i)});
+    }
+    // Show advanced mode slots
+    for(const[sk,sh]of Object.entries(ADV_SLOTS)){
+      h+=`<div class="sh"><h3 style="font-size:11px;color:#008080">🚨 ${sh.lb}</h3><div class="gr">`;
       sh.slots.forEach(s=>{
         const k=advSk(sk,s.t),k2=k+"#2",em=AS[k],em2=AS[k2];
         tt++;
