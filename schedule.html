@@ -395,7 +395,10 @@ function empUn(k){
 function advSk(shift, t){return "adv-"+shift+"-"+t}
 function advOcc(shift, t){
   const k=advSk(shift,t),k2=k+"#2";
-  let c=0;if(AS[k])c++;if(AS[k2])c++;return c
+  let c=0;
+  if(AS[k])c+=Array.isArray(AS[k])?AS[k].length:1;
+  if(AS[k2])c+=Array.isArray(AS[k2])?AS[k2].length:1;
+  return c
 }
 function rAdv(){
   let mc=0;for(const v of Object.values(AS))if(v==ME)mc++;
