@@ -318,7 +318,6 @@ function logIn(){
   document.querySelector(".nb .btn-pri").style.display="none";
   document.getElementById("loggedNm").style.display="inline";
   document.getElementById("loggedNm").textContent=(isSup?"👁️ ":"👤 ")+ME;
-  REM={};sv("bs_rmd",{});
   if(Notification&&Notification.permission!="granted")reqNotif();
   checkReminders();
   nf("✅ أهلاً "+ME,"g");r();rAdm();
@@ -954,6 +953,7 @@ function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new Fil
   let lsVO=ld("bs_vo",null);if(lsVO)VO=lsVO;
   let lsCDURb=ld("bs_dur_basic",{});if(Object.keys(lsCDURb).length)CDUR_BASIC=lsCDURb;let lsCDURa=ld("bs_dur_adv",{});if(Object.keys(lsCDURa).length)CDUR_ADV=lsCDURa;
   let lsMODE=ld("bs_mode","");if(lsMODE&&lsMODE!="basic")MODE=lsMODE;
+  let lsREM=ld("bs_rmd",{});if(Object.keys(lsREM).length)REM=lsREM;
   // Fetch mode from server BEFORE first render (timeout 3s so cold start doesn't hang)
   try{const ctrl=new AbortController(),tid=setTimeout(()=>ctrl.abort(),3000);const mr=await fetch(SV+"/api/mode",{signal:ctrl.signal});clearTimeout(tid);if(mr.ok){const md=await mr.json();if(md.mode)MODE=md.mode}}catch(e){}
   // Restore from localStorage if server says basic but we had advanced
