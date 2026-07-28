@@ -826,27 +826,27 @@ function supView(){
   if(el.style.display==="block"){el.style.display="none";return}
   el.style.display="block";
   let h="",ta=0,tv=0,tt=0;
-  // Show regular shifts
-  for(const[sk,sh]of Object.entries(SH)){h+=`<div class="sh"><h3 style="font-size:11px">${sh.lb}</h3><div class="gr">`;
-    sh.ts.forEach((t,i)=>{tt++;const k=sk+"_"+t,em=AS[k],vw=(VO[sk]||[]).includes(t),dr=gd(sk,t,i,em||ME),my=em==ME;
-      const isSupSlot=SUP.includes("_sl_"+k);if(isSupSlot&&!adminOn&&!isSup){ta++;h+=`<span class="g">${fm(t)} (${dr}د)</span>`;return}
-      const cls=my?"b":vw?"vw":em?"r":"g";const txt=my?`✅ ${fm(t)} (${dr}د)`:vw?`📖 ${fm(t)} (${dr}د)`:em?`🔴 ${em} (${dr}د)`:fm(t)+` (${dr}د)`;
-      if(!em)ta++;if(em&&!my)tv++;h+=`<span class="${cls}" style="${em?'cursor:default':''}">${txt}</span>`;
-    });h+=`</div></div>`;
-  }
-  // Show advanced mode slots if mode is advanced
   if(MODE=="advanced"){
+    // Show ONLY advanced mode slots
     for(const[sk,sh]of Object.entries(ADV_SLOTS)){
-      h+=`<div class="sh"><h3 style="font-size:11px;color:#008080">${sh.lb}</h3><div class="gr">`;
+      h+=`<div class="sh"><h3 style="font-size:11px;color:#008080">🚨 ${sh.lb}</h3><div class="gr">`;
       sh.slots.forEach(s=>{
         const k=advSk(sk,s.t),k2=k+"#2",em=AS[k],em2=AS[k2];
         tt++;
-        const txt=em?`🔴 ${em} (15د)`:em2?`🔴 ${em2} (15د)`:s.t+` (15د)`;
-        const cls=em||em2?"r":"g";
-        if(em||em2)tv++;else ta++;
-        h+=`<span class="${cls}" style="cursor:default">${txt}</span>`
+        if(em||em2){tv++;h+=`<span class="r" style="cursor:default">🔴 ${em||em2} (15د)</span>`}
+        else{ta++;h+=`<span class="g">${s.t} (15د)</span>`}
       });
       h+=`</div></div>`;
+    }
+  }else{
+    // Show ONLY regular shifts
+    for(const[sk,sh]of Object.entries(SH)){
+      h+=`<div class="sh"><h3 style="font-size:11px">${sh.lb}</h3><div class="gr">`;
+      sh.ts.forEach((t,i)=>{tt++;const k=sk+"_"+t,em=AS[k],vw=(VO[sk]||[]).includes(t),dr=gd(sk,t,i,em||ME),my=em==ME;
+        const isSupSlot=SUP.includes("_sl_"+k);if(isSupSlot&&!adminOn&&!isSup){ta++;h+=`<span class="g">${fm(t)} (${dr}د)</span>`;return}
+        const cls=my?"b":vw?"vw":em?"r":"g";const txt=my?`✅ ${fm(t)} (${dr}د)`:vw?`📖 ${fm(t)} (${dr}د)`:em?`🔴 ${em} (${dr}د)`:fm(t)+` (${dr}د)`;
+        if(!em)ta++;if(em&&!my)tv++;h+=`<span class="${cls}" style="${em?'cursor:default':''}">${txt}</span>`;
+      });h+=`</div></div>`;
     }
   }
   document.getElementById("supSlots").innerHTML=h;
