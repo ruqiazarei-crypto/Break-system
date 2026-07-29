@@ -1,0 +1,22 @@
+{
+  "name": "نظام البريكات - مستشفيات المانع",
+  "short_name": "البريكات",
+  "description": "نظام إدارة البريكات لمستشفيات المانع العامة",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#e8f4f0",
+  "theme_color": "#008080",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
